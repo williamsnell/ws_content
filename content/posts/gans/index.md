@@ -1,5 +1,5 @@
 +++
-title = 'GANs'
+title = 'Why does my GAN do that?'
 date = 2024-07-22T09:25:17+12:00
 image = "creepy_face_upscaled.png"
 cover = "creepy_face_upscaled.png"
