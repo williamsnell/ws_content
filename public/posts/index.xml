@@ -31,26 +31,35 @@ different goal.&lt;/p&gt;
 &lt;li&gt;a generator, which tries to generate new, convincingly realistic content, and&lt;/li&gt;
 &lt;li&gt;a discriminator, which tries to tell real content from fake.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Generally, during training, the generator&amp;rsquo;s is allowed to perform gradient descent all the way
-through both the generator&amp;rsquo;s weights &lt;strong&gt;and&lt;/strong&gt; the discriminator&amp;rsquo;s,
-but not the other way around. Hence, if a generator&amp;rsquo;s output fails to fool the discriminator, the
+&lt;p&gt;Generally, during training, the generator is allowed to back-propagate gradients
+all the way through both the discriminator (as it assesses the generated images)
+and the generator itself. Conversely, the discriminator has no special knowledge
+of the inner workings of the generator.
+Hence, if a generator&amp;rsquo;s output fails to fool the discriminator, the
 generator gets immediate feedback about what parts of the image tipped the discriminator off
 to the fakery. But if a discriminator is repeatedly hoodwinked, it can only look inward to
 understand how to improve.&lt;/p&gt;
 &lt;p&gt;Although GANs can technically generate any type of content, this post will focus on the generation
 of images.&lt;/p&gt;
 &lt;h2 id=&#34;visualizing-dcgans&#34;&gt;Visualizing DCGANs&lt;/h2&gt;
-&lt;p&gt;I particularly like using visualisation to help me get a deeper grip on a complex systems
+&lt;p&gt;I particularly like using visualisation to get a deeper grip on a complex system
 I am working with, and Deep Convolutional GANs (&lt;a href=&#34;https://arxiv.org/pdf/1511.06434&#34;&gt;as introduced in Radford, Metz &amp;amp; Chintala&lt;/a&gt;)
 offered the perfect opportunity for some interesting visualisations.&lt;/p&gt;
-&lt;p&gt;&lt;img alt=&#34;The DCGAN architecture (Radford, Metz &amp;amp; Chintala), specifically the generator, with a 100-tall vector &lt;br&gt;\nbeing processed through convolutional blocks that gradually decrease in feature depth and increase in &lt;br&gt;\nresolution, until being projected to a 64 x 64 pixel RGB image.&#34; src=&#34;https://willsnell.com/posts/gans/dcgan_gen_architecture.png&#34;&gt;&lt;/p&gt;
-&lt;p&gt;DCGANs use regular convolutions in the discriminator to repeatedly downsample the image, building up
+
+  &lt;figure class=&#34;left&#34; &gt;
+    &lt;img src=&#34;dcgan_gen_architecture.png&#34;   /&gt;
+    
+      &lt;figcaption class=&#34;center&#34; &gt;The DCGAN architecture (Radford, Metz &amp; Chintala), specifically the generator, with a 100-tall vector being processed through convolutional blocks that gradually decrease in feature depth and increase in resolution, until being projected to a 64 x 64 pixel RGB image.&lt;/figcaption&gt;
+    
+  &lt;/figure&gt;
+
+
+&lt;p&gt;DCGANs use ordinary 2-dimensional convolutions in the discriminator to repeatedly downsample the image, building up
 more and more internal features as the spatial resolution decreases.
 In this way, they a variant of a typical convolutional image classifier.&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;The architecture presented in the introductory paper omits residual/skip-connections, à la &lt;a href=&#34;https://arxiv.org/pdf/1512.03385&#34;&gt;ResNet&lt;/a&gt;.
-However, the two networks were introduced at similar times, and so the DCGAN&amp;rsquo;s discriminator does not
-appear to deliberately omit them.&lt;/p&gt;
+&lt;p&gt;The architecture presented in the DCGAN paper omits residual/skip-connections, à la &lt;a href=&#34;https://arxiv.org/pdf/1512.03385&#34;&gt;ResNet&lt;/a&gt;.
+However, the two networks were introduced at similar times, and so the DCGAN&amp;rsquo;s authors probably didn&amp;rsquo;t shun them on purpose.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;The generator does effectively the same thing, but in reverse, taking a large (in this case 100-long)
 vector of random noise, and up-projecting it via transposed convolutions to gradually increase the
@@ -59,16 +68,17 @@ image resolution while decreasing the depth of the feature dimension.&lt;/p&gt;
 first layer of the discriminator and the very last layer of the generator
 should produce kernels that take in/out image data directly.&lt;/p&gt;
 &lt;p&gt;For a (4x4 kernel) convolutional
-layer that takes in an RGB image and produces a 128-feature output, we will need&lt;/p&gt;
+layer that takes in an RGB image and produces a 128-feature output, this comes out to:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;128 individual kernels (1 for each feature in the next layer),&lt;/li&gt;
+&lt;li&gt;128 individual kernels (1 for each feature in the output layer),&lt;/li&gt;
 &lt;li&gt;of depth 3 (i.e. each kernel has different weights for how much it activates
 on a red, green, or blue pixel)&lt;/li&gt;
 &lt;li&gt;of size 4 x 4&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Because each kernel has a depth of 3, we can visualize its weights using RGB images. In essence,
 we get 128 x (4 high x 4 wide) images, where a bright red pixel indicates a part of the kernel
-that activates strongly on red pixels, but not on green or blue.&lt;/p&gt;
+that activates strongly on red pixels, but not on green or blue, and a black pixel indicates no
+activation for any input colour.&lt;/p&gt;
 &lt;p&gt;We can use this process in reverse to visualize the generator&amp;rsquo;s &lt;strong&gt;output&lt;/strong&gt; kernels, where a 128-feature
 space is projected up into an RGB image by transpose convolutions (effectively, but not quite, a convolution in reverse.)
 The generator&amp;rsquo;s kernels are the different brushes with which the network paints the output image. Just like an artist might
@@ -90,7 +100,7 @@ purpose to the generator I was going to train.&lt;/p&gt;
 &lt;h2 id=&#34;exploring-my-dcgan&#34;&gt;Exploring my DCGAN&lt;/h2&gt;
 &lt;p&gt;I started with a DCGAN with feature layers of depth [128, 256, 512], kernel size (4 x 4), and which took in an 64x64 RGB image.
 The generator had an input vector of size 100, and was trained on normally distributed random noise.&lt;/p&gt;
-&lt;p&gt;Training on the &lt;a href=&#34;https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html&#34;&gt;CelebA&lt;/a&gt; dataset, I trained with a batch-size of 8, using PyTorch
+&lt;p&gt;Training on the &lt;a href=&#34;https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html&#34;&gt;CelebA&lt;/a&gt; dataset, I used a batch-size of 8, using PyTorch
 with an Adam optimizer using default settings for both the generator and the discriminator.&lt;/p&gt;
 &lt;p&gt;The results from this first run are presented below.&lt;/p&gt;
 &lt;blockquote&gt;
@@ -143,10 +153,10 @@ would have little to no impact on the quality of images produced after training.
 work equally well up to the point where the discriminator&amp;rsquo;s input kernels showed strong specialization (i.e. something similar to
 the generator&amp;rsquo;s output kernels.)&lt;/p&gt;
 &lt;h2 id=&#34;testing-hypothesis-2&#34;&gt;Testing Hypothesis 2&lt;/h2&gt;
-&lt;p&gt;The obvious test is to decrease the number of input kernels for the discriminator
+&lt;p&gt;The obvious test was to decrease the number of input kernels for the discriminator
 (i.e. the first-layer feature depth) from 128 to 64, and see what happens.&lt;/p&gt;
-&lt;p&gt;Even though they are remarkably unstable, this change didn&amp;rsquo;t cause the GAN to diverge,
-and so training was possible. This suggests to me that the discriminator might have an
+&lt;p&gt;Even though GANs are notoriously unstable during training, this change didn&amp;rsquo;t cause the network to diverge.
+This suggests to me that the discriminator might have an
 easier job to do than the generator, and so the smaller network was not immediately defeated
 by its adversary.&lt;/p&gt;
 &lt;video controls preload=&#34;auto&#34; width=&#34;500px&#34;  autoplay loop playsinline class=&#34;html-video&#34;&gt;
@@ -157,7 +167,7 @@ by its adversary.&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;The output kernels from the generator look very similar to those from the previous
 model. This suggests these kernels represent features useful to the generator,
-regardless of the exact weights and representations learned in the hidden layers.&lt;/li&gt;
+regardless of the exact distribution of features in the hidden layers.&lt;/li&gt;
 &lt;li&gt;The discriminator&amp;rsquo;s first layer still looks remarkably random. Despite being half as big,
 the fully trained layer still looks like a desaturated version of the starting layer. At
 least one recognisable feature seems to have appeared, though, in the 3rd column, 1st row.&lt;/li&gt;
@@ -182,9 +192,7 @@ if the discriminator would eventually need to start specializing these kernel we
 &lt;p&gt;The 32 input-kernel network follows the same trend as the 64 input-kernel model: increasingly hazy, desaturated images.&lt;/p&gt;
 &lt;p&gt;Two interesting notes, though:&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;Even as the image quality is degraded, the quality of the facial features looks pretty similar. By analogy, it&amp;rsquo;s like
-looking at a photo of someone taken on an increasingly worse camera - the spatial location and general shape of their
-features are the same, even though the image as a whole is worse.&lt;/li&gt;
+&lt;li&gt;Even as the image quality is degraded, the quality of the facial features looks pretty similar.&lt;/li&gt;
 &lt;li&gt;More egregious structured artifacts are beginning to appear. In the lower left of this image, for example,
 you can see a clear checker-boarding pattern in the background. Such patterns are commonly produced by
 this network.&lt;/li&gt;
@@ -194,7 +202,7 @@ this network.&lt;/li&gt;
 are still learning a good representation of facial features. However, the constrained
 first layer has hindered the ability of the discriminator to notice and penalize noise and
 overall &amp;ldquo;image-quality&amp;rdquo;.&lt;/p&gt;
-&lt;p&gt;I imagine each decrease in input kernels as the discriminator looking through an increasingly blurry lens
+&lt;p&gt;I imagine each decrease in input kernels as the discriminator looking through an increasingly blurry
 or perhaps tinted lens at the image, able to make out broad strokes but missing areas of high spatial frequency,
 and seeing an increasingly desaturated version of the world.
 The analogy isn&amp;rsquo;t quite right, since the spatial dimensions the network receives are unchanged, but it&amp;rsquo;s a start.&lt;/p&gt;
@@ -241,7 +249,9 @@ choose from 11 categories (the 10 from CIFAR-10, plus 1 extra denoting &amp;ldqu
 &lt;p&gt;The flow of gradients through the network for a GAN is asymmetric: the generator gets access
 to the entire state of the discriminator for backprop, while the discriminator only gets its
 own network&amp;rsquo;s response to stimulus to learn from. Why this mismatch would lead to such a
-difference in layer specialization is unknown, to me at least.&lt;/p&gt;
+difference in layer specialization is unknown, to me at least. Perhaps patterned specialization
+in the discriminator&amp;rsquo;s layer closest to the generator&amp;rsquo;s own layers would provide an easy
+attack vector for the generator to learn and defeat the discriminator?&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;em&gt;Is the first layer actually random?&lt;/em&gt; The lack of human-identifiable structure in the kernels
