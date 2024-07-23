@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on willsnell</title>
-    <link>https://willsnell.com/posts/</link>
+    <link>http://localhost:1313/posts/</link>
     <description>Recent content in Posts on willsnell</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 22 Jul 2024 09:25:17 +1200</lastBuildDate><atom:link href="https://willsnell.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 22 Jul 2024 09:25:17 +1200</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Why does my GAN do that?</title>
-      <link>https://willsnell.com/posts/gans/</link>
+      <link>http://localhost:1313/posts/gans/</link>
       <pubDate>Mon, 22 Jul 2024 09:25:17 +1200</pubDate>
       
-      <guid>https://willsnell.com/posts/gans/</guid>
+      <guid>http://localhost:1313/posts/gans/</guid>
       <description>What are GANs? Much ink has already been spilled on the class of machine learning networks called GANs, or Generative Adversarial Networks, so I will only summarize it here.
 If you&amp;rsquo;re interested in learning more, this short course is a great resource.
 Although replaced in contemporary applications by diffusion models for tasks like image generation, GANs provide a unique opportunity to study the interplay of two tightly-coupled systems, each seeking a different goal.</description>
@@ -109,8 +109,8 @@ time-step in the video since the model should change less and less as it gets fu
 and further through its training.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;video controls preload=&#34;auto&#34; width=&#34;500px&#34;  autoplay loop playsinline class=&#34;html-video&#34;&gt;
-    &lt;source src=&#34;https://willsnell.com/posts/gans/gan_full.mp4&#34; type=&#34;video/mp4&#34;&gt;
-  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;https://willsnell.com/posts/gans/gan_full.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
+    &lt;source src=&#34;http://localhost:1313/posts/gans/gan_full.mp4&#34; type=&#34;video/mp4&#34;&gt;
+  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;http://localhost:1313/posts/gans/gan_full.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
 &lt;/video&gt;
 &lt;p&gt;&lt;em&gt;Training a [128, 256, 512] feature DCGAN on CelebA for 3 epochs.&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;These results were very surprising -
@@ -160,8 +160,8 @@ This suggests to me that the discriminator might have an
 easier job to do than the generator, and so the smaller network was not immediately defeated
 by its adversary.&lt;/p&gt;
 &lt;video controls preload=&#34;auto&#34; width=&#34;500px&#34;  autoplay loop playsinline class=&#34;html-video&#34;&gt;
-    &lt;source src=&#34;https://willsnell.com/posts/gans/first_layer_64.mp4&#34; type=&#34;video/mp4&#34;&gt;
-  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;https://willsnell.com/posts/gans/first_layer_64.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
+    &lt;source src=&#34;http://localhost:1313/posts/gans/first_layer_64.mp4&#34; type=&#34;video/mp4&#34;&gt;
+  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;http://localhost:1313/posts/gans/first_layer_64.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
 &lt;/video&gt;
 &lt;p&gt;There are some interesting takeaways from these results:&lt;/p&gt;
 &lt;ol&gt;
@@ -186,8 +186,8 @@ the number of input features to the discriminator were decreased to 32, 16, and 
 if the discriminator would eventually need to start specializing these kernel weights, even if it didn&amp;rsquo;t want to.&lt;/p&gt;
 &lt;h3 id=&#34;32-input-kernels&#34;&gt;32 Input Kernels&lt;/h3&gt;
 &lt;video controls preload=&#34;auto&#34; width=&#34;500px&#34;  autoplay loop playsinline class=&#34;html-video&#34;&gt;
-    &lt;source src=&#34;https://willsnell.com/posts/gans/first_layer_32.mp4&#34; type=&#34;video/mp4&#34;&gt;
-  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;https://willsnell.com/posts/gans/first_layer_32.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
+    &lt;source src=&#34;http://localhost:1313/posts/gans/first_layer_32.mp4&#34; type=&#34;video/mp4&#34;&gt;
+  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;http://localhost:1313/posts/gans/first_layer_32.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
 &lt;/video&gt;
 &lt;p&gt;The 32 input-kernel network follows the same trend as the 64 input-kernel model: increasingly hazy, desaturated images.&lt;/p&gt;
 &lt;p&gt;Two interesting notes, though:&lt;/p&gt;
@@ -197,7 +197,7 @@ if the discriminator would eventually need to start specializing these kernel we
 you can see a clear checker-boarding pattern in the background. Such patterns are commonly produced by
 this network.&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;&lt;img alt=&#34;Blocky, repeating artifacts visible in the lower-left-corner&#34; src=&#34;https://willsnell.com/posts/gans/artefacts.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;Blocky, repeating artifacts visible in the lower-left-corner&#34; src=&#34;http://localhost:1313/posts/gans/artefacts.png&#34;&gt;&lt;/p&gt;
 &lt;p&gt;Together, these findings suggest to me that deeper layers of the discriminator
 are still learning a good representation of facial features. However, the constrained
 first layer has hindered the ability of the discriminator to notice and penalize noise and
@@ -209,8 +209,8 @@ The analogy isn&amp;rsquo;t quite right, since the spatial dimensions the networ
 &lt;h3 id=&#34;the-edge-of-functionality---8-input-kernels&#34;&gt;The Edge of Functionality - 8 Input Kernels&lt;/h3&gt;
 &lt;p&gt;During training, the 16-kernel GAN diverged, meaning the last model left to explore has 8 input kernels.&lt;/p&gt;
 &lt;video controls preload=&#34;auto&#34; width=&#34;500px&#34;  autoplay loop playsinline class=&#34;html-video&#34;&gt;
-    &lt;source src=&#34;https://willsnell.com/posts/gans/first_layer_8.mp4&#34; type=&#34;video/mp4&#34;&gt;
-  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;https://willsnell.com/posts/gans/first_layer_8.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
+    &lt;source src=&#34;http://localhost:1313/posts/gans/first_layer_8.mp4&#34; type=&#34;video/mp4&#34;&gt;
+  &lt;span&gt;Your browser doesn&#39;t support embedded videos, but don&#39;t worry, you can &lt;a href=&#34;http://localhost:1313/posts/gans/first_layer_8.mp4&#34;&gt;download it&lt;/a&gt; and watch it with your favorite video player!&lt;/span&gt;
 &lt;/video&gt;
 &lt;p&gt;Finally, we see clear changes from the input kernels at the start to those at the end. However, this is
 not enough to save the network, and the fully trained GAN produces images with little colour saturation,
@@ -260,6 +260,20 @@ performance to the original network could tell whether the discriminator is, in 
 value from this layer after all.&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
+</content>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://localhost:1313/posts/latent_space/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/posts/latent_space/</guid>
+      <description> </description>
+      <content>&lt;script src=&#34;https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;https://cdn.plot.ly/plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;div id=&#34;myDiv&#34;&gt;
+&lt;script src=&#34;visualizer.js&#34;&gt;&lt;/script&gt;
 </content>
     </item>
     
