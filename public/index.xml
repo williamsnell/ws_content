@@ -270,19 +270,24 @@ value from this layer after all.&lt;/p&gt;
       
       <guid>https://willsnell.com/about/</guid>
       <description>Hi, I&amp;rsquo;m Will!
-I&amp;rsquo;m an engineer living in Auckland. I write about programming and machine learning, mostly.
+I&amp;rsquo;m an engineer living in Auckland. I have a Master&amp;rsquo;s in Mechanical and Aerospace engineering, but I write about programming and machine learning, mostly.
 Things I&amp;rsquo;ve done (so far):
-Helped develop a rocket engine and send a satellite to the moon Lead the analysis of several propellant systems for the reusable Neutron rocket Lead the development and early testing of Neutron&amp;rsquo;s RCS system Developed internal tools for modelling, data analysis, and configuration management at Rocket Lab Taught myself Rust (and accidentally learnt JavaScript and Svelte along the way) to develop playhexchess.</description>
+Helped develop a rocket engine and send a satellite to the moon. Lead the analysis of several propellant systems for the reusable Neutron rocket. Lead the development and early testing of Neutron&amp;rsquo;s RCS system. Developed internal tools for modelling, data analysis, and configuration management at Rocket Lab.</description>
       <content>&lt;p&gt;Hi, I&amp;rsquo;m Will!&lt;/p&gt;
-&lt;p&gt;I&amp;rsquo;m an engineer living in Auckland. I write about programming and machine learning, mostly.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;m an engineer living in Auckland. I have a Master&amp;rsquo;s in Mechanical and Aerospace engineering,
+but I write about programming and machine learning, mostly.&lt;/p&gt;
 &lt;p&gt;Things I&amp;rsquo;ve done (so far):&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Helped develop a &lt;a href=&#34;https://www.youtube.com/live/LtvMiivrxxA?si=-F8PH2Z62zVpUlsi&amp;t=1930&#34;&gt;rocket engine and send a satellite to the moon&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Lead the analysis of several propellant systems for the &lt;a href=&#34;https://www.rocketlabusa.com/launch/neutron/&#34;&gt;reusable Neutron rocket&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Lead the development and early testing of Neutron&amp;rsquo;s &lt;a href=&#34;https://en.wikipedia.org/wiki/Reaction_control_system&#34;&gt;RCS system&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Developed internal tools for modelling, data analysis, and configuration management at &lt;a href=&#34;https://www.rocketlabusa.com/&#34;&gt;Rocket Lab&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Taught myself Rust (and accidentally learnt JavaScript and Svelte along the way) to develop &lt;a href=&#34;https://www.playhexchess.com&#34;&gt;playhexchess.com&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Helped develop a &lt;em&gt;&lt;a href=&#34;https://www.youtube.com/live/LtvMiivrxxA?si=-F8PH2Z62zVpUlsi&amp;t=1930&#34;&gt;rocket engine and send a satellite to the moon.&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Lead the analysis of several propellant systems for the &lt;a href=&#34;https://www.rocketlabusa.com/launch/neutron/&#34;&gt;reusable Neutron rocket.&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Lead the development and early testing of Neutron&amp;rsquo;s &lt;a href=&#34;https://en.wikipedia.org/wiki/Reaction_control_system&#34;&gt;RCS system.&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Developed internal tools for modelling, data analysis, and configuration management at &lt;a href=&#34;https://www.rocketlabusa.com/&#34;&gt;Rocket Lab.&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Learnt Rust (and accidentally learnt JavaScript and some web-dev along the way) by developing &lt;strong&gt;&lt;a href=&#34;https://www.playhexchess.com&#34;&gt;playhexchess.com&lt;/a&gt;&lt;/strong&gt;&lt;/li&gt;
 &lt;/ul&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;strong&gt;&lt;a href=&#34;https://www.linkedin.com/in/william-snell-818159171&#34;&gt;linkedin&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;a href=&#34;https://github.com/williamsnell&#34;&gt;github&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;hr&gt;
 </content>
     </item>
     
