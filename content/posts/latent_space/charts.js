@@ -8,8 +8,8 @@ const accent_color = window.getComputedStyle(document.querySelector(".post-title
 const theme_text_color = window.getComputedStyle(document.querySelector(".post-content")).color.toString();
 
 const DEFAULT_AXIS_FONT = {
-  family: 'Courier new, monospace',
-  size: 18,
+  family: "Arial, Helvetica, sans-serif",
+  size: 12,
   color: theme_text_color,
 };
 
@@ -118,9 +118,13 @@ function slice_arrays(index, array) {
   return [x, y, z];
 }
 
+function vec_subscript(integer) {
+  return `v\u20d7<sub>${integer}</sub>`;
+}
 
-function get_2d_chart(vectors, id, slice_offset=0, options={mode: 'markers', 
-  xaxis_title: 'x', yaxis_title: 'y', layout: {}, config: {}, marker_settings: {}}) {
+
+function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], options={mode: 'markers', 
+  layout: {}, config: {}, marker_settings: {}}) {
 
   const elem = document.getElementById(id);
   if (elem === null) throw(`element given by ${id} doesn't exist`);
@@ -130,8 +134,8 @@ function get_2d_chart(vectors, id, slice_offset=0, options={mode: 'markers',
   }
 
   let merged_layout = {...auto_sizing, ...DEFAULT_2D_LAYOUT, ...options.layout};
-  merged_layout.xaxis.title = {text: options.xaxis_title, font: DEFAULT_AXIS_FONT};
-  merged_layout.yaxis.title = {text: options.yaxis_title, font: DEFAULT_AXIS_FONT};
+  merged_layout.xaxis.title = {text: (axis_titles[0] === null) ? vec_subscript(slice_offset + 1) : axis_titles[0], font: DEFAULT_AXIS_FONT};
+  merged_layout.yaxis.title = {text: (axis_titles[1] === null) ? vec_subscript(slice_offset + 2) : axis_titles[1], font: DEFAULT_AXIS_FONT};
 
 
   const merged_config = {...DEFAULT_CONFIG, ...options.config};
@@ -169,8 +173,11 @@ function get_2d_chart(vectors, id, slice_offset=0, options={mode: 'markers',
   return update_vector_slice;
 }
 
-function get_3d_chart(vectors, id, slice_offset=0, options={mode: 'markers', xaxis_title: 'x', yaxis_title: 'y', zaxis_title: 'z',
+function get_3d_chart(vectors, id, slice_offset=0, 
+  axis_titles=[null, null, null],
+  options={mode: 'markers', xaxis_title: null, yaxis_title: null, zaxis_title: null,
   layout: {}, config: {}, marker_settings: {}}) {
+
   const elem = document.getElementById(id);
   if (elem === null) throw(`element given by ${id} doesn't exist`);
 
@@ -180,9 +187,9 @@ function get_3d_chart(vectors, id, slice_offset=0, options={mode: 'markers', xax
     margin: {t: 0, l: 0, r: 0, b: 0},
   }
   let merged_layout = {...auto_sizing, ...DEFAULT_3D_LAYOUT, ...options.layout};
-  merged_layout.scene.xaxis.title = options.xaxis_title;
-  merged_layout.scene.yaxis.title = options.yaxis_title;
-  merged_layout.scene.zaxis.title = options.zaxis_title;
+  merged_layout.scene.xaxis.title = (axis_titles[0] === null) ? vec_subscript(slice_offset + 1) : axis_titles[0];
+  merged_layout.scene.yaxis.title = (axis_titles[1] === null) ? vec_subscript(slice_offset + 2) : axis_titles[1];
+  merged_layout.scene.zaxis.title = (axis_titles[2] === null) ? vec_subscript(slice_offset + 3) : axis_titles[2];
 
   const merged_config = {...DEFAULT_CONFIG, ...options.config};
   const markers = {...DEFAULT_3D_MARKERS, ...options.marker_settings};
@@ -229,7 +236,7 @@ const MAX_SIDEBYSIDE_WIDTH = 600;
   *  Eiher way, the combined plots show the same 
   *  vector space and sit in the same HTML element.
   */
-function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=['x', 'y', 'z'], 
+function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, null], 
   options_2d={mode: 'markers', layout: {}, config: {}, marker_settings: {}},
   options_3d={mode: 'markers', layout: {}, config: {}, marker_settings: {}}) 
 {
@@ -257,14 +264,8 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=['x', 'y', 'z'
   options_3d.layout.width = (width * 0.5).toFixed(0);
   options_3d.layout.margin = {t: 0, b: 0, l: 20, r: 0};
 
-  options_2d.xaxis_title = axis_titles[0];
-  options_2d.yaxis_title = axis_titles[1];
-  options_3d.xaxis_title = axis_titles[0];
-  options_3d.yaxis_title = axis_titles[1];
-  options_3d.zaxis_title = axis_titles[2];
-
-  let update_2d = get_2d_chart(vectors, fig_2d.id, slice_offset, options_2d);
-  let update_3d = get_3d_chart(vectors, fig_3d.id, slice_offset, options_3d);
+  let update_2d = get_2d_chart(vectors, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
+  let update_3d = get_3d_chart(vectors, fig_3d.id, slice_offset, axis_titles, options_3d);
 
   function update_both(slice_offset) {
     update_2d(slice_offset);

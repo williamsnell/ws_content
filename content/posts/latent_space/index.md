@@ -74,7 +74,7 @@ distributed from -1 to 1, it would look like this:
 
 <script>
 const vec_space = rand(1000, 1);
-get_2d_chart(vec_space, "1d_space_chart");
+get_2d_chart(vec_space, "1d_space_chart", 0, ["", "", ""]);
 </script>
 
 
@@ -89,7 +89,7 @@ something like this:
 
 <script>
 const vec_space_2 = rand(1_000, 2);
-get_2d_chart(vec_space_2, "2d_space_chart");
+get_2d_chart(vec_space_2, "2d_space_chart", 0, ["", "", ""]);
 </script>
 
 For every possible location in this space, we can
@@ -127,7 +127,7 @@ this time in 3 dimensions:
 
 <script>
 const vec_space_3 = rand(10_000, 3);
-get_3d_chart(vec_space_3, "3d_space_chart");
+get_3d_chart(vec_space_3, "3d_space_chart", 0, ["", "", ""]);
 latexize_vector(vec_space_3[0], "3_vec");
 </script>
 
@@ -208,8 +208,7 @@ Visualized, it looks like so:
 <div id="3d_into_2d" style="width: 100%;"></div>
 
 <script>
-get_2d_3d_chart(vec_space_3, "3d_into_2d", 0,
-    ["v1", 'v2', 'v3']);
+get_2d_3d_chart(vec_space_3, "3d_into_2d");
 </script>
 
 We can pick any 2 elements to display, of course. 
