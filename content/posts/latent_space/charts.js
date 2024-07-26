@@ -148,7 +148,7 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
     mode: options.mode,
     x: x,
     y: y,
-    marker: markers
+    marker: markers,
   }];
 
   Plotly.newPlot(elem, points, merged_layout, merged_config);
@@ -158,16 +158,17 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
     *                 new 2-long slice of the vector.
     *
     *                 E.g. if vectors was [1,2,3,4/* ],  */
-  function update_vector_slice(slice_offset) {
-    const [x, y, z] = slice_arrays(slice_offset);
-    const points = {
+  function update_vector_slice(slice_offset, vecs=vectors) {
+    const [x, y, z] = slice_arrays(slice_offset, vecs);
+    const points = [{
       type: 'scattergl',
       mode: options.mode,
       x: x,
       y: y,
-    }
+      marker: markers,
+    }]
      
-    Plotly.react(elem, points, merged_layout, merged_config);
+    Plotly.react(document.getElementById(id), points, merged_layout, merged_config);
   }
 
   return update_vector_slice;
@@ -202,7 +203,7 @@ function get_3d_chart(vectors, id, slice_offset=0,
     x: x,
     y: y,
     z: z,
-    marker: markers
+    marker: markers,
   }];
 
   Plotly.newPlot(elem, points, merged_layout, merged_config);
@@ -212,16 +213,18 @@ function get_3d_chart(vectors, id, slice_offset=0,
     *                 new 2-long slice of the vector.
     *
     *                 E.g. if vectors was [1,2,3,4/* ],  */
-  function update_vector_slice(slice_offset) {
-    const [x, y, z] = slice_arrays(slice_offset);
-    const points = {
-      type: 'scattergl',
+  function update_vector_slice(slice_offset, vecs=vectors) {
+    const [x, y, z] = slice_arrays(slice_offset, vecs);
+    const points = [{
+      type: 'scatter3d',
       mode: options.mode,
       x: x,
       y: y,
-    }
+      z: z,
+      marker: markers,
+    }]
      
-    Plotly.react(elem, points, merged_layout, merged_config);
+    Plotly.react(document.getElementById(id), points, merged_layout, merged_config);
   }
 
   return update_vector_slice;
@@ -279,10 +282,56 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
   let update_2d = get_2d_chart(vecs_2d, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
   let update_3d = get_3d_chart(vecs_3d, fig_3d.id, slice_offset, axis_titles, options_3d);
 
-  function update_both(slice_offset) {
-    update_2d(slice_offset);
-    update_3d(slice_offset);
+  function update_both(slice_offset, vecs_2d=vectors, vecs_3d=vectors) {
+    update_2d(slice_offset, vecs_2d);
+    update_3d(slice_offset, vecs_3d);
   }
   return update_both;
 
+}
+
+function get_spherical_chart(vectors, id, axis_titles=[null, null, null]) {
+  let slice_offset = 0;
+  let dimensions = 3;
+  let spherical = vecs_to_spherical(
+                        vectors,
+                        dimensions,
+                        slice_offset,
+                        slice_offset+1,
+                        slice_offset+2
+                    );
+  let circular = vecs_to_spherical(
+                        vectors,
+                        dimensions,
+                        slice_offset,
+                        slice_offset+1,
+                        null
+                    ); 
+
+  let chart_draw = get_2d_3d_chart({d2: circular, d3: spherical}, id, 0, axis_titles);
+
+  async function draw(dimensions, slice_offset) {
+    let spherical = vecs_to_spherical(
+                        vectors,
+                        dimensions,
+                        slice_offset,
+                        slice_offset+1,
+                        slice_offset+2
+                    );
+    let circular = vecs_to_spherical(
+                        vectors,
+                        dimensions,
+                        slice_offset,
+                        slice_offset+1,
+                        null
+                    ); 
+    chart_draw(0, circular, spherical);
+  }
+ // take in vecs, and do a spherical transformation of them
+  // whenever "dimensions" changes
+  //
+  // return a callback that lets the user update dimensions and 
+  // slice_offset
+  
+  return draw;
 }

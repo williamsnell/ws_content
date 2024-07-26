@@ -253,26 +253,11 @@ between two elements of the vector.&lt;/p&gt;
 visualized. &lt;strong&gt;Before you do&lt;/strong&gt;, make a guess about what you think
 will happen as the number of dimensions increases.&lt;/p&gt;
 &lt;div id=&#34;spherical&#34; style=&#34;width: 100%;&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;spherical_vec&#34; style=&#34;display: flexbox;&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
 const vec_space_1000 = rand(10000, 1000);
-let dimensions = 3;
-let slice_offset = 0;
-let spherical = vecs_to_spherical(
-                    vec_space_1000,
-                    dimensions,
-                    slice_offset,
-                    slice_offset+1,
-                    slice_offset+2
-                );
-let circular = vecs_to_spherical(
-                    vec_space_1000,
-                    dimensions,
-                    slice_offset,
-                    slice_offset+1,
-                    null
-                );
-get_2d_3d_chart({d2: circular, d3: spherical}, &#34;spherical&#34;, slice_offset, [&#34;&#34;, &#34;&#34;, &#34;&#34;]);
-// get vector_widget
+let redraw_spherical = get_spherical_chart(vec_space_1000, &#39;spherical&#39;);
+let widget = get_vector_widget(vec_space_1000[0], &#39;spherical_vec&#39;, redraw_spherical);
 &lt;/script&gt;
 &lt;p&gt;// 2-space&lt;/p&gt;
 &lt;p&gt;In 2-space, both the 2D and the 3D plot display exactly the same

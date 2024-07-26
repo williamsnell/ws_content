@@ -313,26 +313,11 @@ visualized. **Before you do**, make a guess about what you think
 will happen as the number of dimensions increases.
 
 <div id="spherical" style="width: 100%;"></div>
+<div id="spherical_vec" style="display: flexbox;"></div>
 <script>
 const vec_space_1000 = rand(10000, 1000);
-let dimensions = 3;
-let slice_offset = 0;
-let spherical = vecs_to_spherical(
-                    vec_space_1000,
-                    dimensions,
-                    slice_offset,
-                    slice_offset+1,
-                    slice_offset+2
-                );
-let circular = vecs_to_spherical(
-                    vec_space_1000,
-                    dimensions,
-                    slice_offset,
-                    slice_offset+1,
-                    null
-                );
-get_2d_3d_chart({d2: circular, d3: spherical}, "spherical", slice_offset, ["", "", ""]);
-// get vector_widget
+let redraw_spherical = get_spherical_chart(vec_space_1000, 'spherical');
+let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', redraw_spherical);
 </script>
 
 
