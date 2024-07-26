@@ -202,8 +202,91 @@ rest of our vector. It wouldn&amp;rsquo;t matter if we were
 plotting a vector of length 3 or a vector of length
 3000 - from this viewpoint, they all look the same.&lt;/p&gt;
 &lt;h2 id=&#34;different-projections&#34;&gt;Different Projections&lt;/h2&gt;
+&lt;p&gt;So far, we&amp;rsquo;ve been exploring space with &lt;em&gt;cartesian&lt;/em&gt; coordinates.&lt;/p&gt;
 &lt;p&gt;Without completely justifying it, I&amp;rsquo;m going to introduce
-a completely different projection&lt;/p&gt;
+a completely different coordinate system - &lt;a href=&#34;https://en.wikipedia.org/wiki/Spherical_coordinate_system&#34;&gt;spherical coordinates&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;In a spherical coordinate system, a point in space is defined
+not by 3 orthogonal coordinates (e.g. x, y, and z), but rather
+as a &lt;em&gt;radial distance&lt;/em&gt; \(r\), and then a series of angles
+\(\theta_1\), \(\theta_2\), etc. like so:&lt;/p&gt;
+\[
+\begin{align}
+    \vec{v} = \begin{bmatrix}
+        r \\
+        \theta_{1} \\
+        \vdots \\
+        \theta_{n} \\
+    \end{bmatrix}
+\end{align}
+\]
+&lt;p&gt;Essentially, we have a line of some length \(r\), starting at the
+origin, which we then reorient along our angles \(\vec{\theta}\).
+The tip of the line represents the point in space we are describing.&lt;/p&gt;
+&lt;p&gt;In 3-space, these two vectors represent the same position:&lt;/p&gt;
+\[
+\begin{align}
+    \vec{v} = \begin{bmatrix}
+        0.54 \\
+        -0.87 \\
+        0.26 \\
+    \end{bmatrix}
+    = \vec{s_{\theta}} = \begin{bmatrix}
+        1.06 \\
+        -1.02 \\
+        1.32 \\
+    \end{bmatrix}
+\end{align}
+\]
+&lt;p&gt;Where I&amp;rsquo;ve used the subscript \(_\theta\) to denote a
+vector in spherical coordinates.&lt;/p&gt;
+&lt;p&gt;Why bother with spherical coordinates? After all, you still
+need an n-length vector to represent a point in n-space!&lt;/p&gt;
+&lt;p&gt;What&amp;rsquo;s interesting, however, is when you start looking at
+higher dimensions. Since the length \(r\) takes into account
+the entire vector, plotting the first 2 or 3 elements in the
+spherical vector gives us a different view on higher dimensions.&lt;/p&gt;
+&lt;p&gt;Importantly, we always keep the magnitude of the full vector.
+We then get to select 1 angle (for a 2D plot) or 2 angles (for
+a 3D plot). These angles represent the relative positioning
+between two elements of the vector.&lt;/p&gt;
+&lt;p&gt;Below, you can increase the dimensionality of the space being
+visualized. &lt;strong&gt;Before you do&lt;/strong&gt;, make a guess about what you think
+will happen as the number of dimensions increases.&lt;/p&gt;
+&lt;div id=&#34;spherical&#34; style=&#34;width: 100%;&#34;&gt;&lt;/div&gt;
+&lt;script&gt;
+const vec_space_1000 = rand(10000, 1000);
+let dimensions = 3;
+let slice_offset = 0;
+let spherical = vecs_to_spherical(
+                    vec_space_1000,
+                    dimensions,
+                    slice_offset,
+                    slice_offset+1,
+                    slice_offset+2
+                );
+let circular = vecs_to_spherical(
+                    vec_space_1000,
+                    dimensions,
+                    slice_offset,
+                    slice_offset+1,
+                    null
+                );
+get_2d_3d_chart({d2: circular, d3: spherical}, &#34;spherical&#34;, slice_offset, [&#34;&#34;, &#34;&#34;, &#34;&#34;]);
+// get vector_widget
+&lt;/script&gt;
+&lt;p&gt;// 2-space&lt;/p&gt;
+&lt;p&gt;In 2-space, both the 2D and the 3D plot display exactly the same
+thing. This is also the exact same view we would get if we were
+using cartesian coordinates.&lt;/p&gt;
+&lt;p&gt;// 3-space&lt;/p&gt;
+&lt;p&gt;3-space is where it gets interesting. Our 3D plot still holds enough
+dimensionality to perfectly represent our vector, and so our view is
+still identical to our cartesian plot above.&lt;/p&gt;
+&lt;p&gt;The 2D plot, however, is different. Even though our points are randomly
+distributed between -1 and 1, there are now points well outside those bounds.&lt;/p&gt;
+&lt;p&gt;Looking at the 3D view of the cube, which points might have a distance to
+the origin (a &lt;em&gt;magnitude&lt;/em&gt;) greater than 1?&lt;/p&gt;
+&lt;p&gt;A hole has started to appear in the centre of the plot. Why do you think this is?&lt;/p&gt;
 </content>
     </item>
     

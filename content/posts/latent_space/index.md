@@ -247,5 +247,113 @@ plotting a vector of length 3 or a vector of length
 
 ## Different Projections
 
+So far, we've been exploring space with *cartesian* coordinates.
+
 Without completely justifying it, I'm going to introduce
-a completely different projection 
+a completely different coordinate system - [spherical coordinates](https://en.wikipedia.org/wiki/Spherical_coordinate_system).
+
+In a spherical coordinate system, a point in space is defined
+not by 3 orthogonal coordinates (e.g. x, y, and z), but rather 
+as a *radial distance* \(r\), and then a series of angles
+\(\theta_1\), \(\theta_2\), etc. like so:
+
+\[
+\begin{align}
+    \vec{v} = \begin{bmatrix}
+        r \\
+        \theta_{1} \\
+        \vdots \\
+        \theta_{n} \\
+    \end{bmatrix}
+\end{align}
+\]
+
+
+
+Essentially, we have a line of some length \(r\), starting at the
+origin, which we then reorient along our angles \(\vec{\theta}\).
+The tip of the line represents the point in space we are describing.
+
+In 3-space, these two vectors represent the same position:
+
+\[
+\begin{align}
+    \vec{v} = \begin{bmatrix}
+        0.54 \\
+        -0.87 \\
+        0.26 \\
+    \end{bmatrix}
+    = \vec{s_{\theta}} = \begin{bmatrix}
+        1.06 \\
+        -1.02 \\
+        1.32 \\
+    \end{bmatrix}
+\end{align}
+\]
+
+Where I've used the subscript \(_\theta\) to denote a 
+vector in spherical coordinates.
+
+Why bother with spherical coordinates? After all, you still
+need an n-length vector to represent a point in n-space!
+
+What's interesting, however, is when you start looking at 
+higher dimensions. Since the length \(r\) takes into account
+the entire vector, plotting the first 2 or 3 elements in the 
+spherical vector gives us a different view on higher dimensions.
+
+Importantly, we always keep the magnitude of the full vector.
+We then get to select 1 angle (for a 2D plot) or 2 angles (for 
+a 3D plot). These angles represent the relative positioning
+between two elements of the vector.
+
+
+Below, you can increase the dimensionality of the space being
+visualized. **Before you do**, make a guess about what you think
+will happen as the number of dimensions increases.
+
+<div id="spherical" style="width: 100%;"></div>
+<script>
+const vec_space_1000 = rand(10000, 1000);
+let dimensions = 3;
+let slice_offset = 0;
+let spherical = vecs_to_spherical(
+                    vec_space_1000,
+                    dimensions,
+                    slice_offset,
+                    slice_offset+1,
+                    slice_offset+2
+                );
+let circular = vecs_to_spherical(
+                    vec_space_1000,
+                    dimensions,
+                    slice_offset,
+                    slice_offset+1,
+                    null
+                );
+get_2d_3d_chart({d2: circular, d3: spherical}, "spherical", slice_offset, ["", "", ""]);
+// get vector_widget
+</script>
+
+
+// 2-space
+
+In 2-space, both the 2D and the 3D plot display exactly the same 
+thing. This is also the exact same view we would get if we were
+using cartesian coordinates. 
+
+// 3-space
+
+3-space is where it gets interesting. Our 3D plot still holds enough
+dimensionality to perfectly represent our vector, and so our view is
+still identical to our cartesian plot above. 
+
+The 2D plot, however, is different. Even though our points are randomly
+distributed between -1 and 1, there are now points well outside those bounds.
+
+Looking at the 3D view of the cube, which points might have a distance to 
+the origin (a *magnitude*) greater than 1?
+
+A hole has started to appear in the centre of the plot. Why do you think this is?
+
+

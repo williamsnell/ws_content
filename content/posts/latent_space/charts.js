@@ -22,7 +22,7 @@ let DEFAULT_2D_LAYOUT = {
     l: 40,
     r: 40,
     b: 40,
-    t: 40,
+    t: 80,
     pad: 0,
   },
   scene: {
@@ -258,14 +258,26 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
     plot_container.appendChild(fig_2d);
     plot_container.appendChild(fig_3d);
   }
-  const pad = (width * 0.1).toFixed(0);
   options_2d.layout.width = (width * 0.5).toFixed(0);
   options_2d.layout.height = (width * 0.5).toFixed(0);
   options_3d.layout.width = (width * 0.5).toFixed(0);
-  options_3d.layout.margin = {t: 0, b: 0, l: 20, r: 0};
 
-  let update_2d = get_2d_chart(vectors, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
-  let update_3d = get_3d_chart(vectors, fig_3d.id, slice_offset, axis_titles, options_3d);
+
+  // Handling for passing different data to the different
+  // plots. In this case, the input can be vec = Array[Array],
+  // or else {d2: Array[Array], d3: Array[Array]} 
+  let vecs_2d, vecs_3d;
+
+  if (vectors.hasOwnProperty('d3')) {
+    vecs_2d = vectors.d2;
+    vecs_3d = vectors.d3;
+  } else {
+    vecs_2d = vectors;
+    vecs_3d = vectors;
+  }
+
+  let update_2d = get_2d_chart(vecs_2d, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
+  let update_3d = get_3d_chart(vecs_3d, fig_3d.id, slice_offset, axis_titles, options_3d);
 
   function update_both(slice_offset) {
     update_2d(slice_offset);

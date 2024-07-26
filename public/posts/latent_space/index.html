@@ -138,7 +138,7 @@ latent space is an important concept in AI we almost never stick to just 3 dimen
   <h1 class="post-title">
     <a href="http://localhost:1313/posts/latent_space/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">4 min read (712 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">6 min read (1118 words)</span></div>
 
   
   
@@ -338,8 +338,91 @@ rest of our vector. It wouldn&rsquo;t matter if we were
 plotting a vector of length 3 or a vector of length
 3000 - from this viewpoint, they all look the same.</p>
 <h2 id="different-projections">Different Projections<a href="#different-projections" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>So far, we&rsquo;ve been exploring space with <em>cartesian</em> coordinates.</p>
 <p>Without completely justifying it, I&rsquo;m going to introduce
-a completely different projection</p>
+a completely different coordinate system - <a href="https://en.wikipedia.org/wiki/Spherical_coordinate_system">spherical coordinates</a>.</p>
+<p>In a spherical coordinate system, a point in space is defined
+not by 3 orthogonal coordinates (e.g. x, y, and z), but rather
+as a <em>radial distance</em> \(r\), and then a series of angles
+\(\theta_1\), \(\theta_2\), etc. like so:</p>
+\[
+\begin{align}
+    \vec{v} = \begin{bmatrix}
+        r \\
+        \theta_{1} \\
+        \vdots \\
+        \theta_{n} \\
+    \end{bmatrix}
+\end{align}
+\]
+<p>Essentially, we have a line of some length \(r\), starting at the
+origin, which we then reorient along our angles \(\vec{\theta}\).
+The tip of the line represents the point in space we are describing.</p>
+<p>In 3-space, these two vectors represent the same position:</p>
+\[
+\begin{align}
+    \vec{v} = \begin{bmatrix}
+        0.54 \\
+        -0.87 \\
+        0.26 \\
+    \end{bmatrix}
+    = \vec{s_{\theta}} = \begin{bmatrix}
+        1.06 \\
+        -1.02 \\
+        1.32 \\
+    \end{bmatrix}
+\end{align}
+\]
+<p>Where I&rsquo;ve used the subscript \(_\theta\) to denote a
+vector in spherical coordinates.</p>
+<p>Why bother with spherical coordinates? After all, you still
+need an n-length vector to represent a point in n-space!</p>
+<p>What&rsquo;s interesting, however, is when you start looking at
+higher dimensions. Since the length \(r\) takes into account
+the entire vector, plotting the first 2 or 3 elements in the
+spherical vector gives us a different view on higher dimensions.</p>
+<p>Importantly, we always keep the magnitude of the full vector.
+We then get to select 1 angle (for a 2D plot) or 2 angles (for
+a 3D plot). These angles represent the relative positioning
+between two elements of the vector.</p>
+<p>Below, you can increase the dimensionality of the space being
+visualized. <strong>Before you do</strong>, make a guess about what you think
+will happen as the number of dimensions increases.</p>
+<div id="spherical" style="width: 100%;"></div>
+<script>
+const vec_space_1000 = rand(10000, 1000);
+let dimensions = 3;
+let slice_offset = 0;
+let spherical = vecs_to_spherical(
+                    vec_space_1000,
+                    dimensions,
+                    slice_offset,
+                    slice_offset+1,
+                    slice_offset+2
+                );
+let circular = vecs_to_spherical(
+                    vec_space_1000,
+                    dimensions,
+                    slice_offset,
+                    slice_offset+1,
+                    null
+                );
+get_2d_3d_chart({d2: circular, d3: spherical}, "spherical", slice_offset, ["", "", ""]);
+// get vector_widget
+</script>
+<p>// 2-space</p>
+<p>In 2-space, both the 2D and the 3D plot display exactly the same
+thing. This is also the exact same view we would get if we were
+using cartesian coordinates.</p>
+<p>// 3-space</p>
+<p>3-space is where it gets interesting. Our 3D plot still holds enough
+dimensionality to perfectly represent our vector, and so our view is
+still identical to our cartesian plot above.</p>
+<p>The 2D plot, however, is different. Even though our points are randomly
+distributed between -1 and 1, there are now points well outside those bounds.</p>
+<p>Looking at the 3D view of the cube, which points might have a distance to
+the origin (a <em>magnitude</em>) greater than 1?</p>
+<p>A hole has started to appear in the centre of the plot. Why do you think this is?</p>
 
       </div></div>
 

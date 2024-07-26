@@ -126,7 +126,7 @@ function calc_vecs() {
   VEC_LEN = VEC_LENGTHS[vec_pos];
   vecs = [];
   for (let i = 0; i < NUM_VECS; i++) {
-    vecs.push(newVec(gaussianRandom));
+    vecs.push(newVec(uniformRandom));
   }
 }
 
