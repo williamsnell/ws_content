@@ -276,11 +276,39 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
   fig_3d.id = id + "_fig_3d";
 
   if (width < MAX_SIDEBYSIDE_WIDTH) {
+    let button_bar = plot_container.appendChild(document.createElement("div"));
+    button_bar.style.display = "flex";
+    button_bar.style.gap = "10px 10px";
     // add tab buttons
+    let d2_button = button_bar.appendChild(document.createElement("button"));
+    d2_button.textContent = "2D";
+    d2_button.onclick = () => {
+      d2_button.style.display = "none";
+      d3_button.style.display = "block";
+      fig_3d.style.display = "none"; 
+      fig_2d.style.display = "block";
+    };
+
+    let d3_button = button_bar.appendChild(document.createElement("button"));
+    d3_button.textContent = "3D";
+    d3_button.onclick = () => {
+      d3_button.style.display = "none";
+      d2_button.style.display = "block";
+      fig_3d.style.display = "block"; 
+      fig_2d.style.display = "none";
+    };
     // activate the default tab
     plot_container.appendChild(fig_2d);
     plot_container.appendChild(fig_3d);
+
+    // Set defaults
+    d2_button.style.display = "none";
     fig_3d.style.display = "none";
+
+    options_2d.layout.width = width.toFixed(0);
+    options_2d.layout.height = width.toFixed(0);
+    options_3d.layout.width = width.toFixed(0);
+    options_3d.layout.height = width.toFixed(0);
     // tabs
   } else {
     plot_container.style.display = "flex";
