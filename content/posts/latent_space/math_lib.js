@@ -54,10 +54,16 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
 
   const container = document.getElementById(id);
   if (container === null) throw(`Element id=${id} doesn't exist.`);
-  const button_bar = container.appendChild(document.createElement('div'));
+  const wrapper = container.appendChild(document.createElement("div"));
+  wrapper.style.display = "flex";
+  wrapper.style.justifyContent = "center";
+  const button_bar = wrapper.appendChild(document.createElement('div'));
   button_bar.style.display = "flex";
+  button_bar.style.flexWrap = "wrap";
   button_bar.style.gap = "20px 20px";
-  button_bar.style.width = "100%";
+  button_bar.style.width = "calc(min(300px, 100%))";
+  button_bar.style.paddingTop = "20px";
+  button_bar.style.justifyContent = "center";
 
   const dim_minus = button_bar.appendChild(document.createElement("button"));
   const dim_plus = button_bar.appendChild(document.createElement("button"));
@@ -89,6 +95,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
 
   // create +dimensions button
   dim_plus.textContent = "Dimensions (+)";
+  dim_plus.style.width = "calc(min(120px, 45%))";
   dim_plus.onclick = () => {
     if (AVAILABLE_DIMENSIONS[current_dims + 1] <= vector.length) {
       current_dims = current_dims + 1
@@ -97,6 +104,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
   };
   // create -dimensions button
   dim_minus.textContent = "Dimensions (-)";
+  dim_minus.style.width = "calc(min(120px, 45%))";
   dim_minus.onclick = () => {
     current_dims = Math.max(0, current_dims - 1);
     current_offset = Math.max(Math.min(current_offset, AVAILABLE_DIMENSIONS[current_dims] - num_selected), 0);
@@ -104,6 +112,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
   }; 
   // create +slice button
   slice_plus.textContent = "Elements (+)";
+  slice_plus.style.width = "calc(min(120px, 45%))";
   slice_plus.onclick = () => {
     current_offset = Math.max(Math.min(AVAILABLE_DIMENSIONS[current_dims] - num_selected, current_offset + 1), 0); 
     redraw_vec();
@@ -111,6 +120,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
 
   // create -slice button
   slice_minus.textContent = "Elements (-)";
+  slice_minus.style.width = "calc(min(120px, 45%))";
   slice_minus.onclick = () => {
     current_offset = Math.max(0, current_offset - 1); 
     redraw_vec();

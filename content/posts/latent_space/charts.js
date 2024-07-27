@@ -276,17 +276,22 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
   fig_3d.id = id + "_fig_3d";
 
   if (width < MAX_SIDEBYSIDE_WIDTH) {
+    // add tab buttons
+    // activate the default tab
+    plot_container.appendChild(fig_2d);
+    plot_container.appendChild(fig_3d);
+    fig_3d.style.display = "none";
     // tabs
   } else {
     plot_container.style.display = "flex";
     fig_2d.style.borderRight = `1px solid ${theme_text_color}`;
     plot_container.appendChild(fig_2d);
     plot_container.appendChild(fig_3d);
-  }
-  options_2d.layout.width = (width * 0.5).toFixed(0);
-  options_2d.layout.height = (width * 0.5).toFixed(0);
-  options_3d.layout.width = (width * 0.5).toFixed(0);
 
+    options_2d.layout.width = (width * 0.5).toFixed(0);
+    options_2d.layout.height = (width * 0.5).toFixed(0);
+    options_3d.layout.width = (width * 0.5).toFixed(0);
+  }
 
   // Handling for passing different data to the different
   // plots. In this case, the input can be vec = Array[Array],

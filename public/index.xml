@@ -261,7 +261,7 @@ between two elements of the vector.&lt;/p&gt;
 visualized. &lt;strong&gt;Before you do&lt;/strong&gt;, make a guess about what you think
 will happen as the number of dimensions increases.&lt;/p&gt;
 &lt;div id=&#34;spherical&#34; style=&#34;width: 100%;&#34;&gt;&lt;/div&gt;
-&lt;div id=&#34;spherical_vec&#34; style=&#34;display: flexbox;&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;spherical_vec&#34;&gt;&lt;/div&gt;
 &lt;div id=&#34;tooltip-1space&#34; style=&#34;display: none;&#34;&gt;
     // 1-space
 &lt;p&gt;1-space is boring as ever&amp;hellip;&lt;/p&gt;

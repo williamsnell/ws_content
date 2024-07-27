@@ -321,7 +321,7 @@ visualized. **Before you do**, make a guess about what you think
 will happen as the number of dimensions increases.
 
 <div id="spherical" style="width: 100%;"></div>
-<div id="spherical_vec" style="display: flexbox;"></div>
+<div id="spherical_vec"></div>
 <div id="tooltip-1space" style="display: none;">
     // 1-space
 
