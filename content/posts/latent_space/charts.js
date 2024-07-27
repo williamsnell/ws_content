@@ -136,13 +136,17 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
   let merged_layout = {...auto_sizing, ...DEFAULT_2D_LAYOUT, ...options.layout};
   merged_layout.xaxis.title = {text: (axis_titles[0] === null) ? vec_subscript(slice_offset + 1) : axis_titles[0], font: DEFAULT_AXIS_FONT};
   merged_layout.yaxis.title = {text: (axis_titles[1] === null) ? vec_subscript(slice_offset + 2) : axis_titles[1], font: DEFAULT_AXIS_FONT};
-
-
+  
   const merged_config = {...DEFAULT_CONFIG, ...options.config};
   const markers = {...DEFAULT_MARKERS, ...options.marker_settings};
   
   const [x, y, z] = slice_arrays(slice_offset, vectors);
-    
+  
+  // adjust ticks
+  merged_layout.xaxis.tickvals = [Math.round(Math.min(...x)), 0, Math.round(Math.max(...x))];
+  merged_layout.yaxis.tickvals = [Math.round(Math.min(...y)), 0, Math.round(Math.max(...y))];
+
+  
   const points = [{
     type: 'scattergl',
     mode: options.mode,
@@ -160,6 +164,11 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
     *                 E.g. if vectors was [1,2,3,4/* ],  */
   function update_vector_slice(slice_offset, vecs=vectors) {
     const [x, y, z] = slice_arrays(slice_offset, vecs);
+
+    // adjust ticks
+    merged_layout.xaxis.tickvals = [Math.round(Math.min(...x)), 0, Math.round(Math.max(...x))];
+    merged_layout.yaxis.tickvals = [Math.round(Math.min(...y)), 0, Math.round(Math.max(...y))];
+
     const points = [{
       type: 'scattergl',
       mode: options.mode,
@@ -196,6 +205,13 @@ function get_3d_chart(vectors, id, slice_offset=0,
   const markers = {...DEFAULT_3D_MARKERS, ...options.marker_settings};
   
   const [x, y, z] = slice_arrays(slice_offset, vectors);
+
+  // adjust ticks
+  merged_layout.scene.xaxis.tickvals = [Math.round(Math.min(...x)), 0, Math.round(Math.max(...x))];
+  merged_layout.scene.yaxis.tickvals = [Math.round(Math.min(...y)), 0, Math.round(Math.max(...y))];
+  merged_layout.scene.zaxis.tickvals = [Math.round(Math.min(...z)), 0, Math.round(Math.max(...z))];
+
+
     
   const points = [{
     type: 'scatter3d',
@@ -215,6 +231,12 @@ function get_3d_chart(vectors, id, slice_offset=0,
     *                 E.g. if vectors was [1,2,3,4/* ],  */
   function update_vector_slice(slice_offset, vecs=vectors) {
     const [x, y, z] = slice_arrays(slice_offset, vecs);
+
+    // adjust ticks
+    merged_layout.scene.xaxis.tickvals = [Math.round(Math.min(...x)), 0, Math.round(Math.max(...x))];
+    merged_layout.scene.yaxis.tickvals = [Math.round(Math.min(...y)), 0, Math.round(Math.max(...y))];
+    merged_layout.scene.zaxis.tickvals = [Math.round(Math.min(...z)), 0, Math.round(Math.max(...z))];
+
     const points = [{
       type: 'scatter3d',
       mode: options.mode,

@@ -6,7 +6,9 @@
   
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Why explore hyperspace? All the plots on this page are interactive!
+<meta name="description" content="Why explore hyperspace? Hyperspace can be quite a cool topic, but it can also be intimidating. To give us a mission, let&amp;rsquo;s start by posing a seemingly unrelated question:
+If I want to smoothly blend from this image to this image, how should I do so?
+All the plots on this page are interactive!
 latent space is an important concept in AI we almost never stick to just 3 dimensions, and operate in n-dimensional space, or &amp;lsquo;hyperspaces&amp;rsquo;, where n can be 100, 1000, or bigger understanding the topology of such spaces can seem intidimidating, but I think I can make it fun Windows into Hyperspace Let&amp;rsquo;s start with the concept of vectors." />
 <meta name="keywords" content="" />
 
@@ -52,7 +54,9 @@ latent space is an important concept in AI we almost never stick to just 3 dimen
 <meta property="og:locale" content="en" />
 <meta property="og:type" content="article" />
 <meta property="og:title" content="Navigating Hyperspace">
-<meta property="og:description" content="Why explore hyperspace? All the plots on this page are interactive!
+<meta property="og:description" content="Why explore hyperspace? Hyperspace can be quite a cool topic, but it can also be intimidating. To give us a mission, let&amp;rsquo;s start by posing a seemingly unrelated question:
+If I want to smoothly blend from this image to this image, how should I do so?
+All the plots on this page are interactive!
 latent space is an important concept in AI we almost never stick to just 3 dimensions, and operate in n-dimensional space, or &amp;lsquo;hyperspaces&amp;rsquo;, where n can be 100, 1000, or bigger understanding the topology of such spaces can seem intidimidating, but I think I can make it fun Windows into Hyperspace Let&amp;rsquo;s start with the concept of vectors." />
 <meta property="og:url" content="http://localhost:1313/posts/latent_space/" />
 <meta property="og:site_name" content="willsnell" />
@@ -138,7 +142,7 @@ latent space is an important concept in AI we almost never stick to just 3 dimen
   <h1 class="post-title">
     <a href="http://localhost:1313/posts/latent_space/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">6 min read (1118 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">7 min read (1367 words)</span></div>
 
   
   
@@ -156,6 +160,11 @@ latent space is an important concept in AI we almost never stick to just 3 dimen
 <script src="charts.js?{{ .Now.Unix }}"></script>
 <script src="vector_math.js?{{ .Now.Unix }}"></script>
 <h1 id="why-explore-hyperspace">Why explore hyperspace?<a href="#why-explore-hyperspace" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Hyperspace can be quite a cool topic, but it can also be intimidating.
+To give us a mission, let&rsquo;s start by posing a seemingly unrelated
+question:</p>
+<p>If I want to smoothly blend from this image to this image, how should
+I do so?</p>
 <p>All the plots on this page are interactive!</p>
 <ul>
 <li>latent space is an important concept in AI</li>
@@ -170,7 +179,7 @@ but I think I can make it fun</li>
 arranged in a single column or row, like so:</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
+    \vec{v}_{3} = \begin{bmatrix}
         1.9 \\
         4.7 \\
         -3.1 \\
@@ -180,7 +189,7 @@ arranged in a single column or row, like so:</p>
 <p>An n-dimensional vector is \(n\) items long:</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
+    \vec{v}_{n} = \begin{bmatrix}
         x_{1} \\
         \vdots \\
         x_{n}
@@ -194,7 +203,7 @@ going to represent them as <em>coordinates</em>.</p>
 possible position with a 1-dimensional vector:</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
+    \vec{v}_{1} = \begin{bmatrix}
         x_{1} \\
     \end{bmatrix}
 \end{align}
@@ -219,7 +228,7 @@ get_2d_chart(vec_space_2, "2d_space_chart", 0, ["", "", ""]);
 define an exact point through something like:</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
+    \vec{v}_{2} = \begin{bmatrix}
         -0.85 \\
         0.24 \\
     \end{bmatrix}
@@ -231,7 +240,7 @@ now have 3-long vectors like this:</p>
 <div id="3_vec">
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
+    \vec{v}_{3} = \begin{bmatrix}
         0.26 \\
         -0.88 \\
         -0.9 \\
@@ -254,11 +263,11 @@ our brain can reconstruct a series of 2D images into a 3D representation:</p>
 inside its vector space:</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
-        0.93 \\
+    \vec{v}_{4} = \begin{bmatrix}
+        0.93  \\
         -0.43 \\
-        0.67 \\
-            0.12 \\
+        0.67  \\
+        0.12  \\
     \end{bmatrix}
 \end{align}
 \]
@@ -268,11 +277,11 @@ but we&rsquo;ve already run out of spatial dimensions.</p>
 How would we visualize something like this?</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
-        x_{1} \\
-        x_{2}\\
-        \vdots \\
-        x_{1000} \\
+    \vec{v}_{1000} = \begin{bmatrix}
+        x_{1}      \\
+        x_{2}      \\
+        \vdots     \\
+        x_{1000}   \\
     \end{bmatrix}
 \end{align}
 \]
@@ -289,9 +298,9 @@ in three dimensions, and visualizing it with two.</p>
 \[
 \begin{align}
     \vec{v} = \begin{bmatrix}
-        0.21 \\
-        -0.85 \\
-        -0.32 \\
+        0.21   \\
+        -0.85  \\
+        -0.32  \\
     \end{bmatrix}
 \end{align}
 \]
@@ -299,7 +308,7 @@ in three dimensions, and visualizing it with two.</p>
 \[
 \begin{align}
     \vec{v} = \begin{bmatrix}
-        0.21 \\
+        0.21  \\
         -0.85 \\
     \end{bmatrix}
 \end{align}
@@ -312,8 +321,8 @@ get_2d_3d_chart(vec_space_3, "3d_into_2d");
 <p>We can pick any 2 elements to display, of course.
 Representing our 3-space in 2 dimensions could
 be done equally validly by picking two different
-elements, such as the last element \(\vec{v}_{3}\)
-and the second element \(\vec{v}_{2}\):</p>
+elements, such as the last element \(x_{3}\)
+and the second element \(x_{2}\):</p>
 \[
 \begin{align}
     \vec{v} = \begin{bmatrix}
@@ -325,12 +334,12 @@ and the second element \(\vec{v}_{2}\):</p>
 <p>What does our 2D projection tell us about the 3D space?
 Well, we effectively get the same view as if we rotated
 our 3D view until we were just looking at one face.</p>
-<p>If we&rsquo;re plotting, say, \(\vec{v_{1}}\) and \(\vec{v_{2}}\),
+<p>If we&rsquo;re plotting, say, \(x_{1}\) and \(x_{2}\),
 we get a perfect understanding of how our points are
 distributed in those two dimensions.</p>
 <p>Should we want to know
-what portion of points have \(\vec{v_{1}}\) &gt; 0
-and \(\vec{v_{2}}\) &lt; 0, for example, we can
+what portion of points have \(x_{1}\) &gt; 0
+and \(x_{2}\) &lt; 0, we can
 look at the 2D chart and easily see the answer is
 ~25%.</p>
 <p>However, we get absolutely no information about the
@@ -342,15 +351,15 @@ plotting a vector of length 3 or a vector of length
 <p>Without completely justifying it, I&rsquo;m going to introduce
 a completely different coordinate system - <a href="https://en.wikipedia.org/wiki/Spherical_coordinate_system">spherical coordinates</a>.</p>
 <p>In a spherical coordinate system, a point in space is defined
-not by 3 orthogonal coordinates (e.g. x, y, and z), but rather
+not by \(n\) orthogonal coordinates (e.g. x, y, and z), but rather
 as a <em>radial distance</em> \(r\), and then a series of angles
 \(\theta_1\), \(\theta_2\), etc. like so:</p>
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
-        r \\
+    \vec{s}_n = \begin{bmatrix}
+        r          \\
         \theta_{1} \\
-        \vdots \\
+        \vdots     \\
         \theta_{n} \\
     \end{bmatrix}
 \end{align}
@@ -362,21 +371,22 @@ The tip of the line represents the point in space we are describing.</p>
 \[
 \begin{align}
     \vec{v} = \begin{bmatrix}
-        0.54 \\
+        0.54  \\
         -0.87 \\
-        0.26 \\
-    \end{bmatrix}
-    = \vec{s_{\theta}} = \begin{bmatrix}
-        1.06 \\
+        0.26  \\
+    \end{bmatrix}_{[x,y,z]}
+    = \vec{s} = \begin{bmatrix}
+        1.06  \\
         -1.02 \\
-        1.32 \\
-    \end{bmatrix}
+        1.32  \\
+    \end{bmatrix}_{[r, \theta_1, \theta_2]}
 \end{align}
 \]
-<p>Where I&rsquo;ve used the subscript \(_\theta\) to denote a
+<p>Where I&rsquo;ve used the letter \(\vec{s}\) to denote a
 vector in spherical coordinates.</p>
-<p>Why bother with spherical coordinates? After all, you still
-need an n-length vector to represent a point in n-space!</p>
+<h3 id="why-bother-with-spherical-coordinates">Why bother with spherical coordinates?<a href="#why-bother-with-spherical-coordinates" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>How does this help us? After all, you still
+need an n-length vector to represent a point in n-space.</p>
 <p>What&rsquo;s interesting, however, is when you start looking at
 higher dimensions. Since the length \(r\) takes into account
 the entire vector, plotting the first 2 or 3 elements in the
@@ -390,24 +400,69 @@ visualized. <strong>Before you do</strong>, make a guess about what you think
 will happen as the number of dimensions increases.</p>
 <div id="spherical" style="width: 100%;"></div>
 <div id="spherical_vec" style="display: flexbox;"></div>
-<script>
-const vec_space_1000 = rand(10000, 1000);
-let redraw_spherical = get_spherical_chart(vec_space_1000, 'spherical');
-let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', redraw_spherical);
-</script>
-<p>// 2-space</p>
-<p>In 2-space, both the 2D and the 3D plot display exactly the same
+<div id="tooltip-1space" style="display: none;">
+    // 1-space
+<p>1-space is boring as ever&hellip;</p>
+<p>Jump to the next space with the &ldquo;Dimensions (+)&rdquo; button.</p>
+</div>
+<div id="tooltip-2space" style="display: none;">
+// 2-space
+<p>In 2-space, both the 2D and the 3D plot display the same
 thing. This is also the exact same view we would get if we were
-using cartesian coordinates.</p>
-<p>// 3-space</p>
-<p>3-space is where it gets interesting. Our 3D plot still holds enough
+using cartesian coordinates. Because any 2-length vector losslessly
+describes this space, we can freely switch between them without issue.</p>
+</div>
+<div id="tooltip-3space" style="display: none;">
+// 3-space
+<p>3-space is where it gets interesting. Our <strong>3D plot</strong> still holds enough
 dimensionality to perfectly represent our vector, and so our view is
-still identical to our cartesian plot above.</p>
-<p>The 2D plot, however, is different. Even though our points are randomly
-distributed between -1 and 1, there are now points well outside those bounds.</p>
+identical to the cartesian plot we had earlier.</p>
+<p>The <strong>2D plot</strong>, however, is different. Even though our points are randomly
+distributed between -1 and 1, we are starting to see points shift outside
+that range.</p>
+<p>Remember that the distance from the origin (0, 0) in our 2D plot now
+represents the absolute distance from the origin in n-space.</p>
 <p>Looking at the 3D view of the cube, which points might have a distance to
 the origin (a <em>magnitude</em>) greater than 1?</p>
-<p>A hole has started to appear in the centre of the plot. Why do you think this is?</p>
+<p>Interestingly, a hole has started to appear in the centre of the plot.</p>
+<p>Why do you think this is?</p>
+<p>What might you expect to see happen as we continue to increase the dimensionality
+of our space?</p>
+</div>
+<div id="tooltip-4space" style="display: none;">
+// 4-space
+<p>This is the first space that cannot be fully represented by the
+spatial dimensions we have at hand. If you&rsquo;ve been watching the 2D
+plot over the last few dimensionalities, you should be able to guess
+what&rsquo;s coming for our 3-space plot.</p>
+<p>This is also the first dimensionality where we get multiple 3D and 2D
+plots to hop between. By pressing the &ldquo;Elements (-)&rdquo; or &ldquo;Elements (+)&rdquo;
+buttons, we can move through the vector, choosing different elements
+to act as the &ldquo;direction&rdquo; component of our spherical projection.</p>
+</div>
+<div id="tooltip-5space" style="display: none;">
+// 5-space and beyond
+<p>I&rsquo;ll leave you be as you explore the next few dimensions.</p>
+<p>Have a play around, and try and build an intuition for
+what these charts are telling you about the spaces.</p>
+</div>
+<script>
+let dims_with_text = [1, 2, 3, 4, 5];
+const vec_space_1000 = rand(10000, 1000);
+let redraw_spherical = get_spherical_chart(vec_space_1000, 'spherical', ["", "", ""]);
+let callback = (dimensions, slice_offset) => {
+    for (let dim of dims_with_text) {
+        if (dim == dimensions) {
+            document.getElementById(`tooltip-${dimensions}space`).style.display = "block";
+        }
+        else {
+            document.getElementById(`tooltip-${dim}space`).style.display = "none";
+        }
+    }
+    redraw_spherical(dimensions, slice_offset);
+}
+let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', callback);
+</script>
 
       </div></div>
 
