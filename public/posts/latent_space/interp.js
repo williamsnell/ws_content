@@ -60,7 +60,7 @@ function slerp(fraction, start, stop) {
 
 // Returns an array of vectors, i.e. NOT transformed into x, y, z
 // TODO add dimensions to save unnecessary calculations
-function get_interp_path(start_vec, stop_vec, interpolator, num_steps=1000) {
+function get_interp_path(start_vec, stop_vec, interpolator, num_steps=500) {
   let tweens = Array.from({ length: num_steps}, (v, i) => i / (num_steps - 1));
   
   return tweens.map((fraction) => interpolator(fraction, start_vec, stop_vec));
@@ -71,10 +71,11 @@ function draw_2d_interp(chart_id, start_vec, stop_vec, dimensions, interpolator,
   
   function transform_vecs(dimensions, vector_position) {
     let interp_path = get_interp_path(start_vec, stop_vec, interpolator);
+    let offset;
     let p_x, p_y, _;
     if (transform !== null) {
-      interp_path = transform(interp_path, dimensions, vector_position, vector_position+1, null);
-      [p_x, p_y, _] = slice_arrays(0, interp_path);
+      [interp_path, offset] = transform(interp_path, dimensions, vector_position, vector_position+1, null);
+      [p_x, p_y, _] = slice_arrays(offset, interp_path);
     } else {
       [p_x, p_y, _] = slice_arrays(vector_position, interp_path);
     }
@@ -99,10 +100,11 @@ function draw_3d_interp(chart_id, start_vec, stop_vec, dimensions, interpolator,
   
   function transform_vecs(dimensions, vector_position) {
     let interp_path = get_interp_path(start_vec, stop_vec, interpolator);
+    let offset;
     let p_x, p_y, p_z;
     if (transform !== null) {
-      interp_path = transform(interp_path, dimensions, vector_position, vector_position+1, vector_position+2);
-      [p_x, p_y, p_z] = slice_arrays(0, interp_path);
+      [interp_path, offset] = transform(interp_path, dimensions, vector_position, vector_position+1, vector_position+2);
+      [p_x, p_y, p_z] = slice_arrays(offset, interp_path);
     } else {
       [p_x, p_y, p_z] = slice_arrays(vector_position, interp_path);
     }

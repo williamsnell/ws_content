@@ -313,7 +313,7 @@ what these charts are telling you about the spaces.&lt;/p&gt;
 &lt;script&gt;
 let dims_with_text = [1, 2, 3, 4, 5];
 const vec_space_1000 = rand(10000, 1000);
-let redraw_spherical = get_spherical_chart(vec_space_1000, &#39;spherical&#39;, [&#34;&#34;, &#34;&#34;, &#34;&#34;]);
+let redraw_spherical = get_projected_chart(vec_space_1000, &#39;spherical&#39;, [&#34;&#34;, &#34;&#34;, &#34;&#34;], vecs_to_spherical);
 let callback = (dimensions, slice_offset) =&gt; {
     for (let dim of dims_with_text) {
         if (dim == dimensions) {
@@ -331,7 +331,8 @@ let widget = get_vector_widget(vec_space_1000[0], &#39;spherical_vec&#39;, callb
 &lt;div id=&#34;spherical_lerp&#34;&gt;&lt;/div&gt;
 &lt;div id=&#34;lerp_vec&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
-let redraw_chart = get_interpolated_spherical_chart(vec_space_1000, &#34;spherical_lerp&#34;, lerp, vec_space_1000[0], vec_space_1000[1]);
+let redraw_chart = get_interpolated_chart(vec_space_1000, &#34;spherical_lerp&#34;, lerp, vec_space_1000[0], vec_space_1000[1],
+                                          vecs_to_spherical);
 let widget2 = get_vector_widget(vec_space_1000[0], &#34;lerp_vec&#34;, redraw_chart, 1);
 &lt;/script&gt;
 </content>

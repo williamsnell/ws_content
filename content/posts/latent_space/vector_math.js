@@ -103,5 +103,5 @@ function vecs_to_spherical(vecs, dimensions, elem0=0, elem1=1, elem2=2) {
   for (let i = 0; i < vecs.length; i++) {
     out.push(_vec_to_spherical(vecs[i], dimensions, elem0, elem1, elem2));
   }
-  return out;
+  return [out, 0];
 }

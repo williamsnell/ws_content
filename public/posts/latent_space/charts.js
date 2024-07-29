@@ -211,7 +211,12 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
       marker: markers,
       __tag__: "scatter_points",
     }]
-     
+
+    // const points = {
+    //   x: x,
+    //   y: y,
+    // };
+    // Plotly.restyle(id, points, 0);
     Plotly.react(document.getElementById(id), points, merged_layout, merged_config);
   }
 
@@ -284,6 +289,13 @@ function get_3d_chart(vectors, id, slice_offset=0,
     }]
      
     Plotly.react(id, points, merged_layout, merged_config);
+    // const update = {
+    //   x: x,
+    //   y: y,
+    //   z: z,
+    // };
+
+    // Plotly.restyle(id, update, 0);
   }
 
   return update_vector_slice;
@@ -382,18 +394,20 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
 
 }
 
-function get_spherical_chart(vectors, id, axis_titles=[null, null, null], 
+function get_projected_chart(vectors, id, axis_titles=[null, null, null], 
+    projection=identity_transform,
     options_2d=EMPTY_PLOT_OPTIONS, options_3d=EMPTY_PLOT_OPTIONS) {
   let slice_offset = 0;
   let dimensions = 3;
-  let spherical = vecs_to_spherical(
+
+  let [projected_3d, offset] = projection(
                         vectors,
                         dimensions,
                         slice_offset,
                         slice_offset+1,
                         slice_offset+2
                     );
-  let circular = vecs_to_spherical(
+  let [projected_2d, _] = projection(
                         vectors,
                         dimensions,
                         slice_offset,
@@ -401,35 +415,33 @@ function get_spherical_chart(vectors, id, axis_titles=[null, null, null],
                         null
                     ); 
 
-  let chart_draw = get_2d_3d_chart({d2: circular, d3: spherical}, id, 0, axis_titles, options_2d, options_3d);
+  let chart_draw = get_2d_3d_chart({d2: projected_2d, d3: projected_3d}, id, offset, axis_titles, options_2d, options_3d);
 
-  async function draw(dimensions, slice_offset) {
-    let spherical = vecs_to_spherical(
-                        vectors,
-                        dimensions,
-                        slice_offset,
-                        slice_offset+1,
-                        slice_offset+2
-                    );
-    let circular = vecs_to_spherical(
-                        vectors,
-                        dimensions,
-                        slice_offset,
-                        slice_offset+1,
-                        null
-                    ); 
-    chart_draw(0, circular, spherical);
+  async function draw(dimensions, slice_offset, project=projection) {
+    let [projected_3d, offset] = project(
+                          vectors,
+                          dimensions,
+                          slice_offset,
+                          slice_offset+1,
+                          slice_offset+2
+                      );
+    let [projected_2d, _] = project(
+                          vectors,
+                          dimensions,
+                          slice_offset,
+                          slice_offset+1,
+                          null
+                      ); 
+    chart_draw(offset, projected_2d, projected_3d);
   }
- // take in vecs, and do a spherical transformation of them
-  // whenever "dimensions" changes
-  //
   // return a callback that lets the user update dimensions and 
   // slice_offset
   
   return draw;
 }
 
-function get_interpolated_spherical_chart(vectors, id, interpolator, start_vec, stop_vec) {
+function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec, 
+  projection=identity_transform) {
   // make the markers less colorful, to accentuate the interpolation.
   //
   // Have to get this here or else the CSS hasn't fully loaded.
@@ -444,21 +456,37 @@ function get_interpolated_spherical_chart(vectors, id, interpolator, start_vec, 
   options_3d.marker_settings = structuredClone(DEFAULT_3D_MARKERS);
   options_3d.marker_settings.color = darker_plot;
   options_3d.marker_settings.opacity = 0.7;
-  let redraw_spherical = get_spherical_chart(vectors, id, ["", "", ""], options_2d, options_3d); 
+
+
+    let redraw_points = get_projected_chart(vectors, id, ["", "", ""], projection,
+      options_2d, options_3d,); 
   
   let redraw_interp_2d = draw_2d_interp(
     `${id}_fig_2d`, start_vec, stop_vec, 1, interpolator, 0, 
-    vecs_to_spherical, {mode: 'lines', line: {color: accent_color, width: 3}});
+    projection, {mode: 'lines', line: {color: accent_color, width: 3}});
   let redraw_interp_3d = draw_3d_interp(
     `${id}_fig_3d`, start_vec, stop_vec, 1, interpolator, 0, 
-    vecs_to_spherical, {mode: 'lines', line: {color: accent_color, width: 3}});
+    projection, {mode: 'lines', line: {color: accent_color, width: 3}});
 
-  function redraw(dimensions, slice_offset) {
-      redraw_spherical(dimensions, slice_offset);
+  function redraw(dimensions, slice_offset, projection) {
+      redraw_points(dimensions, slice_offset, projection);
       redraw_interp_2d(dimensions, slice_offset);
       redraw_interp_3d(dimensions, slice_offset);
   } 
   // use the accent color for the interpolation lines
   //
   return redraw;
+}
+
+function identity_transform(vec, dimensions, elem0, elem1, elem2) {
+  if (dimensions < 3) {
+    if (dimensions == 1) {
+      return [vec.map((x) => [x[elem0], 0, 0]), 0];
+    } else if (dimensions == 2) {
+      return [vec.map((x) => [x[elem0], x[elem1], 0]), 0];
+    }
+  }
+  else {
+    return [vec, elem0];
+  }
 }
