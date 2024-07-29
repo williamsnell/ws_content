@@ -3,6 +3,7 @@ languageCode = 'en-nz'
 title = "willsnell.com"
 theme = ['hugo-video', 'terminal']
 paginate = 5
+enableRobotsTXT = true
 
 [markup]
   [markup.goldmark]

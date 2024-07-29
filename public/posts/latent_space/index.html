@@ -142,7 +142,7 @@ latent space is an important concept in AI we almost never stick to just 3 dimen
   <h1 class="post-title">
     <a href="http://localhost:1313/posts/latent_space/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">7 min read (1367 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">7 min read (1374 words)</span></div>
 
   
   
@@ -155,10 +155,11 @@ latent space is an important concept in AI we almost never stick to just 3 dimen
   
 
   <div class="post-content"><div>
-        <script src="./plotly-2.32.0.min.js?{{ .Now.Unix }}" charset="utf-8"></script>
-<script src="math_lib.js?{{ .Now.Unix }}"></script>
-<script src="charts.js?{{ .Now.Unix }}"></script>
-<script src="vector_math.js?{{ .Now.Unix }}"></script>
+        <script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="math_lib.js"></script>
+<script src="charts.js"></script>
+<script src="vector_math.js"></script>
+<script src="interp.js"></script>
 <h1 id="why-explore-hyperspace">Why explore hyperspace?<a href="#why-explore-hyperspace" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <p>Hyperspace can be quite a cool topic, but it can also be intimidating.
 To give us a mission, let&rsquo;s start by posing a seemingly unrelated
@@ -422,8 +423,9 @@ distributed between -1 and 1, we are starting to see points shift outside
 that range.</p>
 <p>Remember that the distance from the origin (0, 0) in our 2D plot now
 represents the absolute distance from the origin in n-space.</p>
-<p>Looking at the 3D view of the cube, which points might have a distance to
-the origin (a <em>magnitude</em>) greater than 1?</p>
+<p>Looking at the 3D view of the cube, which points do you think
+have a distance to
+the origin (a <em>vector magnitude</em>) greater than 1?</p>
 <p>Interestingly, a hole has started to appear in the centre of the plot.</p>
 <p>Why do you think this is?</p>
 <p>What might you expect to see happen as we continue to increase the dimensionality
@@ -462,6 +464,13 @@ let callback = (dimensions, slice_offset) => {
     redraw_spherical(dimensions, slice_offset);
 }
 let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', callback);
+</script>
+<h1 id="tracing-lines-through-hyperspace">Tracing Lines Through Hyperspace<a href="#tracing-lines-through-hyperspace" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<div id="spherical_lerp"></div>
+<div id="lerp_vec"></div>
+<script>
+let redraw_chart = get_interpolated_spherical_chart(vec_space_1000, "spherical_lerp", lerp, vec_space_1000[0], vec_space_1000[1]);
+let widget2 = get_vector_widget(vec_space_1000[0], "lerp_vec", redraw_chart, 1);
 </script>
 
       </div></div>

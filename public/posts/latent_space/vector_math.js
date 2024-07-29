@@ -1,3 +1,33 @@
+function slice_arrays(index, array) {
+  let x = [];
+  let y = []; 
+  let z = []; 
+
+  if (array[0].length == 1) {
+    for (let i = 0; i < array.length; i++) {
+      x.push(array[i][index]);
+      y.push(0.);
+      z.push(0.);
+    }
+  }
+  else if (array[0].length == 2) {
+    for (let i = 0; i < array.length; i++) {
+      x.push(array[i][index]);
+      y.push(array[i][index + 1]);
+      z.push(0.);
+    }
+  }
+  else {
+    for (let i = 0; i < array.length; i++) {
+      x.push(array[i][index]);
+      y.push(array[i][index + 1]);
+      z.push(array[i][index + 2]);
+    }
+  }
+
+  return [x, y, z];
+}
+
 function vec(length, initializer) {
   return Array.from({length: length}, (x, i) => initializer());
 }

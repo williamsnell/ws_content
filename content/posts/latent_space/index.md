@@ -4,10 +4,11 @@ date = 2024-07-25T12:19:22+12:00
 image = "routeburn.jpg"
 cover = "routeburn.jpg"
 +++
-<script src="./plotly-2.32.0.min.js?{{ .Now.Unix }}" charset="utf-8"></script>
-<script src="math_lib.js?{{ .Now.Unix }}"></script>
-<script src="charts.js?{{ .Now.Unix }}"></script>
-<script src="vector_math.js?{{ .Now.Unix }}"></script>
+<script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="math_lib.js"></script>
+<script src="charts.js"></script>
+<script src="vector_math.js"></script>
+<script src="interp.js"></script>
 
 
 # Why explore hyperspace?
@@ -351,8 +352,9 @@ that range.
 Remember that the distance from the origin (0, 0) in our 2D plot now
 represents the absolute distance from the origin in n-space. 
 
-Looking at the 3D view of the cube, which points might have a distance to 
-the origin (a *magnitude*) greater than 1?
+Looking at the 3D view of the cube, which points do you think
+have a distance to 
+the origin (a *vector magnitude*) greater than 1?
 
 Interestingly, a hole has started to appear in the centre of the plot. 
 
@@ -403,3 +405,12 @@ let callback = (dimensions, slice_offset) => {
 let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', callback);
 </script>
 
+
+# Tracing Lines Through Hyperspace
+
+<div id="spherical_lerp"></div>
+<div id="lerp_vec"></div>
+<script>
+let redraw_chart = get_interpolated_spherical_chart(vec_space_1000, "spherical_lerp", lerp, vec_space_1000[0], vec_space_1000[1]);
+let widget2 = get_vector_widget(vec_space_1000[0], "lerp_vec", redraw_chart, 1);
+</script>

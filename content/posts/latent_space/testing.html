@@ -126,7 +126,7 @@ function calc_vecs() {
   VEC_LEN = VEC_LENGTHS[vec_pos];
   vecs = [];
   for (let i = 0; i < NUM_VECS; i++) {
-    vecs.push(newVec(uniformRandom));
+    vecs.push(newVec(gaussianRandom));
   }
 }
 
@@ -274,13 +274,12 @@ function redraw_background() {
   circular_data[0].marker.color[1] = 'red';
   circular_data[0].marker.size[0] = 6;
   circular_data[0].marker.size[1] = 6;
-
+  circular_data[0].test = "true";
 
   Plotly.react(circular, circular_data, layout, config);
 
-
   // show interpolation
-  let lerp_path = draw_interp(vecs, slerp);
+  let lerp_path = draw_interp(vecs, lerp);
   let [p_x, p_y, p_z] = slice_arrays(vector_position, lerp_path);
   let new_data = {
     type: 'scatter3d',
@@ -317,7 +316,7 @@ function redraw_background() {
   Plotly.addTraces(circular, new_circ);
 
   showVecText();
-  draw_point(false);
+  draw_point();
 }
 
 function showVecText() {
@@ -470,7 +469,7 @@ function draw_interp(vecs, interpolator, num_steps=100) {
 }
 
 // show interpolation
-let lerp_path = draw_interp(vecs, slerp);
+let lerp_path = draw_interp(vecs, lerp);
 let [p_x, p_y, p_z] = slice_arrays(vector_position, lerp_path);
 let new_data = {
   type: 'scatter3d',

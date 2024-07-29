@@ -54,9 +54,11 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
 
   const container = document.getElementById(id);
   if (container === null) throw(`Element id=${id} doesn't exist.`);
+
   const wrapper = container.appendChild(document.createElement("div"));
   wrapper.style.display = "flex";
   wrapper.style.justifyContent = "center";
+
   const button_bar = wrapper.appendChild(document.createElement('div'));
   button_bar.style.display = "flex";
   button_bar.style.flexWrap = "wrap";

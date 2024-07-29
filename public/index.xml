@@ -17,10 +17,11 @@
 If I want to smoothly blend from this image to this image, how should I do so?
 All the plots on this page are interactive!
 latent space is an important concept in AI we almost never stick to just 3 dimensions, and operate in n-dimensional space, or &amp;lsquo;hyperspaces&amp;rsquo;, where n can be 100, 1000, or bigger understanding the topology of such spaces can seem intidimidating, but I think I can make it fun Windows into Hyperspace Let&amp;rsquo;s start with the concept of vectors.</description>
-      <content>&lt;script src=&#34;./plotly-2.32.0.min.js?{{ .Now.Unix }}&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;math_lib.js?{{ .Now.Unix }}&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;charts.js?{{ .Now.Unix }}&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;vector_math.js?{{ .Now.Unix }}&#34;&gt;&lt;/script&gt;
+      <content>&lt;script src=&#34;./plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;math_lib.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;charts.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;vector_math.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;interp.js&#34;&gt;&lt;/script&gt;
 &lt;h1 id=&#34;why-explore-hyperspace&#34;&gt;Why explore hyperspace?&lt;/h1&gt;
 &lt;p&gt;Hyperspace can be quite a cool topic, but it can also be intimidating.
 To give us a mission, let&amp;rsquo;s start by posing a seemingly unrelated
@@ -284,8 +285,9 @@ distributed between -1 and 1, we are starting to see points shift outside
 that range.&lt;/p&gt;
 &lt;p&gt;Remember that the distance from the origin (0, 0) in our 2D plot now
 represents the absolute distance from the origin in n-space.&lt;/p&gt;
-&lt;p&gt;Looking at the 3D view of the cube, which points might have a distance to
-the origin (a &lt;em&gt;magnitude&lt;/em&gt;) greater than 1?&lt;/p&gt;
+&lt;p&gt;Looking at the 3D view of the cube, which points do you think
+have a distance to
+the origin (a &lt;em&gt;vector magnitude&lt;/em&gt;) greater than 1?&lt;/p&gt;
 &lt;p&gt;Interestingly, a hole has started to appear in the centre of the plot.&lt;/p&gt;
 &lt;p&gt;Why do you think this is?&lt;/p&gt;
 &lt;p&gt;What might you expect to see happen as we continue to increase the dimensionality
@@ -324,6 +326,13 @@ let callback = (dimensions, slice_offset) =&gt; {
     redraw_spherical(dimensions, slice_offset);
 }
 let widget = get_vector_widget(vec_space_1000[0], &#39;spherical_vec&#39;, callback);
+&lt;/script&gt;
+&lt;h1 id=&#34;tracing-lines-through-hyperspace&#34;&gt;Tracing Lines Through Hyperspace&lt;/h1&gt;
+&lt;div id=&#34;spherical_lerp&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;lerp_vec&#34;&gt;&lt;/div&gt;
+&lt;script&gt;
+let redraw_chart = get_interpolated_spherical_chart(vec_space_1000, &#34;spherical_lerp&#34;, lerp, vec_space_1000[0], vec_space_1000[1]);
+let widget2 = get_vector_widget(vec_space_1000[0], &#34;lerp_vec&#34;, redraw_chart, 1);
 &lt;/script&gt;
 </content>
     </item>

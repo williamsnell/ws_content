@@ -1,4 +1,4 @@
-let DEFAULT_CONFIG = {
+const DEFAULT_CONFIG = {
   displayModeBar: false,
   dragMode: false,
   scrollZoom: true,
@@ -13,11 +13,14 @@ const DEFAULT_AXIS_FONT = {
   color: theme_text_color,
 };
 
-let DEFAULT_2D_LAYOUT = {
+const EMPTY_PLOT_OPTIONS = {mode: 'markers', layout: {}, config: {}, marker_settings: {}};
+
+const DEFAULT_2D_LAYOUT = {
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
   autosize: false,
   hovermode: false,
+  showlegend: false,
   margin: {
     l: 40,
     r: 40,
@@ -61,11 +64,12 @@ const DEFAULT_3D_MARKERS = {
   }
 }
 
-let DEFAULT_3D_LAYOUT = {
+const DEFAULT_3D_LAYOUT = {
   autosize: false,
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
   hovermode: false,
+  showlegend: false,
   scene: {
     aspectmode: 'data',
     xaxis: {
@@ -88,34 +92,63 @@ let DEFAULT_3D_LAYOUT = {
   },
 };
 
-function slice_arrays(index, array) {
-  let x = [];
-  let y = []; 
-  let z = []; 
 
-  if (array[0].length == 1) {
-    for (let i = 0; i < array.length; i++) {
-      x.push(array[i][index]);
-      y.push(0.);
-      z.push(0.);
-    }
+function remove_old_traces(chart, trace_id) {
+  if (chart === null || chart.data === null) {throw("chart isn't defined properly.");}
+  for (let i = 0; i < chart.data.length; i++) {
+    if (chart.data[i].__tag__ == trace_id) {Plotly.deleteTraces(chart, i);}
   }
-  else if (array[0].length == 2) {
-    for (let i = 0; i < array.length; i++) {
-      x.push(array[i][index]);
-      y.push(array[i][index + 1]);
-      z.push(0.);
-    }
-  }
-  else {
-    for (let i = 0; i < array.length; i++) {
-      x.push(array[i][index]);
-      y.push(array[i][index + 1]);
-      z.push(array[i][index + 2]);
-    }
+}
+
+function add_line_2d(chart_id, x_points, y_points, 
+  trace_settings={mode: 'lines'}) {
+  let chart = document.getElementById(chart_id);
+
+  let trace_id = self.crypto.randomUUID();
+
+  function update_trace(p_x, p_y) {
+    remove_old_traces(chart, trace_id);
+    
+    let data = {
+      type: 'scattergl',
+      x: p_x,
+      y: p_y,
+      __tag__: trace_id,
+      ...trace_settings
+    };
+
+    Plotly.addTraces(chart, data);
   }
 
-  return [x, y, z];
+  update_trace(x_points, y_points);
+
+  return update_trace;
+}
+
+function add_line_3d(chart_id, x_points, y_points, z_points, 
+  trace_settings={mode: 'lines'}) {
+  let chart = document.getElementById(chart_id);
+
+  let trace_id = self.crypto.randomUUID();
+
+  function update_trace(p_x, p_y, p_z) {
+    remove_old_traces(chart, trace_id);
+
+    let data = {
+      type: 'scatter3d',
+      x: p_x,
+      y: p_y,
+      z: p_z,
+      __tag__: trace_id,
+      ...trace_settings,
+    };
+
+    Plotly.addTraces(chart, data);
+  }
+
+  update_trace(x_points, y_points, z_points);
+
+  return update_trace;
 }
 
 function vec_subscript(integer) {
@@ -153,6 +186,7 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
     x: x,
     y: y,
     marker: markers,
+    __tag__: "scatter_points",
   }];
 
   Plotly.newPlot(elem, points, merged_layout, merged_config);
@@ -175,6 +209,7 @@ function get_2d_chart(vectors, id, slice_offset=0, axis_titles=[null, null], opt
       x: x,
       y: y,
       marker: markers,
+      __tag__: "scatter_points",
     }]
      
     Plotly.react(document.getElementById(id), points, merged_layout, merged_config);
@@ -220,6 +255,7 @@ function get_3d_chart(vectors, id, slice_offset=0,
     y: y,
     z: z,
     marker: markers,
+    __tag__: "scatter_points",
   }];
 
   Plotly.newPlot(elem, points, merged_layout, merged_config);
@@ -244,9 +280,10 @@ function get_3d_chart(vectors, id, slice_offset=0,
       y: y,
       z: z,
       marker: markers,
+      __tag__: "scatter_points",
     }]
      
-    Plotly.react(document.getElementById(id), points, merged_layout, merged_config);
+    Plotly.react(id, points, merged_layout, merged_config);
   }
 
   return update_vector_slice;
@@ -345,7 +382,8 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
 
 }
 
-function get_spherical_chart(vectors, id, axis_titles=[null, null, null]) {
+function get_spherical_chart(vectors, id, axis_titles=[null, null, null], 
+    options_2d=EMPTY_PLOT_OPTIONS, options_3d=EMPTY_PLOT_OPTIONS) {
   let slice_offset = 0;
   let dimensions = 3;
   let spherical = vecs_to_spherical(
@@ -363,7 +401,7 @@ function get_spherical_chart(vectors, id, axis_titles=[null, null, null]) {
                         null
                     ); 
 
-  let chart_draw = get_2d_3d_chart({d2: circular, d3: spherical}, id, 0, axis_titles);
+  let chart_draw = get_2d_3d_chart({d2: circular, d3: spherical}, id, 0, axis_titles, options_2d, options_3d);
 
   async function draw(dimensions, slice_offset) {
     let spherical = vecs_to_spherical(
@@ -389,4 +427,38 @@ function get_spherical_chart(vectors, id, axis_titles=[null, null, null]) {
   // slice_offset
   
   return draw;
+}
+
+function get_interpolated_spherical_chart(vectors, id, interpolator, start_vec, stop_vec) {
+  // make the markers less colorful, to accentuate the interpolation.
+  //
+  // Have to get this here or else the CSS hasn't fully loaded.
+  let darker_plot = "rgb(150, 150, 150)";
+
+  let options_2d = structuredClone(EMPTY_PLOT_OPTIONS);
+  options_2d.marker_settings = structuredClone(DEFAULT_MARKERS);
+  options_2d.marker_settings.color = darker_plot;
+  options_2d.marker_settings.opacity = 0.7;
+
+  let options_3d = structuredClone(EMPTY_PLOT_OPTIONS);
+  options_3d.marker_settings = structuredClone(DEFAULT_3D_MARKERS);
+  options_3d.marker_settings.color = darker_plot;
+  options_3d.marker_settings.opacity = 0.7;
+  let redraw_spherical = get_spherical_chart(vectors, id, ["", "", ""], options_2d, options_3d); 
+  
+  let redraw_interp_2d = draw_2d_interp(
+    `${id}_fig_2d`, start_vec, stop_vec, 1, interpolator, 0, 
+    vecs_to_spherical, {mode: 'lines', line: {color: accent_color, width: 3}});
+  let redraw_interp_3d = draw_3d_interp(
+    `${id}_fig_3d`, start_vec, stop_vec, 1, interpolator, 0, 
+    vecs_to_spherical, {mode: 'lines', line: {color: accent_color, width: 3}});
+
+  function redraw(dimensions, slice_offset) {
+      redraw_spherical(dimensions, slice_offset);
+      redraw_interp_2d(dimensions, slice_offset);
+      redraw_interp_3d(dimensions, slice_offset);
+  } 
+  // use the accent color for the interpolation lines
+  //
+  return redraw;
 }
