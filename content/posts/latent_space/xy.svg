@@ -1,0 +1,19 @@
+<svg width="799.9999999999999" height="600.0000000000001" xmlns="http://www.w3.org/2000/svg">
+ <g>
+  <title>Layer 1</title>
+  <path fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="undefined" stroke-linecap="undefined" opacity="undefined" d="m220,124.28058l0,309.17834" id="svg_1"/>
+  <path transform="rotate(-90, 219.901, 124.429)" id="svg_4" d="m220.70366,124.42875l-4.70099,-4.70588l3.09598,0l4.70099,4.70588l-4.70099,4.70588l-3.09598,0l4.70099,-4.70588z" stroke="#ffffff" fill="#ffffff"/>
+  <path fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="undefined" stroke-linecap="undefined" opacity="undefined" transform="rotate(90, 373.033, 432.125)" d="m373.03334,277.53608l0,309.17834" id="svg_11"/>
+  <path id="svg_14" d="m429.96302,187.14297l3.25982,-3.25982l3.46285,3.46282l3.46285,-3.46282l3.25985,3.25982l-3.46285,3.46285l3.46285,3.46285l-3.25985,3.25985l-3.46285,-3.46285l-3.46285,3.46285l-3.25982,-3.25985l3.46282,-3.46285l-3.46282,-3.46285z" stroke="#7f0000" fill="#7f0000"/>
+  <path id="svg_2" d="m525.37629,431.90513l-4.70099,-4.70588l3.09598,0l4.70099,4.70588l-4.70099,4.70588l-3.09598,0l4.70099,-4.70588z" stroke="#ffffff" fill="#ffffff"/>
+  <path fill="none" stroke="#ffa86a" stroke-dasharray="5,5" opacity="undefined" d="m222.01307,191.19536l207.30039,0" id="svg_7"/>
+  <path fill="#ffa86a" stroke="#ffa86a" d="m423.94403,192.55144l1.8868,-3.3019l1.8868,3.3019l-3.7736,0z" id="svg_8" stroke-width="2" transform="rotate(90, 425.831, 190.901)"/>
+  <g id="svg_16">
+   <path fill="#c1c1c1" stroke="#c1c1c1" stroke-dasharray="5,5" opacity="undefined" d="m322.78672,315.30274l227.39615,0" id="svg_13" transform="rotate(-90, 436.485, 315.781)"/>
+   <path fill="#c1c1c1" stroke="#c1c1c1" d="m433.90049,201.62421l3.62198,1.8868l-3.62198,1.8868l0,-3.7736z" id="svg_15" stroke-width="2" transform="rotate(-90, 435.711, 203.511)"/>
+  </g>
+  <text xml:space="preserve" text-anchor="start" font-family="monospace" font-size="24" id="svg_3" y="184.84849" x="325.45455" stroke-width="0" stroke="#000" fill="#ffa86a">x</text>
+  <text xml:space="preserve" text-anchor="start" font-family="monospace" font-size="24" id="svg_5" y="329.09092" x="442.42426" stroke-width="0" stroke="#000" fill="#ffffff">y</text>
+ </g>
+
+</svg>

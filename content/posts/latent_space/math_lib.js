@@ -1,28 +1,35 @@
 const VEC_ELEMS_DISPLAYED = 8;
 const AVAILABLE_DIMENSIONS = [1, 2, 3, 4, 5, 6, 10, 20, 50, 100, 1000];
 
+function make_latex_vectors(vector, element_id, slice_offset, dimensions, num_selected) {
+  if (dimensions > vector.length) throw("Dimensions > vector length");
 
-function latexize_vector(vector, element_id) {
-  let latex_str = `
-\\[
-  \\begin{align}
-    \\vec{v} = \\begin{bmatrix}`;
+  let prelude = `\\[
+    \\begin{align}`;
 
-  for (let i = 0; i < vector.length; i++) {
-    latex_str += `${vector[i].toFixed(2)} \\\\`
+  let v = latexize_vector(vector.map((x, i) => `x_{${i+1}}=${x.toFixed(2)}`), 
+    `\\vec{v}_{${dimensions}}`, slice_offset, dimensions, num_selected);
+  let spherical_vec = [
+    `r = ${(vec_norm(vector, dimensions) * ((dimensions == 1) ? Math.sign(vector[0]) : 1)).toFixed(2)}`,
+      ];
+  if (dimensions > 1) {
+    spherical_vec.push(`\\theta_1 = f(x_{${slice_offset+1}}, x_{${slice_offset+2}})`);
+    //spherical_vec.push(`\\theta_1 = ${Math.atan2(vector[slice_offset + 1], vector[slice_offset]).toFixed(2)}`);
+  } 
+  if (dimensions > 2) {
+    spherical_vec.push(`\\theta_2 = f(x_{${slice_offset+2}}, x_{${slice_offset+3}})`);
+    //spherical_vec.push(`\\theta_2 = ${Math.atan2(vector[slice_offset + 2], vector[slice_offset + 1]).toFixed(2)}`);
   }
-  latex_str += `\\end{bmatrix}
-              \\end{align}
+  let s3d = latexize_vector(spherical_vec, `    \\vec{s}_{${Math.min(3, dimensions)}}`, 0, Math.min(dimensions, 3), Math.min(dimensions, 3));
+
+  let epilogue = `\\end{align}
             \\]`;
-  document.getElementById(element_id).innerHTML = latex_str;
+
+  document.getElementById(element_id).innerHTML = prelude + v + "\\mapsto " + s3d + epilogue;
 }
 
-function latexize_vector(vector, element_id, slice_offset, dimensions, num_selected) {
-  if (dimensions > vector.length) throw("Dimensions > vector length");
-  let latex_str = `
-    \\[
-    \\begin{align}
-\\vec{v}_{${dimensions}} = \\begin{bmatrix}`;
+function latexize_vector(vector, vec_name, slice_offset, dimensions, num_selected, symbols=null) {
+    let latex_str = `${vec_name} = \\begin{bmatrix}`;
 
   const start = Math.max(0, Math.min(slice_offset, dimensions - VEC_ELEMS_DISPLAYED));
   const desired_stop = Math.min(dimensions, slice_offset + VEC_ELEMS_DISPLAYED);
@@ -35,17 +42,16 @@ function latexize_vector(vector, element_id, slice_offset, dimensions, num_selec
   if (start > 0) latex_str += `\\vdots \\\\`;
   for (let i = start; i < stop; i++) {
     if ((i - slice_offset) >= 0 && (i - slice_offset) < num_selected) {
-      latex_str += `\\mathbf{${vector[i].toFixed(2)}} \\\\`
+      latex_str += `${vector[i]} \\\\`
     } else {
-      latex_str += `${vector[i].toFixed(2)} \\\\`
+      latex_str += `${vector[i]} \\\\`
     }
   }
   if (stop < dimensions) latex_str += `\\vdots \\\\`;
 
-  latex_str += `\\end{bmatrix}
-              \\end{align}
-            \\]`;
-  document.getElementById(element_id).innerHTML = latex_str;
+  latex_str += `\\end{bmatrix}`;
+
+  return latex_str;
 }
 
 function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)=>{}, start_dims=0, start_offset=0, num_selected=3) {
@@ -87,7 +93,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
 
   async function redraw_vec() {
     activate_elements_buttons(AVAILABLE_DIMENSIONS[current_dims], num_selected);
-    latexize_vector(vector, vec_div.id, current_offset, AVAILABLE_DIMENSIONS[current_dims], num_selected);
+    make_latex_vectors(vector, vec_div.id, current_offset, AVAILABLE_DIMENSIONS[current_dims], num_selected);
     await callback(AVAILABLE_DIMENSIONS[current_dims], current_offset);
     await window.MathJax.typesetPromise();
   }

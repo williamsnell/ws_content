@@ -1,7 +1,7 @@
 
 // lerp
 
-function lerp(fraction, start, stop) {
+function lerp(fraction, start, stop, dimensions) {
   let out = [];
   for (var i = 0; i < start.length; i++) {
     out[i] = start[i] + fraction * (stop[i] - start[i]);
@@ -34,9 +34,9 @@ function dot(arr1, arr2) {
   return acc;
 }
 
-function slerp(fraction, start, stop) {
-  const norm_start = mult(start, 1 / vec_norm(start));
-  const norm_stop = mult(stop, 1 / vec_norm(stop));
+function slerp(fraction, start, stop, dimensions) {
+  const norm_start = mult(start.slice(0, dimensions+1), 1 / vec_norm(start, dimensions));
+  const norm_stop = mult(stop.slice(0, dimensions+1), 1 / vec_norm(stop, dimensions));
 
   const omega = Math.acos(clamp(dot(norm_start, norm_stop), -1, 1));
   const so = Math.sin(omega);
@@ -60,17 +60,17 @@ function slerp(fraction, start, stop) {
 
 // Returns an array of vectors, i.e. NOT transformed into x, y, z
 // TODO add dimensions to save unnecessary calculations
-function get_interp_path(start_vec, stop_vec, interpolator, num_steps=500) {
+function get_interp_path(start_vec, stop_vec, interpolator, dimensions, num_steps=500) {
   let tweens = Array.from({ length: num_steps}, (v, i) => i / (num_steps - 1));
   
-  return tweens.map((fraction) => interpolator(fraction, start_vec, stop_vec));
+  return tweens.map((fraction) => interpolator(fraction, start_vec, stop_vec, dimensions));
 }
 
 function draw_2d_interp(chart_id, start_vec, stop_vec, dimensions, interpolator, 
     vector_position=0, transform=null, trace_settings={mode: 'lines'}) {
   
   function transform_vecs(dimensions, vector_position) {
-    let interp_path = get_interp_path(start_vec, stop_vec, interpolator);
+    let interp_path = get_interp_path(start_vec, stop_vec, interpolator, dimensions);
     let offset;
     let p_x, p_y, _;
     if (transform !== null) {
@@ -99,7 +99,7 @@ function draw_3d_interp(chart_id, start_vec, stop_vec, dimensions, interpolator,
     vector_position=0, transform=null, trace_settings={mode: 'lines'}) {
   
   function transform_vecs(dimensions, vector_position) {
-    let interp_path = get_interp_path(start_vec, stop_vec, interpolator);
+    let interp_path = get_interp_path(start_vec, stop_vec, interpolator, dimensions);
     let offset;
     let p_x, p_y, p_z;
     if (transform !== null) {

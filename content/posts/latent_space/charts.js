@@ -71,7 +71,7 @@ const DEFAULT_3D_LAYOUT = {
   hovermode: false,
   showlegend: false,
   scene: {
-    aspectmode: 'data',
+    aspectmode: 'cube',
     xaxis: {
       zeroline: false,
       tickmode: "array",

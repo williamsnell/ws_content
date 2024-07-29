@@ -117,7 +117,6 @@ this time in 3 dimensions:&lt;/p&gt;
 &lt;script&gt;
 const vec_space_3 = rand(10_000, 3);
 get_3d_chart(vec_space_3, &#34;3d_space_chart&#34;, 0, [&#34;&#34;, &#34;&#34;, &#34;&#34;]);
-latexize_vector(vec_space_3[0], &#34;3_vec&#34;);
 &lt;/script&gt;
 &lt;p&gt;We&amp;rsquo;re very used to looking at 3D space through something like this, where
 our brain can reconstruct a series of 2D images into a 3D representation:&lt;/p&gt;
@@ -170,12 +169,20 @@ in three dimensions, and visualizing it with two.&lt;/p&gt;
 &lt;p&gt;We can display the first 2 elements, i.e.:&lt;/p&gt;
 \[
 \begin{align}
-    \vec{v} = \begin{bmatrix}
+    \vec{c}_2 = \begin{bmatrix}
         0.21  \\
         -0.85 \\
     \end{bmatrix}
 \end{align}
 \]
+&lt;p&gt;Where \(\vec{c}_2\) represents a &lt;strong&gt;cartesian projection&lt;/strong&gt;
+down to 2 dimensions.&lt;/p&gt;
+&lt;p&gt;We can write this as an equation:&lt;/p&gt;
+\[
+    \vec{v}_3 \mapsto \vec{c}_2
+\]
+&lt;p&gt;Where the arrow \(\mapsto\) means
+&amp;ldquo;maps to&amp;rdquo;.&lt;/p&gt;
 &lt;p&gt;Visualized, it looks like so:&lt;/p&gt;
 &lt;div id=&#34;3d_into_2d&#34; style=&#34;width: 100%;&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
@@ -213,24 +220,48 @@ plotting a vector of length 3 or a vector of length
 &lt;p&gt;So far, we&amp;rsquo;ve been exploring space with &lt;em&gt;cartesian&lt;/em&gt; coordinates.&lt;/p&gt;
 &lt;p&gt;Without completely justifying it, I&amp;rsquo;m going to introduce
 a completely different coordinate system - &lt;a href=&#34;https://en.wikipedia.org/wiki/Spherical_coordinate_system&#34;&gt;spherical coordinates&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;In a spherical coordinate system, a point in space is defined
-not by \(n\) orthogonal coordinates (e.g. x, y, and z), but rather
-as a &lt;em&gt;radial distance&lt;/em&gt; \(r\), and then a series of angles
-\(\theta_1\), \(\theta_2\), etc. like so:&lt;/p&gt;
+&lt;p&gt;Most people are used to &amp;ldquo;cartesian&amp;rdquo; coordinates. In the following
+image, it seems natural to define the position of the red cross based
+on two distances, which we typically call x and y.
+&lt;img src=&#34;xy.svg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;We could represent this point as a vector:&lt;/p&gt;
 \[
 \begin{align}
-    \vec{s}_n = \begin{bmatrix}
-        r          \\
-        \theta_{1} \\
-        \vdots     \\
-        \theta_{n} \\
+    \vec{v}_2 = \begin{bmatrix}
+        x \\
+        y \\
     \end{bmatrix}
 \end{align}
 \]
-&lt;p&gt;Essentially, we have a line of some length \(r\), starting at the
-origin, which we then reorient along our angles \(\vec{\theta}\).
-The tip of the line represents the point in space we are describing.&lt;/p&gt;
-&lt;p&gt;In 3-space, these two vectors represent the same position:&lt;/p&gt;
+&lt;p&gt;In higher dimensions, we can add more directions, provided they are
+perpendicular to all the other directions. Hence, for 3d, we might
+use (x, y, z).&lt;/p&gt;
+&lt;p&gt;In a spherical coordinate system, however, a point in space is defined
+not by \(n\) orthogonal coordinates (e.g. x, y, and z), but rather
+as a &lt;em&gt;radial distance&lt;/em&gt; \(r\), and then a series of angles.&lt;/p&gt;
+&lt;p&gt;To fully describe any point in 2D-space, we need two coordinates.
+Since we already have one (the distance from the origin \(r\)),
+we need one more. Hence, a 2D spherical coordinate system would have
+one angle, \(\theta_1\).&lt;/p&gt;
+&lt;img src=&#34;radial.svg&#34;&gt;
+&lt;p&gt;We can also represent this point as a vector:&lt;/p&gt;
+\[
+\begin{align}
+    \vec{s}_2 = \begin{bmatrix}
+        r          \\
+        \theta_{1} \\
+    \end{bmatrix}
+\end{align}
+\]
+&lt;p&gt;Notice that &lt;strong&gt;both \(\vec{v}_2\) and \(\vec{s}_2\)&lt;/strong&gt; refer to
+the exact same point in space. The actual numbers inside the vectors,
+and the coordinate &lt;strong&gt;system&lt;/strong&gt; used are very different, but the point
+in space is the same.&lt;/p&gt;
+&lt;h3 id=&#34;adding-dimensions&#34;&gt;Adding Dimensions&lt;/h3&gt;
+&lt;p&gt;In 3-space, we need a third coordinate. For cartesian coordinates, we add z
+to our existing x and y. For spherical coordinates, we add
+another angle \(\theta_2\).&lt;/p&gt;
+&lt;p&gt;These two vectors represent the same position:&lt;/p&gt;
 \[
 \begin{align}
     \vec{v} = \begin{bmatrix}
@@ -245,8 +276,6 @@ The tip of the line represents the point in space we are describing.&lt;/p&gt;
     \end{bmatrix}_{[r, \theta_1, \theta_2]}
 \end{align}
 \]
-&lt;p&gt;Where I&amp;rsquo;ve used the letter \(\vec{s}\) to denote a
-vector in spherical coordinates.&lt;/p&gt;
 &lt;h3 id=&#34;why-bother-with-spherical-coordinates&#34;&gt;Why bother with spherical coordinates?&lt;/h3&gt;
 &lt;p&gt;How does this help us? After all, you still
 need an n-length vector to represent a point in n-space.&lt;/p&gt;
@@ -254,47 +283,79 @@ need an n-length vector to represent a point in n-space.&lt;/p&gt;
 higher dimensions. Since the length \(r\) takes into account
 the entire vector, plotting the first 2 or 3 elements in the
 spherical vector gives us a different view on higher dimensions.&lt;/p&gt;
-&lt;p&gt;Importantly, we always keep the magnitude of the full vector.
-We then get to select 1 angle (for a 2D plot) or 2 angles (for
+&lt;p&gt;Importantly, &lt;strong&gt;we always keep the magnitude of the full vector&lt;/strong&gt;
+when using spherical coordinates.&lt;/p&gt;
+&lt;p&gt;We then get to select 1 angle (for a 2D plot) or 2 angles (for
 a 3D plot). These angles represent the relative positioning
 between two elements of the vector.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://localhost:1313/posts/latent_space/#projecting&#34;&gt;Earlier, we projected higher-dimensional space&lt;/a&gt; (into 2D and 3D
+cartesian plots. We got to pick 2 elements from our larger vector, and had to
+throw away the rest.&lt;/p&gt;
+&lt;p&gt;We have to do a similar thing in spherical coordinates. However, we &lt;em&gt;always&lt;/em&gt;
+keep the magnitude. This means that we&amp;rsquo;re left with the ability to pick
+one angle (for a 2d plot) or 2 angles (for a 3d plot) from our larger
+vector.&lt;/p&gt;
+&lt;blockquote&gt;
 &lt;p&gt;Below, you can increase the dimensionality of the space being
-visualized. &lt;strong&gt;Before you do&lt;/strong&gt;, make a guess about what you think
+visualized.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Before you do&lt;/strong&gt;, make a guess about what you think
 will happen as the number of dimensions increases.&lt;/p&gt;
+&lt;p&gt;Remember, we&amp;rsquo;re keeping the &lt;em&gt;vector magnitude&lt;/em&gt;, but
+can only keep one angle (for the 2D plot) or 2
+angles (for the 3D plot).&lt;/p&gt;
+&lt;p&gt;How many dimensions do you think we can plot before
+the spherical projection will start to look different
+to the cartesian projection?&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;div id=&#34;spherical&#34; style=&#34;width: 100%;&#34;&gt;&lt;/div&gt;
 &lt;div id=&#34;spherical_vec&#34;&gt;&lt;/div&gt;
 &lt;div id=&#34;tooltip-1space&#34; style=&#34;display: none;&#34;&gt;
-    // 1-space
+&lt;blockquote&gt;
+&lt;p&gt;// 1-space&lt;/p&gt;
 &lt;p&gt;1-space is boring as ever&amp;hellip;&lt;/p&gt;
 &lt;p&gt;Jump to the next space with the &amp;ldquo;Dimensions (+)&amp;rdquo; button.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;/div&gt;
 &lt;div id=&#34;tooltip-2space&#34; style=&#34;display: none;&#34;&gt;
-// 2-space
+&lt;blockquote&gt;
+&lt;p&gt;// 2-space&lt;/p&gt;
 &lt;p&gt;In 2-space, both the 2D and the 3D plot display the same
 thing. This is also the exact same view we would get if we were
 using cartesian coordinates. Because any 2-length vector losslessly
 describes this space, we can freely switch between them without issue.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;/div&gt;
 &lt;div id=&#34;tooltip-3space&#34; style=&#34;display: none;&#34;&gt;
-// 3-space
-&lt;p&gt;3-space is where it gets interesting. Our &lt;strong&gt;3D plot&lt;/strong&gt; still holds enough
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Important&lt;/strong&gt;: understanding the 2D and 3D plots here is critical to
+understanding the rest of this article.&lt;/p&gt;
+&lt;p&gt;// 3-space&lt;/p&gt;
+&lt;p&gt;Our &lt;strong&gt;3D plot&lt;/strong&gt; still holds enough
 dimensionality to perfectly represent our vector, and so our view is
-identical to the cartesian plot we had earlier.&lt;/p&gt;
-&lt;p&gt;The &lt;strong&gt;2D plot&lt;/strong&gt;, however, is different. Even though our points are randomly
+identical to the cartesian plot we had earlier. That is,
+our mapping \(\vec{v} \mapsto \vec{s}\) is lossless.&lt;/p&gt;
+&lt;p&gt;The &lt;strong&gt;2D plot&lt;/strong&gt;, however, is different. We&amp;rsquo;re fundamentally
+losing some information when projecting from \(\vec{v}_3\) to \(\vec{s}_2\).
+Notably, even though our points are randomly
 distributed between -1 and 1, we are starting to see points shift outside
 that range.&lt;/p&gt;
 &lt;p&gt;Remember that the distance from the origin (0, 0) in our 2D plot now
 represents the absolute distance from the origin in n-space.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Questions&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Looking at the 3D view of the cube, which points do you think
 have a distance to
 the origin (a &lt;em&gt;vector magnitude&lt;/em&gt;) greater than 1?&lt;/p&gt;
-&lt;p&gt;Interestingly, a hole has started to appear in the centre of the plot.&lt;/p&gt;
-&lt;p&gt;Why do you think this is?&lt;/p&gt;
+&lt;p&gt;Interestingly, a hole has started to appear in the centre of the plot.
+Why do you think this is?&lt;/p&gt;
 &lt;p&gt;What might you expect to see happen as we continue to increase the dimensionality
 of our space?&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;/div&gt;
 &lt;div id=&#34;tooltip-4space&#34; style=&#34;display: none;&#34;&gt;
-// 4-space
+&lt;blockquote&gt;
+&lt;p&gt;// 4-space&lt;/p&gt;
 &lt;p&gt;This is the first space that cannot be fully represented by the
 spatial dimensions we have at hand. If you&amp;rsquo;ve been watching the 2D
 plot over the last few dimensionalities, you should be able to guess
@@ -303,12 +364,19 @@ what&amp;rsquo;s coming for our 3-space plot.&lt;/p&gt;
 plots to hop between. By pressing the &amp;ldquo;Elements (-)&amp;rdquo; or &amp;ldquo;Elements (+)&amp;rdquo;
 buttons, we can move through the vector, choosing different elements
 to act as the &amp;ldquo;direction&amp;rdquo; component of our spherical projection.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;/div&gt;
 &lt;div id=&#34;tooltip-5space&#34; style=&#34;display: none;&#34;&gt;
-// 5-space and beyond
+&lt;blockquote&gt;
+&lt;p&gt;// 5-space and beyond&lt;/p&gt;
 &lt;p&gt;I&amp;rsquo;ll leave you be as you explore the next few dimensions.&lt;/p&gt;
 &lt;p&gt;Have a play around, and try and build an intuition for
 what these charts are telling you about the spaces.&lt;/p&gt;
+&lt;p&gt;Remember, the &lt;strong&gt;Dimensions&lt;/strong&gt; buttons change the dimensionality
+of the underlying vector space, and the &lt;strong&gt;Elements&lt;/strong&gt; buttons
+change which elements of \(\vec{v}\) we&amp;rsquo;re using to calculate
+\(\theta_1\) and \(\theta_2\).&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;/div&gt;
 &lt;script&gt;
 let dims_with_text = [1, 2, 3, 4, 5];
@@ -318,14 +386,15 @@ let callback = (dimensions, slice_offset) =&gt; {
     for (let dim of dims_with_text) {
         if (dim == dimensions) {
             document.getElementById(`tooltip-${dimensions}space`).style.display = &#34;block&#34;;
-        }
-        else {
+        } else if (dimensions &gt; dims_with_text[dims_with_text.length - 1]) {
+            document.getElementById(`tooltip-${dims_with_text[dims_with_text.length - 1]}space`).style.display = &#34;block&#34;;
+        } else {
             document.getElementById(`tooltip-${dim}space`).style.display = &#34;none&#34;;
         }
     }
     redraw_spherical(dimensions, slice_offset);
 }
-let widget = get_vector_widget(vec_space_1000[0], &#39;spherical_vec&#39;, callback);
+let widget = get_vector_widget(vec_space_1000[0], &#39;spherical_vec&#39;, callback, 1);
 &lt;/script&gt;
 &lt;h1 id=&#34;tracing-lines-through-hyperspace&#34;&gt;Tracing Lines Through Hyperspace&lt;/h1&gt;
 &lt;div id=&#34;spherical_lerp&#34;&gt;&lt;/div&gt;
@@ -335,6 +404,38 @@ let redraw_chart = get_interpolated_chart(vec_space_1000, &#34;spherical_lerp&#3
                                           vecs_to_spherical);
 let widget2 = get_vector_widget(vec_space_1000[0], &#34;lerp_vec&#34;, redraw_chart, 1);
 &lt;/script&gt;
+&lt;h2 id=&#34;slerp&#34;&gt;Slerp&lt;/h2&gt;
+&lt;div id=&#34;spherical_slerp&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;slerp_vec&#34;&gt;&lt;/div&gt;
+&lt;script&gt;
+let redraw_slerp = get_interpolated_chart(vec_space_1000, &#34;spherical_slerp&#34;, slerp, vec_space_1000[0], vec_space_1000[1],
+                                          vecs_to_spherical);
+let widget3 = get_vector_widget(vec_space_1000[0], &#34;slerp_vec&#34;, redraw_slerp, 1);
+&lt;/script&gt;
+&lt;h1 id=&#34;interpretations&#34;&gt;Interpretations&lt;/h1&gt;
+&lt;p&gt;Geometric:&lt;/p&gt;
+&lt;p&gt;Think about what we saw as we increased the number of dimensions of our space,
+keeping the number of points constant. If you&amp;rsquo;d like, jump back to &lt;a href=&#34;http://localhost:1313/posts/latent_space/#why_bother_with_spherical_coordinates&#34;&gt;the interactive
+plots&lt;/a&gt; and hop between 1, 2, and 3 dimensions.&lt;/p&gt;
+&lt;p&gt;We start with a line, very densely packed. Then we have a square, which
+is already less dense. Both dimensions are still, of course, uniformly
+distributed between -1 and 1, but already our distance between any two
+points has increased.&lt;/p&gt;
+&lt;p&gt;Next, we have a cube, and already, the points are so far apart that the
+10,000 or so points plotted don&amp;rsquo;t look particularly dense. Even though
+we can&amp;rsquo;t see it, when we next jump to a hypercube,
+we can expect our space to decrease in density once again.&lt;/p&gt;
+&lt;p&gt;The extra dimensions&lt;/p&gt;
+&lt;p&gt;Statistical:&lt;/p&gt;
+&lt;p&gt;The law of large numbers says that as our number of dimensions increases, our
+vectors will begin to strongly exhibit properties of the underlying distribution.&lt;/p&gt;
+&lt;p&gt;In particular, the variance of our distribution tells us the expected distance
+away from our mean, which in this case is the origin.&lt;/p&gt;
+&lt;h1 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;exploring distributions (slerp keeps the vector magnitude right, but skews the variance of
+the intermediate vectors.)&lt;/li&gt;
+&lt;/ul&gt;
 </content>
     </item>
     
