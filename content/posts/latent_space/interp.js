@@ -24,6 +24,11 @@ function mult(array, num) {
   return array.map((x) => x * num);
 }
 
+function add(array, num) {
+  // elemwise multiplication
+  return array.map((x) => x + num);
+}
+
 function dot(arr1, arr2) {
   // Implicitly assumes arr1 and arr2 
   // have the same length.
@@ -35,8 +40,8 @@ function dot(arr1, arr2) {
 }
 
 function slerp(fraction, start, stop, dimensions) {
-  const norm_start = mult(start.slice(0, dimensions+1), 1 / vec_norm(start, dimensions));
-  const norm_stop = mult(stop.slice(0, dimensions+1), 1 / vec_norm(stop, dimensions));
+  const norm_start = mult(start.slice(0, dimensions), 1 / vec_norm(start, dimensions));
+  const norm_stop = mult(stop.slice(0, dimensions), 1 / vec_norm(stop, dimensions));
 
   const omega = Math.acos(clamp(dot(norm_start, norm_stop), -1, 1));
   const so = Math.sin(omega);
@@ -56,6 +61,36 @@ function slerp(fraction, start, stop, dimensions) {
     }
   }
   return out;
+}
+
+function slerp2(fraction, start, stop, dimensions) {
+  const q1_mag = vec_norm(start, dimensions);
+  const q2_mag = vec_norm(stop, dimensions);
+
+  const q1_norm = mult(start.slice(0, dimensions), 1 / q1_mag);
+  const q2_norm = mult(stop.slice(0, dimensions), 1 / q2_mag);
+
+  const theta = Math.acos(clamp(dot(q1_norm, q2_norm), -1, 1));
+  const so = Math.sin(theta);
+  
+  let out = new Array(start.length);
+ 
+  if (so == 0) {
+    for (let i = 0; i < start.length; i++) {
+      out[i] = (1.0 - fraction) * start[i] + fraction * stop[i];
+    }
+  }
+  else {
+    let s_theta_1 = Math.sin((1.0 - fraction) * theta) / so;
+    let s_theta_2 = Math.sin(fraction * theta) / so;
+    
+    let lerp_magnitude = q1_mag + fraction * (q2_mag - q1_mag);
+
+    for (let i = 0; i < start.length; i++) {
+      out[i] = lerp_magnitude * (s_theta_1 * q1_norm[i] + s_theta_2 * q2_norm[i]);
+    }
+  }
+  return out; 
 }
 
 // Returns an array of vectors, i.e. NOT transformed into x, y, z

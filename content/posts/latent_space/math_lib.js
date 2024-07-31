@@ -119,7 +119,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
     redraw_vec();
   }; 
   // create +slice button
-  slice_plus.textContent = "Elements (+)";
+  slice_plus.textContent = "\\(x_{+}\\)";
   slice_plus.style.width = "calc(min(180px, 45%))";
   slice_plus.onclick = () => {
     current_offset = Math.max(Math.min(AVAILABLE_DIMENSIONS[current_dims] - num_selected, current_offset + 1), 0); 
@@ -127,7 +127,7 @@ function get_vector_widget(vector, id, callback=async (dimensions, slice_offset)
   };
 
   // create -slice button
-  slice_minus.textContent = "Elements (-)";
+  slice_minus.textContent = "\\(x_{-}\\)";
   slice_minus.style.width = "calc(min(180px, 45%))";
   slice_minus.onclick = () => {
     current_offset = Math.max(0, current_offset - 1); 

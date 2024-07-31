@@ -67,6 +67,16 @@ function vec_norm(vec, dimensions) {
   return Math.sqrt(acc);
 }
 
+function distance(vec1, vec2, dimensions) {
+  let difference = [];
+  if (vec1.length != vec2.length) throw("Vectors should have same size.");
+  if (vec1.length < dimensions) throw("dimensions exceeds length of vector.");
+  for (let i = 0; i < dimensions; i++) {
+    difference.push(vec1[i] - vec2[i]);
+  }
+  return vec_norm(difference, dimensions);
+}
+
 // Pass elem2 = null to plot circular coordinates instead of spherical
 //
 // dimensions lets the user explicitly pass how much of the 

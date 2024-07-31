@@ -478,6 +478,14 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
   return redraw;
 }
 
+function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec, 
+  pictures_folder, projection=identity_transform) {
+    
+  // get a slider for traversing the interpolations
+  // get a picture widget
+  //
+}
+
 function identity_transform(vec, dimensions, elem0, elem1, elem2) {
   if (dimensions < 3) {
     if (dimensions == 1) {
