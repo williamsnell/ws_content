@@ -6,6 +6,7 @@ const DEFAULT_CONFIG = {
 
 const accent_color = window.getComputedStyle(document.querySelector(".post-title")).color.toString();
 const theme_text_color = window.getComputedStyle(document.querySelector(".post-content")).color.toString();
+const colors = ["#23B0FF", "#FF6266", "#FFA86A", "#EE72F1", "#23B0FF"];
 
 const DEFAULT_AXIS_FONT = {
   family: "Arial, Helvetica, sans-serif",
@@ -396,43 +397,54 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
 
 function get_projected_chart(vectors, id, axis_titles=[null, null, null], 
     projection=identity_transform,
-    options_2d=EMPTY_PLOT_OPTIONS, options_3d=EMPTY_PLOT_OPTIONS) {
+    options_2d=EMPTY_PLOT_OPTIONS, options_3d=EMPTY_PLOT_OPTIONS, 
+    enable_3d=true) {
   let slice_offset = 0;
   let dimensions = 3;
+  let chart_draw;
 
-  let [projected_3d, offset] = projection(
-                        vectors,
-                        dimensions,
-                        slice_offset,
-                        slice_offset+1,
-                        slice_offset+2
-                    );
-  let [projected_2d, _] = projection(
+  let [projected_2d, offset] = projection(
                         vectors,
                         dimensions,
                         slice_offset,
                         slice_offset+1,
                         null
                     ); 
-
-  let chart_draw = get_2d_3d_chart({d2: projected_2d, d3: projected_3d}, id, offset, axis_titles, options_2d, options_3d);
-
-  async function draw(dimensions, slice_offset, project=projection) {
-    let [projected_3d, offset] = project(
+    
+  if (enable_3d) {
+    let [projected_3d, _] = projection(
                           vectors,
                           dimensions,
                           slice_offset,
                           slice_offset+1,
                           slice_offset+2
                       );
-    let [projected_2d, _] = project(
+    chart_draw = get_2d_3d_chart({d2: projected_2d, d3: projected_3d}, id, offset, axis_titles, options_2d, options_3d);
+  } else {
+    chart_draw = get_2d_chart(projected_2d, id, offset, [axis_titles[0], axis_titles[1]], options_2d);
+  }
+
+  async function draw(dimensions, slice_offset, project=projection) {
+    let [projected_2d, offset] = project(
                           vectors,
                           dimensions,
                           slice_offset,
                           slice_offset+1,
                           null
                       ); 
-    chart_draw(offset, projected_2d, projected_3d);
+    
+    if (enable_3d) {
+      let [projected_3d, _] = project(
+                            vectors,
+                            dimensions,
+                            slice_offset,
+                            slice_offset+1,
+                            slice_offset+2
+                        );
+      chart_draw(offset, projected_2d, projected_3d);
+    } else {
+      chart_draw(offset, projected_2d);
+    }
   }
   // return a callback that lets the user update dimensions and 
   // slice_offset
@@ -482,15 +494,16 @@ function generate_picture_frames(container, interpolators, pictures_folder, poin
   let frame = container.appendChild(document.createElement("div"));
   frame.style.display = "flex";
   frame.style.justifyContent = "space-around";
-  frame.style.height = "calc(min(30vh, 200px))";
   frame.style.margin = "20px 20px 20px 20px";
   frame.style.justifyContent = "space-around";
 
-  for (const [name, _] of Object.entries(interpolators)) {
+  for (const [index, [name, _]] of Object.entries(Object.entries(interpolators))) {
     let sub_frame = frame.appendChild(document.createElement("figure"));
     let title = sub_frame.appendChild(document.createElement("figcaption"));
     title.textContent = name;
     title.style.width = "calc(min(30%, 200px))";
+    title.style.background = colors[index];
+    title.style.color = theme_text_color;
     sub_frame.style.position = "relative";
     sub_frame.style.width = "calc(min(30%, 200px))";
     sub_frame.style.height = "calc(min(30vh, 200px) + 1rem)";
@@ -502,7 +515,7 @@ function generate_picture_frames(container, interpolators, pictures_folder, poin
       img.style.transitionDuration = "0.5s";
       img.style.transitionTimingFunction = "linear";
       img.src = `${pictures_folder}/${name}/${point}.jpg`;
-      img.id = `${container}_${name}_${point}`;
+      img.id = `${container.id}_${name}_${point}`;
       if (Number(point) != default_val) {
         img.style.opacity = "0";
       }
@@ -512,10 +525,17 @@ function generate_picture_frames(container, interpolators, pictures_folder, poin
 
 function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec, 
   pictures_folder, points, projection=identity_transform) {
+
+  let dimensions = vectors[0].length;
+  
   let container = document.getElementById(id);
 
   let plot_box = container.appendChild(document.createElement("div"));
   plot_box.id = id + "_plot_box";
+  plot_box.style.display = "flex";
+  plot_box.style.justifyContent = "center";
+  let plotly_div = plot_box.appendChild(document.createElement("div"));
+  plotly_div.id = id + "_plotly";
   let darker_plot = "rgb(150, 150, 150)";
 
   let options_2d = structuredClone(EMPTY_PLOT_OPTIONS);
@@ -524,20 +544,47 @@ function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec,
   options_2d.marker_settings.opacity = 0.7;
 
   let options_3d = structuredClone(EMPTY_PLOT_OPTIONS);
-  options_3d.marker_settings = structuredClone(DEFAULT_3D_MARKERS);
-  options_3d.marker_settings.color = darker_plot;
-  options_3d.marker_settings.opacity = 0.7;
 
-  let redraw_points = get_projected_chart(vectors, plot_box.id, ["", "", ""], projection,
-    options_2d, options_3d);
+  let redraw_points = get_projected_chart(vectors, plotly_div.id, ["", "", ""], projection,
+    options_2d, options_3d, false);
 
   // redraw the points at the max dimensionality
-  redraw_points(vectors[0].length, 0);
+  redraw_points(dimensions, 0);
+  
+  let redraws = [];
+  
 
-  let point_list = container.appendChild(document.createElement("datalist"));
-  point_list.id = id + "_datalist";
+  for (const [index, [name, interp]] of Object.entries(Object.entries(interpolators))) {
+    // 2d line
+    draw_2d_interp(
+      plotly_div.id, start_vec, stop_vec, dimensions, interp, 0, 
+      projection, {mode: 'lines', line: {width: 1, color: colors[index]}});
 
-  let slider_div = document.createElement("div");
+    function get_interp_point(fraction) {
+      let point = interp(fraction, start_vec, stop_vec, dimensions);
+      let [x_2d, y_2d, _] = projection([point], dimensions, 0, 1, null)[0][0];
+      let [x_3d, y_3d, z_3d] = projection([point], dimensions, 0, 1, 2)[0][0];
+      
+      return [x_2d, y_2d, x_3d, y_3d, z_3d];
+    }
+
+    let [x_2d, y_2d, x_3d, y_3d, z_3d] = get_interp_point(0);
+
+    let redraw_2d = add_line_2d(plotly_div.id, [x_2d], [y_2d], {mode: "markers", marker: {size: 5, color: colors[index]}});
+    // let redraw_3d = add_line_3d(`${plot_box.id}_fig_3d`, [x_3d], [y_3d], [z_3d]);
+
+
+    function redraw_point(fraction) {
+      let [x_2d, y_2d, x_3d, y_3d, z_3d] = get_interp_point(fraction); 
+      redraw_2d([x_2d], [y_2d]);
+      // redraw_3d(x_3d, y_3d, z_3d);
+    }
+
+    redraws.push(redraw_point);
+  
+  }
+
+  let slider_div = container.appendChild(document.createElement("div"));
   let slider = slider_div.appendChild(document.createElement("input"));
   slider.id = id + "_slider";
   slider.style.display = "flex";
@@ -546,7 +593,6 @@ function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec,
   slider.style.margin = "auto";
   slider.style.marginTop = "10px";
   slider.style.marginTop = "10px";
-  container.appendChild(slider_div);
   slider.type = "range";
   slider.min = "0";
   slider.max = "1";
@@ -555,10 +601,15 @@ function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec,
   slider.style.height = "15px";
 
   generate_picture_frames(container, interpolators, pictures_folder, points, 0); 
+  
   slider.oninput = function(input){
+    for (const func of redraws) {
+      func(Number(this.value));
+    }
+    // set up the plotly animation, to smoothly blend to the next position
     for (const [name, _] of Object.entries(interpolators)) {
       for (const point of points) {
-        let img = document.getElementById(`${container}_${name}_${point}`);
+        let img = document.getElementById(`${id}_${name}_${point}`);
         if (Number(this.value).toFixed(2) == point) {
           img.style.opacity = "1";
         } else {
@@ -572,8 +623,11 @@ function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec,
   // selectively hide/unhide the portraits 
   // as the slider scrolls through
 
-  return (dimensions, slice_offset, proj=projection) => {
-  }
+  // return (dimensions, slice_offset, proj=projection) => {
+  //   for (const func of redraws) {
+  //     func(dimensions, slice_offset);
+  //   }
+  // }
       
   
   // buttons for navigating along the interpolation

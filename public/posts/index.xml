@@ -57,7 +57,7 @@ would be written something like this:&lt;/p&gt;
 &lt;script&gt;
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
-const vec_space_1000 = rand(100, 1000);
+const vec_space_1000 = rand(10_000, 1000);
 let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, &#34;3d_lerp&#34;, lerp, demo_start, demo_stop,
                                           identity_transform);
 redraw_3d_lerp(3, 0, identity_transform);
@@ -599,7 +599,9 @@ let redraw_slerp = get_interpolated_chart(vec_space_1000, &#34;spherical_slerp&#
                                           vecs_to_spherical);
 let widget3 = get_vector_widget(vec_space_1000[0], &#34;slerp_vec&#34;, redraw_slerp, 1);
 &lt;/script&gt;
-&lt;h1 id=&#34;slerp_2&#34;&gt;Slerp_2&lt;/h1&gt;
+&lt;h1 id=&#34;what-is-slerp-actually-doing&#34;&gt;What Is Slerp Actually Doing?&lt;/h1&gt;
+&lt;p&gt;Remember the definition of the slerp function &lt;a href=&#34;http://localhost:1313/posts/latent_space/#the-obvious-answer-is-wrong&#34;&gt;from earlier?&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=&#34;a-better-slerp&#34;&gt;A Better Slerp&lt;/h1&gt;
 &lt;div id=&#34;spherical_slerp2&#34;&gt;&lt;/div&gt;
 &lt;div id=&#34;slerp_vec2&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
@@ -613,16 +615,16 @@ let widget3_2 = get_vector_widget(vec_space_1000[0], &#34;slerp_vec2&#34;, redra
 &lt;h2 id=&#34;comparing-the-lerps-with-real-vectors&#34;&gt;Comparing the &amp;rsquo;lerps with real vectors&lt;/h2&gt;
 &lt;div id=&#34;through_origin&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
-let stylegan_space = randn(10000, 512);
+let stylegan_space = randn(1000, 512);
+let interp_points = [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00];
 fetch(&#34;vecs.json&#34;)
     .then(response =&gt; response.json())
     .then(jvecs =&gt; {
     start_through_origin = jvecs.z;
     stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
-    let redraw = get_multi_interp_chart(stylegan_space, &#34;through_origin&#34;, lerp, start_through_origin, stop_through_origin, 
-                                        &#34;./near_origin&#34;, [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00],
+    let redraw = get_multi_interp_chart(stylegan_space, &#34;through_origin&#34;, {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
+                                        &#34;./near_origin&#34;, interp_points,
                                         vecs_to_spherical);
-    redraw(512, 0);
     });
 &lt;/script&gt;
 &lt;div id=&#34;through_origin_with_scale&#34;&gt;&lt;/div&gt;
@@ -632,12 +634,24 @@ fetch(&#34;vecs.json&#34;)
     .then(jvecs =&gt; {
     start_scale = mult(jvecs.z, 0.9999);
     stop_scale = add(mult(jvecs.z, -1.0001), 1e-4);
-    let redraw_scale = get_interpolated_chart(stylegan_space, &#34;through_origin_with_scale&#34;, slerp2, start_scale, stop_scale,
-                                        vecs_to_spherical);
-    redraw_scale(512, 0);
+    let redraw_scale = get_multi_interp_chart(stylegan_space, &#34;through_origin_with_scale&#34;, {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
+                                                start_scale, stop_scale, &#34;./near_origin_scale&#34;, 
+                                                interp_points, vecs_to_spherical);
     });
 &lt;/script&gt;
-# Interpretations
+&lt;div id=&#34;random&#34;&gt;&lt;/div&gt;
+&lt;script&gt;
+fetch(&#34;vecs.json&#34;)
+    .then(response =&gt; response.json())
+    .then(jvecs =&gt; {
+    start_scale = jvecs.random_start;
+    stop_scale = jvecs.random_stop;
+    let redraw_scale = get_multi_interp_chart(stylegan_space, &#34;random&#34;, {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
+                                                start_scale, stop_scale, &#34;./random&#34;, 
+                                                interp_points, vecs_to_spherical);
+    });
+&lt;/script&gt;
+&lt;h1 id=&#34;interpretations&#34;&gt;Interpretations&lt;/h1&gt;
 &lt;p&gt;Geometric:&lt;/p&gt;
 &lt;p&gt;Great Post! &lt;a href=&#34;https://www.johndcook.com/blog/2011/09/01/multivariate-normal-shell/&#34;&gt;https://www.johndcook.com/blog/2011/09/01/multivariate-normal-shell/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Think about what we saw as we increased the number of dimensions of our space,

@@ -62,7 +62,7 @@ In 3D-space, this looks like:
 <script>
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
-const vec_space_1000 = rand(100, 1000);
+const vec_space_1000 = rand(10_000, 1000);
 let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, "3d_lerp", lerp, demo_start, demo_stop,
                                           identity_transform);
 redraw_3d_lerp(3, 0, identity_transform);
@@ -728,6 +728,11 @@ well outside the bounds of anything the model has been trained on.
 
 ## Why Does Lerp Behave Like This in Higher Dimensional Spaces?
 
+[[[[[[explain that the midpoint of lerp is necesssarily much closer to the 
+origin than any random point]]]]]]
+
+[[[also maybe a quick aside about distribution]]]
+
 # Slerp
 
 <div id="spherical_slerp"></div>
@@ -738,7 +743,152 @@ let redraw_slerp = get_interpolated_chart(vec_space_1000, "spherical_slerp", sle
 let widget3 = get_vector_widget(vec_space_1000[0], "slerp_vec", redraw_slerp, 1);
 </script>
 
-# Slerp_2
+# What Is Slerp Actually Doing?
+
+Remember the definition of the slerp function [from earlier?](#the-obvious-answer-is-wrong)
+Let's break down where it came from, and what it's actually doing.
+
+By looking at the projections above, you hopefully have a good intuition for
+*what* slerp is doing. The hints are in its name - spherical linear interpolation.
+The function works by **rotating** about the origin. Instead of translating from
+point A to point B, slerp rotates between the two points, and scales the magnitude
+of the vector while doing so. 
+
+As our spherical coordinate projections [above showed,](#why-bother-with-spherical-coordinates)
+higher dimensional spaces converge to a hyperspherical shell. To stay in this shell, we 
+want to orbit around the origin, keeping the vector magnitude (approximately) constant. This
+is what slerp does, or tries to do.
+
+To actually get to the code, we have two parts:
+
+1) Rotating in hyperspace.
+2) Scaling between the two vectors' magnitudes.
+
+Part 1) is provided to us by Shoemake & Davis, in the paper 
+[Animating Rotation with Quaternion Curves](https://dl.acm.org/doi/pdf/10.1145/325334.325242).
+In it, a rotation between two [quaternions](https://www.youtube.com/watch?v=zjMuIxRvygQ),
+\(q_1\) and \(q_2\), is given by the formula:
+
+\[
+    \text{Slerp}(q_1, q_2; u) = \frac{\sin( (1 - u)\omega)}{\sin \omega} q_1 + \frac{\sin u\omega}{\sin \omega} q_2
+\]
+
+Where \(u\) is the `fraction` parameter between 0 and 1, and \(q_1 \cdot q_2 = \cos \omega\).
+
+It turns out that this equation generalizes to n-dimensional vectors. Hence, we have part 1): a function to 
+rotate from one vector to another. I'm unclear how "optimal" this rotation is, since there are many ways to 
+rotate between two vectors in hyperspace. However, rotation - or "distance preserving linear maps" - are
+very complicated and dimension-specific, so sticking with a general formula that works is a good plan.
+
+If we recall the definition of the dot product of two vectors:
+
+\[
+    a \cdot b = \vert \vert a \vert \vert  \space  \vert \vert b \vert \vert \cos \omega
+\]
+
+Where \(\omega\) is the angle between the two vectors. We need \(\omega\) for our 
+slerp formula. So, we can rewrite the formula as:
+
+\[
+    \omega = \arccos( \frac{a}{\vert\vert a \vert \vert} \cdot \frac{b}{\vert \vert b \vert \vert} )
+\]
+
+Another way of thinking about \(\frac{a}{\vert \vert a \vert \vert}\) is that is this is \(\hat{a}\)
+(pronounced a-hat) - the unit (length 1) vector which represents only the direction components of a.
+
+This is indeed what the python slerp function does:
+
+```python
+omega = np.arccos(np.clip(np.dot(start_vec/np.linalg.norm(start_vec), stop_vec/np.linalg.norm(stop_vec)), -1, 1))
+```
+
+Now that we have \(\omega\), we can plug it into Shoemake & Davis' Slerp, to get:
+
+```python
+so = np.sin(omega)
+start_hat = start_vec / np.linalg.norm(start_vec)
+stop_hat = stop_vec / np.linalg.norm(stop_vec)
+
+new_direction = np.sin((1.0-fraction)*omega) / so * start_hat  + np.sin(fraction*omega) / so * stop_hat
+```
+
+This **isn't** what the slerp code from [the DCGAN thread](https://github.com/soumith/dcgan.torch/issues/14)
+does. Rather, this is the actual code:
+
+```python
+so = np.sin(omega)
+
+return np.sin((1.0-fraction)*omega) / so * start_vec + np.sin(fraction*omega) / so * stop_vec
+```
+
+There's a subtle difference - the vectors used in slerp - above titled \(q_1\) and \(q_2\) are not 
+normalized. And, rather than just calculating the angle, this line also does part 2), the vector 
+magntiude scaling. 
+
+What this means is that `slerp` is only actually using Shoemake & Davis' formula
+when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,
+it's effectively doing this:
+
+```python
+def slerp(fraction, start_vec, stop_vec):
+    start_mag = np.linalg.norm(start_vec) # ||a||
+    stop_mag = np.linalg.norm(stop_vec) # ||b||, approx. ||a||
+
+    start_hat = start_vec / start_mag # a_hat
+    stop_hat = stop_vec / stop_mag # b_hat
+
+    omega = np.arccos(np.clip(np.dot(start_hat, stop_hat), -1, 1))
+    so = np.sin(omega)
+
+    angle = (
+          np.sin((1.0 - fraction) * omega) / so * start_hat
+        + np.sin(fraction * omega) / so * stop_hat
+        )
+
+    return start_mag * angle
+```
+
+When the magnitudes of the two vectors are not particularly close,
+such as in lower dimensions, this formula can give quite strange
+results.
+
+A slight improvement can be had by explicitly treating the interpolation between 
+the two vectors' magnitudes, and normalizing the vectors before performing the 
+slerp. This results in visually smoother paths, 
+and tends to overshoot the data bounds less when there are large changes in vector 
+magnitude.
+
+We treat the vector magnitude explicitly, and just linearly interpolate (`lerp`) between
+the magnitude of the first vector and the magnitude of the second vector. For the
+purposes of this article, and at risk of being conceited, I'll call this function `slerp2`.
+It is moderately more complicated than `slerp`. The implementation here is formatted for 
+readability, not performance.
+
+```python
+def slerp2(fraction, start_vec, stop_vec):
+    start_mag = np.linalg.norm(start_vec) # ||a||
+    stop_mag = np.linalg.norm(stop_vec) # ||b||
+
+    start_hat = start_vec / start_mag # a_hat
+    stop_hat = stop_vec / stop_mag # b_hat
+
+    omega = np.arccos(np.clip(np.dot(start_hat, stop_hat), -1, 1))
+    so = np.sin(omega)
+
+    magnitude = start_mag + (start_mag - stop_mag) * fraction # lerp
+
+    angle = (
+          np.sin((1.0 - fraction) * omega) / so * start_hat
+        + np.sin(fraction * omega) / so * stop_hat
+        )
+
+    return magnitude * angle
+```
+
+# Slerp2
+
+
+
 <div id="spherical_slerp2"></div>
 <div id="slerp_vec2"></div>
 <script>
@@ -759,16 +909,16 @@ let widget3_2 = get_vector_widget(vec_space_1000[0], "slerp_vec2", redraw_slerp2
 
 <div id="through_origin"></div>
 <script>
-let stylegan_space = randn(10000, 512);
+let stylegan_space = randn(1000, 512);
+let interp_points = [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00];
 fetch("vecs.json")
     .then(response => response.json())
     .then(jvecs => {
     start_through_origin = jvecs.z;
     stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
     let redraw = get_multi_interp_chart(stylegan_space, "through_origin", {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
-                                        "./near_origin", [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00],
+                                        "./near_origin", interp_points,
                                         vecs_to_spherical);
-    redraw(512, 0);
     });
 </script>
 
@@ -779,11 +929,26 @@ fetch("vecs.json")
     .then(jvecs => {
     start_scale = mult(jvecs.z, 0.9999);
     stop_scale = add(mult(jvecs.z, -1.0001), 1e-4);
-    let redraw_scale = get_interpolated_chart(stylegan_space, "through_origin_with_scale", slerp2, start_scale, stop_scale,
-                                        vecs_to_spherical);
-    redraw_scale(512, 0);
+    let redraw_scale = get_multi_interp_chart(stylegan_space, "through_origin_with_scale", {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
+                                                start_scale, stop_scale, "./near_origin_scale", 
+                                                interp_points, vecs_to_spherical);
     });
 </script>
+
+
+<div id="random"></div>
+<script>
+fetch("vecs.json")
+    .then(response => response.json())
+    .then(jvecs => {
+    start_scale = jvecs.random_start;
+    stop_scale = jvecs.random_stop;
+    let redraw_scale = get_multi_interp_chart(stylegan_space, "random", {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
+                                                start_scale, stop_scale, "./random", 
+                                                interp_points, vecs_to_spherical);
+    });
+</script>
+
 # Interpretations
 
 Geometric:
