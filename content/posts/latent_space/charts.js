@@ -458,8 +458,8 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
   options_3d.marker_settings.opacity = 0.7;
 
 
-    let redraw_points = get_projected_chart(vectors, id, ["", "", ""], projection,
-      options_2d, options_3d,); 
+  let redraw_points = get_projected_chart(vectors, id, ["", "", ""], projection,
+    options_2d, options_3d,); 
   
   let redraw_interp_2d = draw_2d_interp(
     `${id}_fig_2d`, start_vec, stop_vec, 1, interpolator, 0, 
@@ -478,8 +478,105 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
   return redraw;
 }
 
+function generate_picture_frames(container, interpolators, pictures_folder, points, default_val) {
+  let frame = container.appendChild(document.createElement("div"));
+  frame.style.display = "flex";
+  frame.style.justifyContent = "space-around";
+  frame.style.height = "calc(min(30vh, 200px))";
+  frame.style.margin = "20px 20px 20px 20px";
+  frame.style.justifyContent = "space-around";
+
+  for (const [name, _] of Object.entries(interpolators)) {
+    let sub_frame = frame.appendChild(document.createElement("figure"));
+    let title = sub_frame.appendChild(document.createElement("figcaption"));
+    title.textContent = name;
+    title.style.width = "calc(min(30%, 200px))";
+    sub_frame.style.position = "relative";
+    sub_frame.style.width = "calc(min(30%, 200px))";
+    sub_frame.style.height = "calc(min(30vh, 200px) + 1rem)";
+    for (const point of points)  {
+      let img = sub_frame.appendChild(document.createElement("img"));
+      img.style.position = "absolute";
+      img.style.top = "2rem";
+      img.style.right = "0";
+      img.style.transitionDuration = "0.5s";
+      img.style.transitionTimingFunction = "linear";
+      img.src = `${pictures_folder}/${name}/${point}.jpg`;
+      img.id = `${container}_${name}_${point}`;
+      if (Number(point) != default_val) {
+        img.style.opacity = "0";
+      }
+    }
+  }
+}
+
 function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec, 
-  pictures_folder, projection=identity_transform) {
+  pictures_folder, points, projection=identity_transform) {
+  let container = document.getElementById(id);
+
+  let plot_box = container.appendChild(document.createElement("div"));
+  plot_box.id = id + "_plot_box";
+  let darker_plot = "rgb(150, 150, 150)";
+
+  let options_2d = structuredClone(EMPTY_PLOT_OPTIONS);
+  options_2d.marker_settings = structuredClone(DEFAULT_MARKERS);
+  options_2d.marker_settings.color = darker_plot;
+  options_2d.marker_settings.opacity = 0.7;
+
+  let options_3d = structuredClone(EMPTY_PLOT_OPTIONS);
+  options_3d.marker_settings = structuredClone(DEFAULT_3D_MARKERS);
+  options_3d.marker_settings.color = darker_plot;
+  options_3d.marker_settings.opacity = 0.7;
+
+  let redraw_points = get_projected_chart(vectors, plot_box.id, ["", "", ""], projection,
+    options_2d, options_3d);
+
+  // redraw the points at the max dimensionality
+  redraw_points(vectors[0].length, 0);
+
+  let point_list = container.appendChild(document.createElement("datalist"));
+  point_list.id = id + "_datalist";
+
+  let slider_div = document.createElement("div");
+  let slider = slider_div.appendChild(document.createElement("input"));
+  slider.id = id + "_slider";
+  slider.style.display = "flex";
+  slider.style.justifyContent = "center";
+  slider.style.width = "auto";
+  slider.style.margin = "auto";
+  slider.style.marginTop = "10px";
+  slider.style.marginTop = "10px";
+  container.appendChild(slider_div);
+  slider.type = "range";
+  slider.min = "0";
+  slider.max = "1";
+  slider.value = "0";
+  slider.step = `${1 / (points.length - 1)}`;
+  slider.style.height = "15px";
+
+  generate_picture_frames(container, interpolators, pictures_folder, points, 0); 
+  slider.oninput = function(input){
+    for (const [name, _] of Object.entries(interpolators)) {
+      for (const point of points) {
+        let img = document.getElementById(`${container}_${name}_${point}`);
+        if (Number(this.value).toFixed(2) == point) {
+          img.style.opacity = "1";
+        } else {
+          img.style.opacity = "0";
+        }
+      }
+    }
+  };
+
+  // pre-fetch all the portraits
+  // selectively hide/unhide the portraits 
+  // as the slider scrolls through
+
+  return (dimensions, slice_offset, proj=projection) => {
+  }
+      
+  
+  // buttons for navigating along the interpolation
     
   // get a slider for traversing the interpolations
   // get a picture widget
@@ -498,3 +595,4 @@ function identity_transform(vec, dimensions, elem0, elem1, elem2) {
     return [vec, elem0];
   }
 }
+

@@ -140,7 +140,7 @@ To dramatically oversimplify, these neural networks take an input vector, do som
   <h1 class="post-title">
     <a href="http://localhost:1313/posts/latent_space/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">16 min read (3282 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">16 min read (3292 words)</span></div>
 
   
   
@@ -176,11 +176,6 @@ being able to chart paths through their latent space.</p>
 <p>For example, if we want to smoothly blend from the first painting above to the second,
 we need a way to traverse from the vector representing one image
 to the vector representing the other.</p>
-<script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
-<script src="math_lib.js"></script>
-<script src="charts.js"></script>
-<script src="vector_math.js"></script>
-<script src="interp.js"></script>
 <h2 id="the-obvious-answer-is-wrong">The obvious answer (is wrong)<a href="#the-obvious-answer-is-wrong" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>To get from point A to point B, the obvious answer is to go in as straight a
 line as possible. The simplest answer here is also the shortest.
@@ -189,12 +184,17 @@ with varying degrees of success. This is known as linear interpolation (lerp), a
 would be written something like this:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">lerp</span>(fraction, start_vec, stop_vec):
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> start_vec <span style="color:#f92672">+</span> fraction <span style="color:#f92672">*</span> (stop_vec <span style="color:#f92672">-</span> start_vec)
-</span></span></code></pre></div><p>In 3D-space, this looks like:</p>
+</span></span></code></pre></div><script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="math_lib.js"></script>
+<script src="charts.js"></script>
+<script src="vector_math.js"></script>
+<script src="interp.js"></script>
+<p>In 3D-space, this looks like:</p>
 <div id="3d_lerp"></div>
 <script>
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
-const vec_space_1000 = rand(10000, 1000);
+const vec_space_1000 = rand(100, 1000);
 let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, "3d_lerp", lerp, demo_start, demo_stop,
                                           identity_transform);
 redraw_3d_lerp(3, 0, identity_transform);
@@ -591,22 +591,43 @@ change which elements of \(\vec{v}\) we&rsquo;re using to calculate
 \(\theta_1\) and \(\theta_2\).</p>
 </blockquote>
 </div>
+<p>You can also change the noise distribution to:
+<span><button id="noise_gaussian" style="display: block;" onclick="
+// change which button is displayed
+document.getElementById('noise_uniform').style.display = 'block';
+document.getElementById('noise_gaussian').style.display = 'none';
+// redraw the last chart
+redraw_proj(randn(10000, 1000));
+">gaussian</button></span>
+<span><button id="noise_uniform" style="display: none;" onclick="
+// change which button is displayed
+document.getElementById('noise_gaussian').style.display = 'block';
+document.getElementById('noise_uniform').style.display = 'none';
+// redraw the last chart
+redraw_proj(vec_space_1000);
+">uniform</button></span></p>
 <script>
 let dims_with_text = [1, 2, 3, 4, 5];
-let redraw_spherical = get_projected_chart(vec_space_1000, 'spherical', ["", "", ""], vecs_to_spherical);
-let callback = (dimensions, slice_offset) => {
-    for (let dim of dims_with_text) {
-        if (dim == dimensions) {
-            document.getElementById(`tooltip-${dimensions}space`).style.display = "block";
-        } else if (dimensions > dims_with_text[dims_with_text.length - 1]) {
-            document.getElementById(`tooltip-${dims_with_text[dims_with_text.length - 1]}space`).style.display = "block";
-        } else {
-            document.getElementById(`tooltip-${dim}space`).style.display = "none";
+function redraw_proj(vector_space) {
+    document.getElementById('spherical').innerHTML = '';
+    document.getElementById('spherical_vec').innerHTML = '';
+
+    let redraw_spherical = get_projected_chart(vector_space, 'spherical', ["", "", ""], vecs_to_spherical);
+    let callback = (dimensions, slice_offset) => {
+        for (let dim of dims_with_text) {
+            if (dim == dimensions) {
+                document.getElementById(`tooltip-${dimensions}space`).style.display = "block";
+            } else if (dimensions > dims_with_text[dims_with_text.length - 1]) {
+                document.getElementById(`tooltip-${dims_with_text[dims_with_text.length - 1]}space`).style.display = "block";
+            } else {
+                document.getElementById(`tooltip-${dim}space`).style.display = "none";
+            }
         }
+        redraw_spherical(dimensions, slice_offset);
     }
-    redraw_spherical(dimensions, slice_offset);
+    let widget = get_vector_widget(vector_space[0], 'spherical_vec', callback, 1);
 }
-let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', callback, 1);
+redraw_proj(vec_space_1000);
 </script>
 <h2 id="whats-going-on">What&rsquo;s going on?<a href="#whats-going-on" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>Our projection has shown us an unintuitive, but true, fact about
@@ -735,7 +756,8 @@ fetch("vecs.json")
     .then(jvecs => {
     start_through_origin = jvecs.z;
     stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
-    let redraw = get_interpolated_chart(stylegan_space, "through_origin", lerp, start_through_origin, stop_through_origin,
+    let redraw = get_multi_interp_chart(stylegan_space, "through_origin", {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
+                                        "./near_origin", [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00],
                                         vecs_to_spherical);
     redraw(512, 0);
     });

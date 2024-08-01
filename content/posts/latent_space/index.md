@@ -36,13 +36,6 @@ For example, if we want to smoothly blend from the first painting above to the s
 we need a way to traverse from the vector representing one image
 to the vector representing the other. 
 
-<script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
-<script src="math_lib.js"></script>
-<script src="charts.js"></script>
-<script src="vector_math.js"></script>
-<script src="interp.js"></script>
-
-
 ## The obvious answer (is wrong)
 
 To get from point A to point B, the obvious answer is to go in as straight a 
@@ -56,13 +49,20 @@ would be written something like this:
         return start_vec + fraction * (stop_vec - start_vec)
 ```
 
+<script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="math_lib.js"></script>
+<script src="charts.js"></script>
+<script src="vector_math.js"></script>
+<script src="interp.js"></script>
+
+
 In 3D-space, this looks like:
 
 <div id="3d_lerp"></div>
 <script>
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
-const vec_space_1000 = rand(10000, 1000);
+const vec_space_1000 = rand(100, 1000);
 let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, "3d_lerp", lerp, demo_start, demo_stop,
                                           identity_transform);
 redraw_3d_lerp(3, 0, identity_transform);
@@ -557,22 +557,44 @@ vector.
 >\(\theta_1\) and \(\theta_2\).
 </div>
 
+You can also change the noise distribution to:
+<span><button id="noise_gaussian" style="display: block;" onclick="
+// change which button is displayed
+document.getElementById('noise_uniform').style.display = 'block';
+document.getElementById('noise_gaussian').style.display = 'none';
+// redraw the last chart
+redraw_proj(randn(10000, 1000));
+">gaussian</button></span>
+<span><button id="noise_uniform" style="display: none;" onclick="
+// change which button is displayed
+document.getElementById('noise_gaussian').style.display = 'block';
+document.getElementById('noise_uniform').style.display = 'none';
+// redraw the last chart
+redraw_proj(vec_space_1000);
+">uniform</button></span>
+
 <script>
 let dims_with_text = [1, 2, 3, 4, 5];
-let redraw_spherical = get_projected_chart(vec_space_1000, 'spherical', ["", "", ""], vecs_to_spherical);
-let callback = (dimensions, slice_offset) => {
-    for (let dim of dims_with_text) {
-        if (dim == dimensions) {
-            document.getElementById(`tooltip-${dimensions}space`).style.display = "block";
-        } else if (dimensions > dims_with_text[dims_with_text.length - 1]) {
-            document.getElementById(`tooltip-${dims_with_text[dims_with_text.length - 1]}space`).style.display = "block";
-        } else {
-            document.getElementById(`tooltip-${dim}space`).style.display = "none";
+function redraw_proj(vector_space) {
+    document.getElementById('spherical').innerHTML = '';
+    document.getElementById('spherical_vec').innerHTML = '';
+
+    let redraw_spherical = get_projected_chart(vector_space, 'spherical', ["", "", ""], vecs_to_spherical);
+    let callback = (dimensions, slice_offset) => {
+        for (let dim of dims_with_text) {
+            if (dim == dimensions) {
+                document.getElementById(`tooltip-${dimensions}space`).style.display = "block";
+            } else if (dimensions > dims_with_text[dims_with_text.length - 1]) {
+                document.getElementById(`tooltip-${dims_with_text[dims_with_text.length - 1]}space`).style.display = "block";
+            } else {
+                document.getElementById(`tooltip-${dim}space`).style.display = "none";
+            }
         }
+        redraw_spherical(dimensions, slice_offset);
     }
-    redraw_spherical(dimensions, slice_offset);
+    let widget = get_vector_widget(vector_space[0], 'spherical_vec', callback, 1);
 }
-let widget = get_vector_widget(vec_space_1000[0], 'spherical_vec', callback, 1);
+redraw_proj(vec_space_1000);
 </script>
 
 ## What's going on?
@@ -706,7 +728,6 @@ well outside the bounds of anything the model has been trained on.
 
 ## Why Does Lerp Behave Like This in Higher Dimensional Spaces?
 
-
 # Slerp
 
 <div id="spherical_slerp"></div>
@@ -744,7 +765,8 @@ fetch("vecs.json")
     .then(jvecs => {
     start_through_origin = jvecs.z;
     stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
-    let redraw = get_interpolated_chart(stylegan_space, "through_origin", lerp, start_through_origin, stop_through_origin,
+    let redraw = get_multi_interp_chart(stylegan_space, "through_origin", {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
+                                        "./near_origin", [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00],
                                         vecs_to_spherical);
     redraw(512, 0);
     });
