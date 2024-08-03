@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title> :: willsnell</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="&lt;!DOCTYPE html&gt; " />
+<meta name="keywords" content="" />
+
+  <meta name="robots" content="noodp" />
+
+<link rel="canonical" href="https://willsnell.com/drafts/hyperspace/testing2/" />
+
+
+  
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="https://willsnell.com/styles.css">
+
+
+
+
+
+
+
+  <link rel="shortcut icon" href="https://willsnell.com/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="https://willsnell.com/img/theme-colors/orange.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="">
+<meta property="og:description" content="&lt;!DOCTYPE html&gt; " />
+<meta property="og:url" content="https://willsnell.com/drafts/hyperspace/testing2/" />
+<meta property="og:site_name" content="willsnell" />
+
+  
+    <meta property="og:image" content="https://willsnell.com/img/favicon/orange.png">
+  
+
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="orange">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    will_snell
+  </div>
+</a>
+
+    </div>
+    
+      <ul class="menu menu--mobile">
+  <li class="menu__trigger">Menu&nbsp;▾</li>
+  <li>
+    <ul class="menu__dropdown">
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+      
+    </ul>
+  </li>
+</ul>
+
+    
+    
+  </div>
+  
+    <nav class="navigation-menu">
+  <ul class="navigation-menu__inner menu--desktop">
+    
+      
+        
+          <li><a href="/about" >About</a></li>
+        
+      
+      
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<article class="post">
+  <h1 class="post-title">
+    <a href="https://willsnell.com/drafts/hyperspace/testing2/"></a>
+  </h1>
+  <div class="post-meta"><span class="post-reading-time">1 min read (2 words)</span></div>
+
+  
+  
+
+
+  
+
+  <div class="post-content"><div>
+        <!DOCTYPE html>
+<head>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<script src="plotly-2.32.0.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+<div id='vector'></div>
+
+<script>
+const VEC_ELEMS_DISPLAYED = 8;
+const AVAILABLE_DIMENSIONS = [1, 2, 3, 4, 5, 6, 10, 20, 50, 100, 1000];
+
+
+function latexize_vector(vector, element_id, slice_offset, dimensions, num_selected) {
+  if (dimensions > vector.length) throw("Dimensions > vector length");
+  let latex_str = `
+    \\[
+    \\mathbf{
+    \\begin{align}
+\\vec{v_{${dimensions}}} = \\begin{bmatrix}`;
+
+  const start = Math.max(0, Math.min(slice_offset, dimensions - VEC_ELEMS_DISPLAYED));
+  const desired_stop = Math.min(dimensions, slice_offset + VEC_ELEMS_DISPLAYED);
+    
+  // Adding dots increases the size of the vector, so we need
+  // this check to stop the vector increasing and decreasing
+  // in length as we scroll through.
+  const stop = (start > 0 && desired_stop < dimensions) ? desired_stop - 1 : desired_stop;
+
+  if (start > 0) latex_str += `\\vdots \\\\`;
+  for (let i = start; i < stop; i++) {
+    if ((i - slice_offset) >= 0 && (i - slice_offset) < num_selected) {
+      latex_str += `\\mathbf{${vector[i].toFixed(2)}} \\\\`
+    } else {
+      latex_str += `${vector[i].toFixed(2)} \\\\`
+    }
+  }
+  if (stop < dimensions) latex_str += `\\vdots \\\\`;
+
+  latex_str += `\\end{bmatrix}
+              \\end{align}
+            }
+            \\]`;
+  document.getElementById(element_id).innerHTML = latex_str;
+}
+
+function get_vector_widget(vector, id, start_dims=0, start_offset=0, num_selected=2) {
+  let current_dims = start_dims;
+  let current_offset = start_offset;
+
+  const container = document.getElementById(id);
+  const dim_plus = container.appendChild(document.createElement("button"));
+  const dim_minus = container.appendChild(document.createElement("button"));
+  const slice_plus = container.appendChild(document.createElement("button"));
+  const slice_minus = container.appendChild(document.createElement("button"));
+  
+  const vec_div = container.appendChild(document.createElement("div"));
+  vec_div.id = id + "_vec_div";
+
+  async function redraw_vec() {
+    latexize_vector(vector, vec_div.id, current_offset, AVAILABLE_DIMENSIONS[current_dims], num_selected);
+    await MathJax.typesetPromise();
+  }
+
+  redraw_vec();
+
+
+  // create +dimensions button
+  dim_plus.textContent = "dim+";
+  dim_plus.onclick = () => {
+    if (AVAILABLE_DIMENSIONS[current_dims + 1] <= vector.length) {
+      current_dims = current_dims + 1
+      current_offset = Math.min(current_offset, AVAILABLE_DIMENSIONS[current_dims] - num_selected);
+      redraw_vec();
+    };
+  };
+  // create -dimensions button
+  dim_minus.textContent = "dim-";
+  dim_minus.onclick = () => {
+    current_dims = Math.max(0, current_dims - 1);
+    current_offset = Math.min(current_offset, AVAILABLE_DIMENSIONS[current_dims] - num_selected);
+    redraw_vec();
+  }; 
+  // create +slice button
+  slice_plus.textContent = "slice+";
+  slice_plus.onclick = () => {
+    current_offset = Math.min(AVAILABLE_DIMENSIONS[current_dims] - num_selected, current_offset + 1); 
+    redraw_vec();
+  };
+
+  // create -slice button
+  slice_minus.textContent = "slice-";
+  slice_minus.onclick = () => {
+    current_offset = Math.max(0, current_offset - 1); 
+    redraw_vec();
+  };
+
+
+}
+  // hook buttons up to relevant plot callbacks
+
+get_vector_widget(Array.from({length: 1000}, (v, i) => i), 'vector', 0, 0, 1);
+
+</script>
+
+      </div></div>
+
+  
+
+  
+    
+
+  
+</article>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2024 Powered by <a href="https://gohugo.io">Hugo</a></span>
+    
+      <span>:: <a href="https://github.com/panr/hugo-theme-terminal" target="_blank">Theme</a> made by <a href="https://github.com/panr" target="_blank">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+
+
+
+
+
+<script type="text/javascript" src="/bundle.min.js"></script>
+
+
+
+
+
+  
+
+  
+    
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      displayMath: [['\\[', '\\]'], ['$$', '$$']],  
+      inlineMath: [['\\(', '\\)']]                  
+    }
+  };
+</script>
+
+
+  
+</div>
+
+</body>
+</html>
