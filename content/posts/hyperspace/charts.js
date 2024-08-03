@@ -1,7 +1,8 @@
 const DEFAULT_CONFIG = {
   displayModeBar: false,
-  dragMode: false,
-  scrollZoom: true,
+  dragmode: false,
+  scrollZoom: ['cartesian+gl3d'],
+  showAxisDragHandles: false,
 };
 
 const accent_color = window.getComputedStyle(document.querySelector(".post-title")).color.toString();
@@ -22,6 +23,7 @@ const DEFAULT_2D_LAYOUT = {
   autosize: false,
   hovermode: false,
   showlegend: false,
+  dragmode: false,
   margin: {
     l: 40,
     r: 40,
