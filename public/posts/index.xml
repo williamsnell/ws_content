@@ -52,8 +52,7 @@ with varying degrees of success. This is known as linear interpolation (lerp), a
 would be written something like this:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;lerp&lt;/span&gt;(fraction, start_vec, stop_vec):
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; start_vec &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; fraction &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; (stop_vec &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; start_vec)
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;script src=&#34;https://unpkg.com/virtual-webgl@1.0.6/src/virtual-webgl.js&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;https://cdn.plot.ly/plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;script src=&#34;https://cdn.plot.ly/plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
 &lt;script src=&#34;math_lib.js&#34;&gt;&lt;/script&gt;
 &lt;script src=&#34;charts.js&#34;&gt;&lt;/script&gt;
 &lt;script src=&#34;vector_math.js&#34;&gt;&lt;/script&gt;

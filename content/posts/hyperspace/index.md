@@ -57,7 +57,6 @@ would be written something like this:
         return start_vec + fraction * (stop_vec - start_vec)
 ```
 
-<script src="https://unpkg.com/virtual-webgl@1.0.6/src/virtual-webgl.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
 <script src="math_lib.js"></script>
 <script src="charts.js"></script>
