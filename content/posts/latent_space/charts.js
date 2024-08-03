@@ -584,6 +584,12 @@ function get_multi_interp_chart(vectors, id, interpolators, start_vec, stop_vec,
   
   }
 
+  // Remove ticks and axes
+  let layout = structuredClone(DEFAULT_2D_LAYOUT);
+  layout.xaxis.tickvals = [];
+  layout.yaxis.tickvals = [];
+  Plotly.relayout(plotly_div.id, layout);
+
   let slider_div = container.appendChild(document.createElement("div"));
   let slider = slider_div.appendChild(document.createElement("input"));
   slider.id = id + "_slider";
