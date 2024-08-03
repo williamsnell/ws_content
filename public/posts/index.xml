@@ -215,8 +215,7 @@ inside its vector space:&lt;/p&gt;
 &lt;p&gt;We could &lt;em&gt;try&lt;/em&gt; using time as an extra dimension,
 but we&amp;rsquo;ve already run out of spatial dimensions.&lt;/p&gt;
 &lt;p&gt;Of course, we want to go far beyond a mere &lt;em&gt;four&lt;/em&gt; dimensions.
-Even if we used
-How would we visualize something like this?&lt;/p&gt;
+Even if we used time, how would we visualize something like this?&lt;/p&gt;
 \[
 \begin{align}
     \vec{v}_{1000} = \begin{bmatrix}
