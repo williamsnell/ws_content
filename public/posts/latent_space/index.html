@@ -7,7 +7,7 @@
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Why explore hyperspace? Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful and (dare I say) fun.
-Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspace frequently shows up in neural networks, and by learning to explore hyperspace, we hope to get a better understanding of how they work." />
+Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspace frequently shows up in neural networks. By learning to explore hyperspace, we can try gain a better understanding of how they work." />
 <meta name="keywords" content="" />
 
   <meta name="robots" content="noodp" />
@@ -53,7 +53,7 @@ Spaces with dimensionality higher than 3 or 4 might be outside of our lived expe
 <meta property="og:type" content="article" />
 <meta property="og:title" content="Navigating Hyperspace">
 <meta property="og:description" content="Why explore hyperspace? Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful and (dare I say) fun.
-Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspace frequently shows up in neural networks, and by learning to explore hyperspace, we hope to get a better understanding of how they work." />
+Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspace frequently shows up in neural networks. By learning to explore hyperspace, we can try gain a better understanding of how they work." />
 <meta property="og:url" content="http://localhost:1313/posts/latent_space/" />
 <meta property="og:site_name" content="willsnell" />
 
@@ -138,7 +138,7 @@ Spaces with dimensionality higher than 3 or 4 might be outside of our lived expe
   <h1 class="post-title">
     <a href="http://localhost:1313/posts/latent_space/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">23 min read (4834 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">23 min read (4837 words)</span></div>
 
   
   
@@ -156,8 +156,8 @@ Spaces with dimensionality higher than 3 or 4 might be outside of our lived expe
 and (dare I say) fun.</p>
 <p>Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but
 that doesn&rsquo;t mean they don&rsquo;t exist, or that they can&rsquo;t be useful.
-For example, hyperspace frequently shows up in neural networks, and by
-learning to explore hyperspace, we hope to get a better understanding
+For example, hyperspace frequently shows up in neural networks. By
+learning to explore hyperspace, we can try gain a better understanding
 of how they work.</p>
 <p>The motivating
 example for this article comes from the sub-field of <a href="https://developers.google.com/machine-learning/gan">Generative Adversarial Networks</a>.</p>
@@ -913,9 +913,9 @@ this article were not exactly <em>randomly</em> picked. The second portrait is
 an (almost) exact opposite of the first - that is, the vector \(\vec{v}^2\)
 used to generate the second image was calculated as:</p>
 \[
-    \vec{v}^2 = - \vec{v}^1 + \eps
+    \vec{v}^2 = - \vec{v}^1 + \epsilon
 \]
-<p>Where \(\eps\) was necessary to prevent <code>slerp</code> and <code>slerp2</code> from blowing
+<p>Where \(\epsilon\) was a very small offset necessary to prevent <code>slerp</code> and <code>slerp2</code> from blowing
 up with a \(\frac{1}{\sin(0)}\) term. \(\vec{v}^1\) was a random vector
 from the correct distribution.</p>
 <p>This means our <code>lerp</code> from the first portrait to the second is a straight

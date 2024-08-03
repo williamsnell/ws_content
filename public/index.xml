@@ -14,14 +14,14 @@
       
       <guid>http://localhost:1313/posts/latent_space/</guid>
       <description>Why explore hyperspace? Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful and (dare I say) fun.
-Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspace frequently shows up in neural networks, and by learning to explore hyperspace, we hope to get a better understanding of how they work.</description>
+Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspace frequently shows up in neural networks. By learning to explore hyperspace, we can try gain a better understanding of how they work.</description>
       <content>&lt;h1 id=&#34;why-explore-hyperspace&#34;&gt;Why explore hyperspace?&lt;/h1&gt;
 &lt;p&gt;Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful
 and (dare I say) fun.&lt;/p&gt;
 &lt;p&gt;Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but
 that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful.
-For example, hyperspace frequently shows up in neural networks, and by
-learning to explore hyperspace, we hope to get a better understanding
+For example, hyperspace frequently shows up in neural networks. By
+learning to explore hyperspace, we can try gain a better understanding
 of how they work.&lt;/p&gt;
 &lt;p&gt;The motivating
 example for this article comes from the sub-field of &lt;a href=&#34;https://developers.google.com/machine-learning/gan&#34;&gt;Generative Adversarial Networks&lt;/a&gt;.&lt;/p&gt;
@@ -777,9 +777,9 @@ this article were not exactly &lt;em&gt;randomly&lt;/em&gt; picked. The second p
 an (almost) exact opposite of the first - that is, the vector \(\vec{v}^2\)
 used to generate the second image was calculated as:&lt;/p&gt;
 \[
-    \vec{v}^2 = - \vec{v}^1 + \eps
+    \vec{v}^2 = - \vec{v}^1 + \epsilon
 \]
-&lt;p&gt;Where \(\eps\) was necessary to prevent &lt;code&gt;slerp&lt;/code&gt; and &lt;code&gt;slerp2&lt;/code&gt; from blowing
+&lt;p&gt;Where \(\epsilon\) was a very small offset necessary to prevent &lt;code&gt;slerp&lt;/code&gt; and &lt;code&gt;slerp2&lt;/code&gt; from blowing
 up with a \(\frac{1}{\sin(0)}\) term. \(\vec{v}^1\) was a random vector
 from the correct distribution.&lt;/p&gt;
 &lt;p&gt;This means our &lt;code&gt;lerp&lt;/code&gt; from the first portrait to the second is a straight

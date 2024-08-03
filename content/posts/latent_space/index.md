@@ -975,10 +975,10 @@ an (almost) exact opposite of the first - that is, the vector \(\vec{v}^2\)
 used to generate the second image was calculated as:
 
 \[
-    \vec{v}^2 = - \vec{v}^1 + \eps
+    \vec{v}^2 = - \vec{v}^1 + \epsilon
 \]
 
-Where \(\eps\) was necessary to prevent `slerp` and `slerp2` from blowing
+Where \(\epsilon\) was a very small offset necessary to prevent `slerp` and `slerp2` from blowing
 up with a \(\frac{1}{\sin(0)}\) term. \(\vec{v}^1\) was a random vector
 from the correct distribution.
 
@@ -1062,7 +1062,7 @@ fetch("vecs.json")
     });
 </script>
 
-You'll note that even though `lerp` shows it's characteristically out-of-family
+You'll note that even though `lerp` shows its characteristically out-of-family
 vector magnitude, the results produced by all 3 interpolators are functionally
 identical.
 
