@@ -262,8 +262,7 @@ We could *try* using time as an extra dimension,
 but we've already run out of spatial dimensions. 
 
 Of course, we want to go far beyond a mere *four* dimensions. 
-Even if we used 
-How would we visualize something like this?
+Even if we used time, how would we visualize something like this?
 
 \[
 \begin{align}
