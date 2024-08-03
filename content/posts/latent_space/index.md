@@ -12,8 +12,8 @@ and (dare I say) fun.
 
 Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but
 that doesn't mean they don't exist, or that they can't be useful.
-For example, hyperspace frequently shows up in neural networks, and by
-learning to explore hyperspace, we hope to get a better understanding
+For example, hyperspace frequently shows up in neural networks. By
+learning to explore hyperspace, we can try gain a better understanding
 of how they work. 
 
 The motivating
