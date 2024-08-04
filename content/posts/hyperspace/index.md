@@ -12,7 +12,7 @@ and (dare I say) fun.
 
 Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but
 that doesn't mean they don't exist, or that they can't be useful.
-For example, hyperspace frequently shows up in neural networks. By
+For example, hyperspaces frequently shows up in neural networks. By
 learning to explore hyperspace, we can try gain a better understanding
 of how they work. 
 
@@ -58,6 +58,7 @@ would be written something like this:
 ```
 
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="observer.js" charset="utf-8"></script>
 <script src="math_lib.js"></script>
 <script src="charts.js"></script>
 <script src="vector_math.js"></script>
@@ -71,9 +72,12 @@ In 3D-space, this looks like:
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
 const vec_space_1000 = rand(10_000, 1000);
-let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, "3d_lerp", lerp, demo_start, demo_stop,
+spawn_plot("3d_lerp", (div_id) => {
+    let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, div_id, lerp, demo_start, demo_stop,
                                           identity_transform);
-redraw_3d_lerp(3, 0, identity_transform);
+    redraw_3d_lerp(3, 0, identity_transform);
+}
+);
 </script>
 
 > Note: Most of the plots on this page are interactive! Have a play!
@@ -99,9 +103,11 @@ this:
 
 <div id="3d_slerp"></div>
 <script>
-let redraw_3d_slerp = get_interpolated_chart(vec_space_1000, "3d_slerp", slerp, demo_start, demo_stop,
+spawn_plot("3d_slerp", (div_id) => {
+let redraw_3d_slerp = get_interpolated_chart(vec_space_1000, div_id, slerp, demo_start, demo_stop,
                                           identity_transform);
 redraw_3d_slerp(3, 0, identity_transform);
+});
 </script>
 
 When thinking about what a "good" interpolation path might look like, a few
@@ -183,7 +189,9 @@ distributed from -1 to 1, it would look like this:
 
 <script>
 const vec_space = rand(1000, 1);
-get_2d_chart(vec_space, "1d_space_chart", 0, ["", "", ""]);
+spawn_plot("1d_space_chart", (div_id) => {
+    get_2d_chart(vec_space, div_id, 0, ["", "", ""]);
+});
 </script>
 
 
@@ -198,7 +206,9 @@ something like this:
 
 <script>
 const vec_space_2 = rand(1_000, 2);
-get_2d_chart(vec_space_2, "2d_space_chart", 0, ["", "", ""]);
+spawn_plot("2d_space_chart", (div_id) => {
+    get_2d_chart(vec_space_2, div_id, 0, ["", "", ""]);
+});
 </script>
 
 For every possible location in this space, we can
@@ -236,7 +246,9 @@ this time in 3 dimensions:
 
 <script>
 const vec_space_3 = rand(10_000, 3);
-get_3d_chart(vec_space_3, "3d_space_chart", 0, ["", "", ""]);
+spawn_plot("3d_space_chart", (div_id) => {
+    get_3d_chart(vec_space_3, div_id, 0, ["", "", ""]);
+});
 </script>
 
 We're very used to looking at 3D space through these kinds of visualizations, where 
@@ -328,7 +340,9 @@ Visualized, it looks like so:
 <div id="3d_into_2d" style="width: 100%;"></div>
 
 <script>
-get_2d_3d_chart(vec_space_3, "3d_into_2d");
+spawn_plot("3d_into_2d", (div_id) => {
+    get_2d_3d_chart(vec_space_3, div_id);
+});
 </script>
 
 We can pick any 2 elements to display, of course. 
@@ -570,18 +584,23 @@ You can also change the noise distribution to:
 document.getElementById('noise_uniform').style.display = 'block';
 document.getElementById('noise_gaussian').style.display = 'none';
 // redraw the last chart
-redraw_proj(randn(10000, 1000));
+selected_space = gaussian_space_1000;
+redraw_proj(selected_space);
 ">gaussian</button></span>
 <span><button id="noise_uniform" style="display: none;" onclick="
 // change which button is displayed
 document.getElementById('noise_gaussian').style.display = 'block';
 document.getElementById('noise_uniform').style.display = 'none';
 // redraw the last chart
-redraw_proj(vec_space_1000);
+let selected_space = vec_space_1000;
+redraw_proj(selected_space);
 ">uniform</button></span>
 
 <script>
 let dims_with_text = [1, 2, 3, 4, 5];
+let gaussian_space_1000 = randn(10000, 1000);
+// keep the button and plots in sync through despawn/respawn
+let selected_space = vec_space_1000;
 function redraw_proj(vector_space) {
     document.getElementById('spherical').innerHTML = '';
     document.getElementById('spherical_vec').innerHTML = '';
@@ -601,7 +620,16 @@ function redraw_proj(vector_space) {
     }
     let widget = get_vector_widget(vector_space[0], 'spherical_vec', callback, 1);
 }
-redraw_proj(vec_space_1000);
+spawn_plot("spherical", 
+    // spawn
+    (div_id) => {
+        redraw_proj(selected_space);
+    },
+    // custom teardown
+    (div_id) => {
+        document.getElementById('spherical').innerHTML = '';
+        document.getElementById('spherical_vec').innerHTML = '';
+    });
 </script>
 
 ## What's going on?
@@ -724,9 +752,13 @@ look like?
 <div id="spherical_lerp"></div>
 <div id="lerp_vec"></div>
 <script>
-let redraw_chart = get_interpolated_chart(vec_space_1000, "spherical_lerp", lerp, vec_space_1000[0], vec_space_1000[1],
-                                          vecs_to_spherical);
-let widget2 = get_vector_widget(vec_space_1000[0], "lerp_vec", redraw_chart, 1);
+spawn_plot_with_vector("spherical_lerp", "lerp_vec",
+    (plot_id, vec_id) => {
+        let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, lerp, vec_space_1000[0], vec_space_1000[1],
+                                              vecs_to_spherical);
+        let widget2 = get_vector_widget(vec_space_1000[0], vec_id, redraw_chart, 1);
+        },
+);
 </script>
 
 At low dimensions, lerp behaves exactly how we expect it to. But by the time we reach
@@ -779,9 +811,13 @@ Was your intuition right?
 <div id="spherical_slerp"></div>
 <div id="slerp_vec"></div>
 <script>
-let redraw_slerp = get_interpolated_chart(vec_space_1000, "spherical_slerp", slerp, vec_space_1000[0], vec_space_1000[1],
+spawn_plot_with_vector("spherical_slerp", "slerp_vec",
+    (plot_id, vec_id) => {
+        let redraw_slerp = get_interpolated_chart(vec_space_1000, plot_id, slerp, vec_space_1000[0], vec_space_1000[1],
                                           vecs_to_spherical);
-let widget3 = get_vector_widget(vec_space_1000[0], "slerp_vec", redraw_slerp, 1);
+        let widget3 = get_vector_widget(vec_space_1000[0], vec_id, redraw_slerp, 1);
+    }
+);
 </script>
 
 # What Is Slerp Actually Doing?
@@ -866,7 +902,7 @@ There's a subtle difference - the vectors used in slerp - above titled \(q_1\) a
 normalized. And, rather than just calculating the angle, this line also does part 2), the vector 
 magntiude scaling. 
 
-What this means is that `slerp` is only actually using Shoemake & Davis' formula
+What this means is that `slerp` is only actually using performing a pure rotation
 when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,
 it's effectively doing this:
 
@@ -891,7 +927,10 @@ def slerp(fraction, start_vec, stop_vec):
 
 When the magnitudes of the two vectors are not particularly close,
 such as in lower dimensions, this formula can give quite strange
-results.
+results. This is exacerbated where the vectors are (almost) pi radians
+apart from one another. (Since the vector spaces on this page are randomly
+generated, if you refresh a few times, you're bound to see some strange 
+slerp results in lower dimensions.)
 
 A slight improvement can be had by explicitly treating the interpolation between 
 the two vectors' magnitudes, and normalizing the vectors before performing the 
@@ -933,9 +972,13 @@ def slerp2(fraction, start_vec, stop_vec):
 <div id="spherical_slerp2"></div>
 <div id="slerp_vec2"></div>
 <script>
-let redraw_slerp2 = get_interpolated_chart(vec_space_1000, "spherical_slerp2", slerp2, vec_space_1000[0], vec_space_1000[1],
-                                          vecs_to_spherical);
-let widget3_2 = get_vector_widget(vec_space_1000[0], "slerp_vec2", redraw_slerp2, 1);
+spawn_plot_with_vector("spherical_slerp2", "slerp_vec2", 
+    (plot_id, vec_id) => {
+        let redraw_slerp2 = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
+                                                  vecs_to_spherical);
+        let widget3_2 = get_vector_widget(vec_space_1000[0], vec_id, redraw_slerp2, 1);
+    }
+);
 </script>
 
 
@@ -996,9 +1039,12 @@ fetch("vecs.json")
     .then(jvecs => {
     start_through_origin = jvecs.z;
     stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
-    let redraw = get_multi_interp_chart(stylegan_space, "through_origin", {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
+    spawn_plot("through_origin",
+        (div_id) => {
+            let redraw = get_multi_interp_chart(stylegan_space, div_id, {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
                                         "./near_origin", interp_points,
                                         vecs_to_spherical);
+        });
     });
 </script>
 
@@ -1028,9 +1074,12 @@ fetch("vecs.json")
     .then(jvecs => {
     start_scale = mult(jvecs.z, 0.9999);
     stop_scale = add(mult(jvecs.z, -1.0001), 1e-4);
-    let redraw_scale = get_multi_interp_chart(stylegan_space, "through_origin_with_scale", {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
+    spawn_plot("through_origin_with_scale",
+        (div_id) => {
+            let redraw_scale = get_multi_interp_chart(stylegan_space, div_id, {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
                                                 start_scale, stop_scale, "./near_origin_scale", 
                                                 interp_points, vecs_to_spherical);
+        });
     });
 </script>
 
@@ -1055,10 +1104,16 @@ fetch("vecs.json")
     .then(jvecs => {
     start_scale = jvecs.random_start;
     stop_scale = jvecs.random_stop;
-    let redraw_scale = get_multi_interp_chart(stylegan_space, "random", {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
-                                                start_scale, stop_scale, "./random", 
-                                                interp_points, vecs_to_spherical);
-    });
+    spawn_plot("random", 
+        (div_id) => {
+            let redraw_scale = get_multi_interp_chart(stylegan_space, div_id, 
+                                                        {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
+                                                        start_scale, stop_scale, "./random", 
+                                                        interp_points, vecs_to_spherical);
+        }
+    );
+    }
+);
 </script>
 
 You'll note that even though `lerp` shows its characteristically out-of-family

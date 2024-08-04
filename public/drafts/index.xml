@@ -2,16 +2,16 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Drafts on willsnell</title>
-    <link>https://willsnell.com/drafts/</link>
+    <link>http://localhost:1313/drafts/</link>
     <description>Recent content in Drafts on willsnell</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en</language><atom:link href="https://willsnell.com/drafts/index.xml" rel="self" type="application/rss+xml" />
+    <language>en</language><atom:link href="http://localhost:1313/drafts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title></title>
-      <link>https://willsnell.com/drafts/hyperspace/testing/</link>
+      <link>http://localhost:1313/drafts/hyperspace/testing/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://willsnell.com/drafts/hyperspace/testing/</guid>
+      <guid>http://localhost:1313/drafts/hyperspace/testing/</guid>
       <description>&lt;!DOCTYPE html&gt; + - vec_len - vec_len + </description>
       <content>&lt;!DOCTYPE html&gt;
 &lt;head&gt;
@@ -564,10 +564,10 @@ draw_point(false);
     
     <item>
       <title></title>
-      <link>https://willsnell.com/drafts/hyperspace/testing2/</link>
+      <link>http://localhost:1313/drafts/hyperspace/testing2/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://willsnell.com/drafts/hyperspace/testing2/</guid>
+      <guid>http://localhost:1313/drafts/hyperspace/testing2/</guid>
       <description>&lt;!DOCTYPE html&gt; </description>
       <content>&lt;!DOCTYPE html&gt;
 &lt;head&gt;

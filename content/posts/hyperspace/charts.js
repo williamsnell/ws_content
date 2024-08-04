@@ -1,7 +1,7 @@
 const DEFAULT_CONFIG = {
   displayModeBar: false,
   dragmode: false,
-  scrollZoom: ['cartesian+gl3d'],
+  scrollZoom: true,
   showAxisDragHandles: false,
 };
 
@@ -503,7 +503,7 @@ function generate_picture_frames(container, interpolators, pictures_folder, poin
     let sub_frame = frame.appendChild(document.createElement("figure"));
     let title = sub_frame.appendChild(document.createElement("figcaption"));
     title.textContent = name;
-    title.style.width = "calc(min(30%, 200px))";
+    title.style.width = "calc(max(min(30%, 200px), 6rem))";
     title.style.background = colors[index];
     title.style.color = theme_text_color;
     sub_frame.style.position = "relative";
