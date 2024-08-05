@@ -97,7 +97,7 @@ const DEFAULT_3D_LAYOUT = {
 
 
 function remove_old_traces(chart, trace_id) {
-  if (chart === null || chart.data === null) {throw("chart isn't defined properly.");}
+  if (chart === null || chart.data === null) {console.log("chart isn't defined properly."); return;}
   for (let i = 0; i < chart.data.length; i++) {
     if (chart.data[i].__tag__ == trace_id) {Plotly.deleteTraces(chart, i);}
   }
@@ -110,17 +110,19 @@ function add_line_2d(chart_id, x_points, y_points,
   let trace_id = self.crypto.randomUUID();
 
   function update_trace(p_x, p_y) {
-    remove_old_traces(chart, trace_id);
-    
-    let data = {
-      type: 'scattergl',
-      x: p_x,
-      y: p_y,
-      __tag__: trace_id,
-      ...trace_settings
-    };
+    if ("data" in chart) {
+      remove_old_traces(chart, trace_id);
+      
+      let data = {
+        type: 'scattergl',
+        x: p_x,
+        y: p_y,
+        __tag__: trace_id,
+        ...trace_settings
+      };
 
-    Plotly.addTraces(chart, data);
+      Plotly.addTraces(chart, data);
+    }
   }
 
   update_trace(x_points, y_points);
@@ -135,18 +137,20 @@ function add_line_3d(chart_id, x_points, y_points, z_points,
   let trace_id = self.crypto.randomUUID();
 
   function update_trace(p_x, p_y, p_z) {
-    remove_old_traces(chart, trace_id);
+    if ("data" in chart) {
+      remove_old_traces(chart, trace_id);
 
-    let data = {
-      type: 'scatter3d',
-      x: p_x,
-      y: p_y,
-      z: p_z,
-      __tag__: trace_id,
-      ...trace_settings,
-    };
+      let data = {
+        type: 'scatter3d',
+        x: p_x,
+        y: p_y,
+        z: p_z,
+        __tag__: trace_id,
+        ...trace_settings,
+      };
 
-    Plotly.addTraces(chart, data);
+      Plotly.addTraces(chart, data);
+    }
   }
 
   update_trace(x_points, y_points, z_points);
@@ -327,52 +331,6 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
   let fig_3d = document.createElement("div");
   fig_3d.id = id + "_fig_3d";
 
-  if (width < MAX_SIDEBYSIDE_WIDTH) {
-    let button_bar = plot_container.appendChild(document.createElement("div"));
-    button_bar.style.display = "flex";
-    button_bar.style.gap = "10px 10px";
-    // add tab buttons
-    let d2_button = button_bar.appendChild(document.createElement("button"));
-    d2_button.textContent = "2D";
-    d2_button.onclick = () => {
-      d2_button.style.display = "none";
-      d3_button.style.display = "block";
-      fig_3d.style.display = "none"; 
-      fig_2d.style.display = "block";
-    };
-
-    let d3_button = button_bar.appendChild(document.createElement("button"));
-    d3_button.textContent = "3D";
-    d3_button.onclick = () => {
-      d3_button.style.display = "none";
-      d2_button.style.display = "block";
-      fig_3d.style.display = "block"; 
-      fig_2d.style.display = "none";
-    };
-    // activate the default tab
-    plot_container.appendChild(fig_2d);
-    plot_container.appendChild(fig_3d);
-
-    // Set defaults
-    d2_button.style.display = "none";
-    fig_3d.style.display = "none";
-
-    options_2d.layout.width = width.toFixed(0);
-    options_2d.layout.height = width.toFixed(0);
-    options_3d.layout.width = width.toFixed(0);
-    options_3d.layout.height = width.toFixed(0);
-    // tabs
-  } else {
-    plot_container.style.display = "flex";
-    fig_2d.style.borderRight = `1px solid ${theme_text_color}`;
-    plot_container.appendChild(fig_2d);
-    plot_container.appendChild(fig_3d);
-
-    options_2d.layout.width = (width * 0.5).toFixed(0);
-    options_2d.layout.height = (width * 0.5).toFixed(0);
-    options_3d.layout.width = (width * 0.5).toFixed(0);
-  }
-
   // Handling for passing different data to the different
   // plots. In this case, the input can be vec = Array[Array],
   // or else {d2: Array[Array], d3: Array[Array]} 
@@ -386,15 +344,73 @@ function get_2d_3d_chart(vectors, id, slice_offset=0, axis_titles=[null, null, n
     vecs_3d = vectors;
   }
 
-  let update_2d = get_2d_chart(vecs_2d, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
-  let update_3d = get_3d_chart(vecs_3d, fig_3d.id, slice_offset, axis_titles, options_3d);
+  let update_2d;
+  let update_3d;
+
+  if (width < MAX_SIDEBYSIDE_WIDTH) {
+    // ------- Mobile layout ---------
+    options_2d.layout.width = width.toFixed(0);
+    options_2d.layout.height = width.toFixed(0);
+    options_3d.layout.width = width.toFixed(0);
+    options_3d.layout.height = width.toFixed(0);
+
+    let button_bar = plot_container.appendChild(document.createElement("div"));
+    button_bar.style.display = "flex";
+    button_bar.style.gap = "10px 10px";
+    // add tab buttons
+    let d2_button = button_bar.appendChild(document.createElement("button"));
+    d2_button.textContent = "2D";
+    d2_button.id = `${id}_button_2d`;
+    d2_button.onclick = () => {
+
+      Plotly.purge(fig_3d.id);
+      update_2d = get_2d_chart(vecs_2d, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
+
+      d2_button.style.display = "none";
+      d3_button.style.display = "block";
+      fig_3d.style.display = "none"; 
+      fig_2d.style.display = "block";
+    };
+
+    let d3_button = button_bar.appendChild(document.createElement("button"));
+    d3_button.textContent = "3D";
+    d3_button.id = `${id}_button_3d`;
+    d3_button.onclick = () => {
+      Plotly.purge(fig_2d.id);
+      update_3d = get_3d_chart(vecs_3d, fig_3d.id, slice_offset, axis_titles, options_3d);
+      d3_button.style.display = "none";
+      d2_button.style.display = "block";
+      fig_3d.style.display = "block"; 
+      fig_2d.style.display = "none";
+    };
+    // activate the default tab
+    plot_container.appendChild(fig_2d);
+    plot_container.appendChild(fig_3d);
+
+    // Set defaults
+    d2_button.style.display = "none";
+    fig_3d.style.display = "none";
+    update_2d = get_2d_chart(vecs_2d, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
+  } else {
+    //  ------- Tab layout ---------
+    plot_container.style.display = "flex";
+    fig_2d.style.borderRight = `1px solid ${theme_text_color}`;
+    plot_container.appendChild(fig_2d);
+    plot_container.appendChild(fig_3d);
+
+    options_2d.layout.width = (width * 0.5).toFixed(0);
+    options_2d.layout.height = (width * 0.5).toFixed(0);
+    options_3d.layout.width = (width * 0.5).toFixed(0);
+
+    update_2d = get_2d_chart(vecs_2d, fig_2d.id, slice_offset, [axis_titles[0], axis_titles[1]], options_2d);
+    update_3d = get_3d_chart(vecs_3d, fig_3d.id, slice_offset, axis_titles, options_3d);
+  }
 
   function update_both(slice_offset, vecs_2d=vectors, vecs_3d=vectors) {
-    update_2d(slice_offset, vecs_2d);
-    update_3d(slice_offset, vecs_3d);
+      if ("data" in fig_2d) { update_2d(slice_offset, vecs_2d)};
+      if ("data" in fig_3d) {update_3d(slice_offset, vecs_3d)};
   }
   return update_both;
-
 }
 
 function get_projected_chart(vectors, id, axis_titles=[null, null, null], 
@@ -471,6 +487,10 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
   options_3d.marker_settings.color = darker_plot;
   options_3d.marker_settings.opacity = 0.7;
 
+  let last_dim = 1;
+  let last_slice = 0;
+  let last_projection = projection;
+
 
   let redraw_points = get_projected_chart(vectors, id, ["", "", ""], projection,
     options_2d, options_3d,); 
@@ -483,12 +503,26 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
     projection, {mode: 'lines', line: {color: accent_color, width: 3}});
 
   function redraw(dimensions, slice_offset, projection) {
+      last_dim = dimensions;
+      last_slice = slice_offset;
+      last_projection = projection;
       redraw_points(dimensions, slice_offset, projection);
       redraw_interp_2d(dimensions, slice_offset);
       redraw_interp_3d(dimensions, slice_offset);
   } 
-  // use the accent color for the interpolation lines
-  //
+
+  // listen for plot modeshifts which indicate we 
+  // need to redraw
+  let button_2d = document.getElementById(`${id}_button_2d`);
+  let button_3d = document.getElementById(`${id}_button_3d`);
+
+  if (button_2d) {
+    button_2d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection));
+  }
+  if (button_3d) {
+    button_3d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection));
+  }
+
   return redraw;
 }
 

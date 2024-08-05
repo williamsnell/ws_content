@@ -132,7 +132,7 @@ function draw_2d_interp(chart_id, start_vec, stop_vec, dimensions, interpolator,
 
 function draw_3d_interp(chart_id, start_vec, stop_vec, dimensions, interpolator, 
     vector_position=0, transform=null, trace_settings={mode: 'lines'}, num_steps=500) {
-  
+ 
   function transform_vecs(dimensions, vector_position) {
     let interp_path = get_interp_path(start_vec, stop_vec, interpolator, dimensions, num_steps);
     let offset;
