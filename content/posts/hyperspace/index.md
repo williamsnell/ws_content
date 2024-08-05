@@ -3,6 +3,7 @@ title = "Navigating Hyperspace"
 date = 2024-07-25T12:19:22+12:00
 image = "hyperspace.png"
 cover = "hyperspace.png"
+summary = "Hyperspaces are unintuitive, strange, and fascinating places. Let's explore them together, interactively."
 +++
 
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
