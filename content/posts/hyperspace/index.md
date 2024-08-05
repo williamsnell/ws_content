@@ -5,6 +5,43 @@ image = "hyperspace.png"
 cover = "hyperspace.png"
 +++
 
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="observer.js" charset="utf-8"></script>
+<script src="math_lib.js"></script>
+<script src="charts.js"></script>
+<script src="vector_math.js"></script>
+<script src="interp.js"></script>
+
+<details>
+    <summary><span class="button" style="padding: 0.5rem">Executive Summary</span></summary>
+
+- In higher dimensional spaces, vectors sampled from typical random distributions 
+form a hyperspherical shell. 
+- `slerp`, a.k.a. 'spherical linear interpolation', is often recommended for traversing these
+spaces instead of linear interpolation (`lerp`).
+- I visualize the formation of these hypershells, and provide some explanations for why they form. 
+- I present `slerp2`, a modification of `slerp` which performs better in lower dimensions and for
+pessimized cases in higher dimensions.
+- I experiment with each interpolation scheme in [StyleGAN2's](https://github.com/NVlabs/stylegan2-ada-pytorch)
+latent 'Z'-space. In this case, the choice of interpolation scheme makes no difference to the results.
+
+# Slerp2 and Higher-Dimensional Space, Projected
+<div id="e_spherical_lerp"></div>
+<div id="e_lerp_vec"></div>
+<script>
+const vec_space_1000 = rand(10_000, 1000);
+spawn_plot_with_vector("e_spherical_lerp", "e_lerp_vec",
+    (plot_id, vec_id) => {
+        let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
+                                              vecs_to_spherical);
+        let widget2 = get_vector_widget(vec_space_1000[0], vec_id, redraw_chart, 1);
+        },
+);
+</script>
+
+</details>
+
+
 # Why explore hyperspace?
 
 Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful
@@ -57,13 +94,6 @@ would be written something like this:
         return start_vec + fraction * (stop_vec - start_vec)
 ```
 
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
-<script src="observer.js" charset="utf-8"></script>
-<script src="math_lib.js"></script>
-<script src="charts.js"></script>
-<script src="vector_math.js"></script>
-<script src="interp.js"></script>
-
 
 In 3D-space, this looks like:
 
@@ -71,7 +101,6 @@ In 3D-space, this looks like:
 <script>
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
-const vec_space_1000 = rand(10_000, 1000);
 spawn_plot("3d_lerp", (div_id) => {
     let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, div_id, lerp, demo_start, demo_stop,
                                           identity_transform);
@@ -656,12 +685,10 @@ that, in general, there isn't much of a "hole" at the origin. However,
 even in 3D (using our 2D plot), we start to see a gap open up near the 
 origin. 
 
-Below are two expandable sections with different ways to interpret the 
+Below are two different ways to interpret the 
 existence of a hyperspherical shell.
 
----
-<details>
-    <summary>Geometric Interpretation</summary>
+#### Geometric Interpretation
 
 As explained in [John D. Cook's post](https://www.johndcook.com/blog/2011/09/01/multivariate-normal-shell/),
 volume **grows faster** in higher dimensions. 
@@ -694,11 +721,7 @@ low, and the amount at the outer perimeter is astronomically high.**
 Because so much space is so far out, our points will inevitably "cluster"
 there.
 
-</details>
-
-<details>
-    <summary>Statistical Interpretation</summary>
-
+#### Statistical Interpretation
 We can also think about this result statistically.
 
 All the elements in our vectors are independent and identically distributed. 
@@ -735,9 +758,6 @@ We should intuitively expect that the more dice we roll,
 2) The less and less likely we are to have a point near the origin
     (or in the corners of our hypercube.)
 
-</details>
-
----
 
 # Tracing Lines Through Hyperspace
 

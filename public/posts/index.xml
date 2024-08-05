@@ -13,9 +13,41 @@
       <pubDate>Thu, 25 Jul 2024 12:19:22 +1200</pubDate>
       
       <guid>https://willsnell.com/posts/hyperspace/</guid>
-      <description>Why explore hyperspace? Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful and (dare I say) fun.
-Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but that doesn&amp;rsquo;t mean they don&amp;rsquo;t exist, or that they can&amp;rsquo;t be useful. For example, hyperspaces frequently shows up in neural networks. By learning to explore hyperspace, we can try gain a better understanding of how they work.</description>
-      <content>&lt;h1 id=&#34;why-explore-hyperspace&#34;&gt;Why explore hyperspace?&lt;/h1&gt;
+      <description>Executive Summary In higher dimensional spaces, vectors sampled from typical random distributions form a hyperspherical shell. slerp, a.k.a. &amp;lsquo;spherical linear interpolation&amp;rsquo;, is often recommended for traversing these spaces instead of linear interpolation (lerp). I visualize the formation of these hypershells, and provide some explanations for why they form. I present slerp2, a modification of slerp which performs better in lower dimensions and for pessimized cases in higher dimensions. I experiment with each interpolation scheme in StyleGAN2&amp;rsquo;s latent &amp;lsquo;Z&amp;rsquo;-space.</description>
+      <content>&lt;script src=&#34;https://cdn.plot.ly/plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;observer.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;math_lib.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;charts.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;vector_math.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;interp.js&#34;&gt;&lt;/script&gt;
+&lt;details&gt;
+    &lt;summary&gt;&lt;span class=&#34;button&#34; style=&#34;padding: 0.5rem&#34;&gt;Executive Summary&lt;/span&gt;&lt;/summary&gt;
+&lt;ul&gt;
+&lt;li&gt;In higher dimensional spaces, vectors sampled from typical random distributions
+form a hyperspherical shell.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;slerp&lt;/code&gt;, a.k.a. &amp;lsquo;spherical linear interpolation&amp;rsquo;, is often recommended for traversing these
+spaces instead of linear interpolation (&lt;code&gt;lerp&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;I visualize the formation of these hypershells, and provide some explanations for why they form.&lt;/li&gt;
+&lt;li&gt;I present &lt;code&gt;slerp2&lt;/code&gt;, a modification of &lt;code&gt;slerp&lt;/code&gt; which performs better in lower dimensions and for
+pessimized cases in higher dimensions.&lt;/li&gt;
+&lt;li&gt;I experiment with each interpolation scheme in &lt;a href=&#34;https://github.com/NVlabs/stylegan2-ada-pytorch&#34;&gt;StyleGAN2&amp;rsquo;s&lt;/a&gt;
+latent &amp;lsquo;Z&amp;rsquo;-space. In this case, the choice of interpolation scheme makes no difference to the results.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;slerp2-and-higher-dimensional-space-projected&#34;&gt;Slerp2 and Higher-Dimensional Space, Projected&lt;/h1&gt;
+&lt;div id=&#34;e_spherical_lerp&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;e_lerp_vec&#34;&gt;&lt;/div&gt;
+&lt;script&gt;
+const vec_space_1000 = rand(10_000, 1000);
+spawn_plot_with_vector(&#34;e_spherical_lerp&#34;, &#34;e_lerp_vec&#34;,
+    (plot_id, vec_id) =&gt; {
+        let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
+                                              vecs_to_spherical);
+        let widget2 = get_vector_widget(vec_space_1000[0], vec_id, redraw_chart, 1);
+        },
+);
+&lt;/script&gt;
+&lt;/details&gt;
+&lt;h1 id=&#34;why-explore-hyperspace&#34;&gt;Why explore hyperspace?&lt;/h1&gt;
 &lt;p&gt;Hyperspace might seem exotic - and it is - but learning better ways to explore it can be both useful
 and (dare I say) fun.&lt;/p&gt;
 &lt;p&gt;Spaces with dimensionality higher than 3 or 4 might be outside of our lived experience, but
@@ -52,18 +84,11 @@ with varying degrees of success. This is known as linear interpolation (lerp), a
 would be written something like this:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;lerp&lt;/span&gt;(fraction, start_vec, stop_vec):
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; start_vec &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; fraction &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; (stop_vec &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; start_vec)
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;script src=&#34;https://cdn.plot.ly/plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;observer.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;math_lib.js&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;charts.js&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;vector_math.js&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;interp.js&#34;&gt;&lt;/script&gt;
-&lt;p&gt;In 3D-space, this looks like:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In 3D-space, this looks like:&lt;/p&gt;
 &lt;div id=&#34;3d_lerp&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
 const demo_start = [-0.5012528962436638, -0.9103151253007502, 0.5048315888047492];
 const demo_stop = [0.905189016060779, -0.28742159270964684, -0.0913802767988876];
-const vec_space_1000 = rand(10_000, 1000);
 spawn_plot(&#34;3d_lerp&#34;, (div_id) =&gt; {
     let redraw_3d_lerp = get_interpolated_chart(vec_space_1000, div_id, lerp, demo_start, demo_stop,
                                           identity_transform);
@@ -542,11 +567,9 @@ is of the same order as the variance of the distribution. This means
 that, in general, there isn&amp;rsquo;t much of a &amp;ldquo;hole&amp;rdquo; at the origin. However,
 even in 3D (using our 2D plot), we start to see a gap open up near the
 origin.&lt;/p&gt;
-&lt;p&gt;Below are two expandable sections with different ways to interpret the
+&lt;p&gt;Below are two different ways to interpret the
 existence of a hyperspherical shell.&lt;/p&gt;
-&lt;hr&gt;
-&lt;details&gt;
-    &lt;summary&gt;Geometric Interpretation&lt;/summary&gt;
+&lt;h4 id=&#34;geometric-interpretation&#34;&gt;Geometric Interpretation&lt;/h4&gt;
 &lt;p&gt;As explained in &lt;a href=&#34;https://www.johndcook.com/blog/2011/09/01/multivariate-normal-shell/&#34;&gt;John D. Cook&amp;rsquo;s post&lt;/a&gt;,
 volume &lt;strong&gt;grows faster&lt;/strong&gt; in higher dimensions.
 For our uniform distribution, our probability density is constant between its bounds of (-1, 1),
@@ -571,9 +594,7 @@ when we go to higher dimensions, &lt;strong&gt;the amount of space near the orig
 low, and the amount at the outer perimeter is astronomically high.&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Because so much space is so far out, our points will inevitably &amp;ldquo;cluster&amp;rdquo;
 there.&lt;/p&gt;
-&lt;/details&gt;
-&lt;details&gt;
-    &lt;summary&gt;Statistical Interpretation&lt;/summary&gt;
+&lt;h4 id=&#34;statistical-interpretation&#34;&gt;Statistical Interpretation&lt;/h4&gt;
 &lt;p&gt;We can also think about this result statistically.&lt;/p&gt;
 &lt;p&gt;All the elements in our vectors are independent and identically distributed.
 The more elements we have, the more we will expect to see strong statistical
@@ -604,8 +625,6 @@ compress space a bit, but our intuition should generally still hold.&lt;/p&gt;
 &lt;li&gt;The less and less likely we are to have a point near the origin
 (or in the corners of our hypercube.)&lt;/li&gt;
 &lt;/ol&gt;
-&lt;/details&gt;
-&lt;hr&gt;
 &lt;h1 id=&#34;tracing-lines-through-hyperspace&#34;&gt;Tracing Lines Through Hyperspace&lt;/h1&gt;
 &lt;p&gt;Hopefully, you now have a solid grip on the spherical projections
 we&amp;rsquo;ll be using from this point onwards. Remember, the distance
