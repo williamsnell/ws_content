@@ -520,7 +520,7 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
     button_2d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection));
   }
   if (button_3d) {
-    button_3d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection));
+    button_3d.addEventListener("click", redraw(last_dim, last_slice, last_projection));
   }
 
   return redraw;

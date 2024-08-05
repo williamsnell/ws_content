@@ -27,11 +27,10 @@ pessimized cases in higher dimensions.
 latent 'Z'-space. In this case, the choice of interpolation scheme makes no difference to the results.
 
 # Slerp2 and Higher-Dimensional Space, Projected
-<div id="e_spherical_lerp"></div>
-<div id="e_lerp_vec"></div>
+<div id="e_container"></div>
 <script>
 const vec_space_1000 = rand(10_000, 1000);
-spawn_plot_with_vector("e_spherical_lerp", "e_lerp_vec",
+spawn_plot_with_vector("e_container",
     (plot_id, vec_id) => {
         let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
                                               vecs_to_spherical);
@@ -771,9 +770,8 @@ Under this lens, what does linear interpolation (our `lerp` function from earlie
 look like?
 
 <div id="spherical_lerp"></div>
-<div id="lerp_vec"></div>
 <script>
-spawn_plot_with_vector("spherical_lerp", "lerp_vec",
+spawn_plot_with_vector("spherical_lerp",
     (plot_id, vec_id) => {
         let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, lerp, vec_space_1000[0], vec_space_1000[1],
                                               vecs_to_spherical);
@@ -830,9 +828,8 @@ What do **you** think will happen as the dimensionality increases?
 Was your intuition right?
 
 <div id="spherical_slerp"></div>
-<div id="slerp_vec"></div>
 <script>
-spawn_plot_with_vector("spherical_slerp", "slerp_vec",
+spawn_plot_with_vector("spherical_slerp",
     (plot_id, vec_id) => {
         let redraw_slerp = get_interpolated_chart(vec_space_1000, plot_id, slerp, vec_space_1000[0], vec_space_1000[1],
                                           vecs_to_spherical);
@@ -991,9 +988,8 @@ def slerp2(fraction, start_vec, stop_vec):
 
 
 <div id="spherical_slerp2"></div>
-<div id="slerp_vec2"></div>
 <script>
-spawn_plot_with_vector("spherical_slerp2", "slerp_vec2", 
+spawn_plot_with_vector("spherical_slerp2", 
     (plot_id, vec_id) => {
         let redraw_slerp2 = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
                                                   vecs_to_spherical);

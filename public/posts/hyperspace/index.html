@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
   
     <title>Navigating Hyperspace :: willsnell</title>
   
@@ -11,7 +11,7 @@
 
   <meta name="robots" content="noodp" />
 
-<link rel="canonical" href="https://willsnell.com/posts/hyperspace/" />
+<link rel="canonical" href="http://localhost:1313/posts/hyperspace/" />
 
 
   
@@ -26,7 +26,7 @@
   
   
   
-  <link rel="stylesheet" href="https://willsnell.com/styles.css">
+  <link rel="stylesheet" href="http://localhost:1313/styles.css">
 
 
 
@@ -34,8 +34,8 @@
 
 
 
-  <link rel="shortcut icon" href="https://willsnell.com/img/theme-colors/orange.png">
-  <link rel="apple-touch-icon" href="https://willsnell.com/img/theme-colors/orange.png">
+  <link rel="shortcut icon" href="http://localhost:1313/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="http://localhost:1313/img/theme-colors/orange.png">
 
 
 
@@ -52,14 +52,14 @@
 <meta property="og:type" content="article" />
 <meta property="og:title" content="Navigating Hyperspace">
 <meta property="og:description" content="Hyperspaces are unintuitive, strange, and fascinating places. Let&amp;rsquo;s explore them together, interactively." />
-<meta property="og:url" content="https://willsnell.com/posts/hyperspace/" />
+<meta property="og:url" content="http://localhost:1313/posts/hyperspace/" />
 <meta property="og:site_name" content="willsnell" />
 
   
   
     
   
-  <meta property="og:image" content="https://willsnell.com/posts/hyperspace/hyperspace.png">
+  <meta property="og:image" content="http://localhost:1313/posts/hyperspace/hyperspace.png">
 
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="627">
@@ -134,7 +134,7 @@
     
 <article class="post">
   <h1 class="post-title">
-    <a href="https://willsnell.com/posts/hyperspace/">Navigating Hyperspace</a>
+    <a href="http://localhost:1313/posts/hyperspace/">Navigating Hyperspace</a>
   </h1>
   <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">24 min read (4973 words)</span></div>
 
@@ -169,11 +169,10 @@ pessimized cases in higher dimensions.</li>
 latent &lsquo;Z&rsquo;-space. In this case, the choice of interpolation scheme makes no difference to the results.</li>
 </ul>
 <h1 id="slerp2-and-higher-dimensional-space-projected">Slerp2 and Higher-Dimensional Space, Projected<a href="#slerp2-and-higher-dimensional-space-projected" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
-<div id="e_spherical_lerp"></div>
-<div id="e_lerp_vec"></div>
+<div id="e_container"></div>
 <script>
 const vec_space_1000 = rand(10_000, 1000);
-spawn_plot_with_vector("e_spherical_lerp", "e_lerp_vec",
+spawn_plot_with_vector("e_container",
     (plot_id, vec_id) => {
         let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
                                               vecs_to_spherical);
@@ -768,9 +767,8 @@ the <em>full vector</em>.</p>
 <p>Under this lens, what does linear interpolation (our <code>lerp</code> function from earlier)
 look like?</p>
 <div id="spherical_lerp"></div>
-<div id="lerp_vec"></div>
 <script>
-spawn_plot_with_vector("spherical_lerp", "lerp_vec",
+spawn_plot_with_vector("spherical_lerp",
     (plot_id, vec_id) => {
         let redraw_chart = get_interpolated_chart(vec_space_1000, plot_id, lerp, vec_space_1000[0], vec_space_1000[1],
                                               vecs_to_spherical);
@@ -814,9 +812,8 @@ show <code>slerp</code>.</p>
 <p>What do <strong>you</strong> think will happen as the dimensionality increases?</p>
 <p>Was your intuition right?</p>
 <div id="spherical_slerp"></div>
-<div id="slerp_vec"></div>
 <script>
-spawn_plot_with_vector("spherical_slerp", "slerp_vec",
+spawn_plot_with_vector("spherical_slerp",
     (plot_id, vec_id) => {
         let redraw_slerp = get_interpolated_chart(vec_space_1000, plot_id, slerp, vec_space_1000[0], vec_space_1000[1],
                                           vecs_to_spherical);
@@ -935,9 +932,8 @@ readability, not performance.</p>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> magnitude <span style="color:#f92672">*</span> angle
 </span></span></code></pre></div><h1 id="slerp2">Slerp2<a href="#slerp2" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <div id="spherical_slerp2"></div>
-<div id="slerp_vec2"></div>
 <script>
-spawn_plot_with_vector("spherical_slerp2", "slerp_vec2", 
+spawn_plot_with_vector("spherical_slerp2", 
     (plot_id, vec_id) => {
         let redraw_slerp2 = get_interpolated_chart(vec_space_1000, plot_id, slerp2, vec_space_1000[0], vec_space_1000[1],
                                                   vecs_to_spherical);
@@ -1082,7 +1078,7 @@ not matter, and certainly depends on the actual system being studied.</p>
         
         
         <span class="button next">
-            <a href="https://willsnell.com/posts/gans/">
+            <a href="http://localhost:1313/posts/gans/">
                 <span class="button__text">Why does my GAN do that?</span>
                 <span class="button__icon">→</span>
             </a>
