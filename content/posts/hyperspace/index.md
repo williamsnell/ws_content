@@ -802,7 +802,7 @@ to fall at exact opposite ends of their distributions, `lerp` will necessarily
 be operating in a smaller domain. 
 
 Right at the midpoint, where `fraction=0.5`, `lerp` will give a vector that is
-the average of \(vec{v}^1\) and \(\vec{v}^2\). The average is the point where
+the average of \(\vec{v}^1\) and \(\vec{v}^2\). The average is the point where
 all values will be the most "smoothed out". Because a particularly large element
 is equally likely to appear in \(\vec{v}^1\) or \(\vec{v}^2\), averaging the two
 vectors should give the point in the interpolation with minimum variance.

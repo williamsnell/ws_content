@@ -793,7 +793,7 @@ be smaller than \(\min(x_i, y_i)\). Unless \(x_i\) and \(y_i\) both happen
 to fall at exact opposite ends of their distributions, <code>lerp</code> will necessarily
 be operating in a smaller domain.</p>
 <p>Right at the midpoint, where <code>fraction=0.5</code>, <code>lerp</code> will give a vector that is
-the average of \(vec{v}^1\) and \(\vec{v}^2\). The average is the point where
+the average of \(\vec{v}^1\) and \(\vec{v}^2\). The average is the point where
 all values will be the most &ldquo;smoothed out&rdquo;. Because a particularly large element
 is equally likely to appear in \(\vec{v}^1\) or \(\vec{v}^2\), averaging the two
 vectors should give the point in the interpolation with minimum variance.
