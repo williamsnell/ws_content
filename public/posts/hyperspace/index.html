@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
   
     <title>Navigating Hyperspace :: willsnell</title>
   
@@ -11,7 +11,7 @@
 
   <meta name="robots" content="noodp" />
 
-<link rel="canonical" href="https://willsnell.com/posts/hyperspace/" />
+<link rel="canonical" href="http://localhost:1313/posts/hyperspace/" />
 
 
   
@@ -26,7 +26,7 @@
   
   
   
-  <link rel="stylesheet" href="https://willsnell.com/styles.css">
+  <link rel="stylesheet" href="http://localhost:1313/styles.css">
 
 
 
@@ -34,8 +34,8 @@
 
 
 
-  <link rel="shortcut icon" href="https://willsnell.com/img/theme-colors/orange.png">
-  <link rel="apple-touch-icon" href="https://willsnell.com/img/theme-colors/orange.png">
+  <link rel="shortcut icon" href="http://localhost:1313/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="http://localhost:1313/img/theme-colors/orange.png">
 
 
 
@@ -52,14 +52,14 @@
 <meta property="og:type" content="article" />
 <meta property="og:title" content="Navigating Hyperspace">
 <meta property="og:description" content="Hyperspaces are unintuitive, strange, and fascinating places. Let&amp;rsquo;s explore them together, interactively." />
-<meta property="og:url" content="https://willsnell.com/posts/hyperspace/" />
+<meta property="og:url" content="http://localhost:1313/posts/hyperspace/" />
 <meta property="og:site_name" content="willsnell" />
 
   
   
     
   
-  <meta property="og:image" content="https://willsnell.com/posts/hyperspace/hyperspace.png">
+  <meta property="og:image" content="http://localhost:1313/posts/hyperspace/hyperspace.png">
 
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="627">
@@ -134,9 +134,9 @@
     
 <article class="post">
   <h1 class="post-title">
-    <a href="https://willsnell.com/posts/hyperspace/">Navigating Hyperspace</a>
+    <a href="http://localhost:1313/posts/hyperspace/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">24 min read (4973 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-07-25</time><span class="post-reading-time">24 min read (4972 words)</span></div>
 
   
   
@@ -207,7 +207,7 @@ is typically random noise, and the vector is often quite long - hundreds or thou
 vectors are long, the latent space is high dimensional.
 Manipulating the outputs of these models relies on us
 being able to chart paths through their latent space.</p>
-<p>For example, if we want to smoothly blend from the first painting above to the second,
+<p>As an example: if we want to smoothly blend from the first painting above to the second,
 we need a way to traverse from the vector representing one image
 to the vector representing the other.</p>
 <h2 id="the-obvious-answer-is-wrong">The obvious answer (is wrong)<a href="#the-obvious-answer-is-wrong" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
@@ -472,7 +472,7 @@ plotting a vector of length 3 or a vector of length
 <p>So far, we&rsquo;ve been exploring space with <em>cartesian</em> coordinates.</p>
 <p>Without completely justifying it, I&rsquo;m going to introduce
 a completely different coordinate system - <a href="https://en.wikipedia.org/wiki/Spherical_coordinate_system">spherical coordinates</a>.</p>
-<p>Most people are used to &ldquo;cartesian&rdquo; coordinates. In the following
+<p>Most people are used to cartesian coordinates. In the following
 image, it seems natural to define the position of the red cross based
 on two distances, which we typically call x and y.
 <img src="xy.svg"></p>
@@ -877,7 +877,7 @@ does. Rather, this is the actual code:</p>
 </span></span></code></pre></div><p>There&rsquo;s a subtle difference - the vectors used in slerp - above titled \(q_1\) and \(q_2\) are not
 normalized. And, rather than just calculating the angle, this line also does part 2), the vector
 magntiude scaling.</p>
-<p>What this means is that <code>slerp</code> is only actually using performing a pure rotation
+<p>What this means is that <code>slerp</code> is only performing a pure rotation
 when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,
 it&rsquo;s effectively doing this:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">slerp</span>(fraction, start_vec, stop_vec):
@@ -1078,7 +1078,7 @@ not matter, and certainly depends on the actual system being studied.</p>
         
         
         <span class="button next">
-            <a href="https://willsnell.com/posts/gans/">
+            <a href="http://localhost:1313/posts/gans/">
                 <span class="button__text">Why does my GAN do that?</span>
                 <span class="button__icon">→</span>
             </a>

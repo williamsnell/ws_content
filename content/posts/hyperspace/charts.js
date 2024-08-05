@@ -159,7 +159,7 @@ function add_line_3d(chart_id, x_points, y_points, z_points,
 }
 
 function vec_subscript(integer) {
-  return `v\u20d7<sub>${integer}</sub>`;
+  return `x<sub>${integer}</sub>`;
 }
 
 

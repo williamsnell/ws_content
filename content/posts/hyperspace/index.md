@@ -77,7 +77,7 @@ vectors are long, the latent space is high dimensional.
 Manipulating the outputs of these models relies on us
 being able to chart paths through their latent space.
 
-For example, if we want to smoothly blend from the first painting above to the second, 
+As an example: if we want to smoothly blend from the first painting above to the second, 
 we need a way to traverse from the vector representing one image
 to the vector representing the other. 
 
@@ -415,7 +415,7 @@ So far, we've been exploring space with *cartesian* coordinates.
 Without completely justifying it, I'm going to introduce
 a completely different coordinate system - [spherical coordinates](https://en.wikipedia.org/wiki/Spherical_coordinate_system).
 
-Most people are used to "cartesian" coordinates. In the following
+Most people are used to cartesian coordinates. In the following
 image, it seems natural to define the position of the red cross based
 on two distances, which we typically call x and y.
 <img src="xy.svg">
@@ -920,7 +920,7 @@ There's a subtle difference - the vectors used in slerp - above titled \(q_1\) a
 normalized. And, rather than just calculating the angle, this line also does part 2), the vector 
 magntiude scaling. 
 
-What this means is that `slerp` is only actually using performing a pure rotation
+What this means is that `slerp` is only performing a pure rotation
 when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,
 it's effectively doing this:
 
