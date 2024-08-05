@@ -442,7 +442,13 @@ function get_projected_chart(vectors, id, axis_titles=[null, null, null],
     chart_draw = get_2d_chart(projected_2d, id, offset, [axis_titles[0], axis_titles[1]], options_2d);
   }
 
+  let last_dim, last_slice, last_projection;
+
   async function draw(dimensions, slice_offset, project=projection) {
+    last_dim = dimensions;
+    last_slice = slice_offset;
+    last_projection = project;
+
     let [projected_2d, offset] = project(
                           vectors,
                           dimensions,
@@ -464,9 +470,18 @@ function get_projected_chart(vectors, id, axis_titles=[null, null, null],
       chart_draw(offset, projected_2d);
     }
   }
-  // return a callback that lets the user update dimensions and 
-  // slice_offset
-  
+  // listen for plot modeshifts which indicate we 
+  // need to redraw
+  let button_2d = document.getElementById(`${id}_button_2d`);
+  let button_3d = document.getElementById(`${id}_button_3d`);
+
+  if (button_2d) {
+    button_2d.addEventListener("click", () => draw(last_dim, last_slice, last_projection));
+  }
+  if (button_3d) {
+    button_3d.addEventListener("click", () => draw(last_dim, last_slice, last_projection));
+  }
+ 
   return draw;
 }
 
@@ -502,11 +517,12 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
     `${id}_fig_3d`, start_vec, stop_vec, 1, interpolator, 0, 
     projection, {mode: 'lines', line: {color: accent_color, width: 3}});
 
-  function redraw(dimensions, slice_offset, projection) {
+  function redraw(dimensions, slice_offset, projection, skip_points=false) {
       last_dim = dimensions;
       last_slice = slice_offset;
       last_projection = projection;
-      redraw_points(dimensions, slice_offset, projection);
+
+      if (!skip_points) redraw_points(dimensions, slice_offset, projection);
       redraw_interp_2d(dimensions, slice_offset);
       redraw_interp_3d(dimensions, slice_offset);
   } 
@@ -517,10 +533,10 @@ function get_interpolated_chart(vectors, id, interpolator, start_vec, stop_vec,
   let button_3d = document.getElementById(`${id}_button_3d`);
 
   if (button_2d) {
-    button_2d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection));
+    button_2d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection, true));
   }
   if (button_3d) {
-    button_3d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection));
+    button_3d.addEventListener("click", () => redraw(last_dim, last_slice, last_projection, true));
   }
 
   return redraw;
