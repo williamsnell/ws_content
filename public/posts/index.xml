@@ -905,13 +905,13 @@ and that&amp;rsquo;s exactly what&amp;rsquo;s going on here.&lt;/p&gt;
 fetch(&#34;vecs.json&#34;)
     .then(response =&gt; response.json())
     .then(jvecs =&gt; {
-    start_scale = jvecs.random_start;
-    stop_scale = jvecs.random_stop;
+    start_random = jvecs.random_start;
+    stop_random = jvecs.random_stop;
     spawn_plot(&#34;random&#34;, 
         (div_id) =&gt; {
             let redraw_scale = get_multi_interp_chart(stylegan_space, div_id, 
                                                         {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
-                                                        start_scale, stop_scale, &#34;./random&#34;, 
+                                                        start_random, stop_random, &#34;./random&#34;, 
                                                         interp_points, vecs_to_spherical);
         }
     );

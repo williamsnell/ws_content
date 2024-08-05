@@ -1119,13 +1119,13 @@ and that's exactly what's going on here.
 fetch("vecs.json")
     .then(response => response.json())
     .then(jvecs => {
-    start_scale = jvecs.random_start;
-    stop_scale = jvecs.random_stop;
+    start_random = jvecs.random_start;
+    stop_random = jvecs.random_stop;
     spawn_plot("random", 
         (div_id) => {
             let redraw_scale = get_multi_interp_chart(stylegan_space, div_id, 
                                                         {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
-                                                        start_scale, stop_scale, "./random", 
+                                                        start_random, stop_random, "./random", 
                                                         interp_points, vecs_to_spherical);
         }
     );
