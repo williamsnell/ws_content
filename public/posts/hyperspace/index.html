@@ -985,8 +985,8 @@ let interp_points = [0.00, 0.14, 0.29, 0.43, 0.57, 0.71, 0.86, 1.00];
 fetch("vecs.json")
     .then(response => response.json())
     .then(jvecs => {
-    start_through_origin = jvecs.z;
-    stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
+    let start_through_origin = jvecs.z;
+    let stop_through_origin = add(mult(jvecs.z, -1), 1e-4);
     spawn_plot("through_origin",
         (div_id) => {
             let redraw = get_multi_interp_chart(stylegan_space, div_id, {lerp: lerp, slerp: slerp, slerp2: slerp2}, start_through_origin, stop_through_origin, 
@@ -1015,8 +1015,8 @@ see if vector magnitude had an impact on the images produced, and whether
 fetch("vecs.json")
     .then(response => response.json())
     .then(jvecs => {
-    start_scale = mult(jvecs.z, 0.9999);
-    stop_scale = add(mult(jvecs.z, -1.0001), 1e-4);
+    let start_scale = mult(jvecs.z, 0.9999);
+    let stop_scale = add(mult(jvecs.z, -1.0001), 1e-4);
     spawn_plot("through_origin_with_scale",
         (div_id) => {
             let redraw_scale = get_multi_interp_chart(stylegan_space, div_id, {lerp: lerp, slerp: slerp, slerp2: slerp2}, 
@@ -1040,8 +1040,8 @@ and that&rsquo;s exactly what&rsquo;s going on here.</p>
 fetch("vecs.json")
     .then(response => response.json())
     .then(jvecs => {
-    start_random = jvecs.random_start;
-    stop_random = jvecs.random_stop;
+    let start_random = jvecs.random_start;
+    let stop_random = jvecs.random_stop;
     spawn_plot("random", 
         (div_id) => {
             let redraw_scale = get_multi_interp_chart(stylegan_space, div_id, 
