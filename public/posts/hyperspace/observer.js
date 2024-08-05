@@ -4,7 +4,7 @@ const options = {
   // user's viewport. They should be active by the
   // time they enter the screen.
   // They should be despawned when exiting the active area.
-  rootMargin: "20% 0px 100% 0px", // top right bottom left
+  rootMargin: "0% 0px 20% 0px", // top right bottom left
   threshold: 0.0,
   // We want to spawn when the plot fully enters the viewport,
   // and despawn when it fully exits. 
