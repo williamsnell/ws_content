@@ -4,7 +4,7 @@ const options = {
   // user's viewport. They should be active by the
   // time they enter the screen.
   // They should be despawned when exiting the active area.
-  rootMargin: "50% 0px 100% 0px", // top right bottom left
+  rootMargin: "20% 0px 100% 0px", // top right bottom left
   threshold: 0.0,
   // We want to spawn when the plot fully enters the viewport,
   // and despawn when it fully exits. 
@@ -15,9 +15,13 @@ let plot_vtable = {};
 function observer_callback(entries, observer) {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
-      plot_vtable[entry.target.id].spawn(); 
+      if (!plot_vtable[entry.target.id].spawned) {
+        plot_vtable[entry.target.id].spawn(); 
+        plot_vtable[entry.target.id].spawned = true;
+      }
     } else {
       plot_vtable[entry.target.id].teardown();
+      plot_vtable[entry.target.id].spawned = false;
     }
   })
 }
@@ -42,10 +46,10 @@ function spawn_plot(div_id, spawn_callback,
 }
 
 function spawn_plot_with_vector(plot_id, vec_id, spawn_callback) {
-  let div = document.getElementById(plot_id);
-  if (div === null) throw(`No element found for ${div_id}.`);
+  let div = document.getElementById(vec_id);
+  if (div === null) throw(`No element found for ${vec_id}.`);
   
-  plot_vtable[plot_id] = {
+  plot_vtable[vec_id] = {
     spawn: () => spawn_callback(plot_id, vec_id),
     spawned: false,
     teardown: () => {
