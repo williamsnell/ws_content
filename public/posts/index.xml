@@ -6,7 +6,355 @@
     <description>Recent content in Posts on willsnell</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 06 Aug 2024 09:55:22 +1200</lastBuildDate><atom:link href="https://willsnell.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 12 Oct 2024 19:57:00 +1300</lastBuildDate><atom:link href="https://willsnell.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Why Is Measuring Composition So Difficult?</title>
+      <link>https://willsnell.com/posts/math_composition/</link>
+      <pubDate>Sat, 12 Oct 2024 19:57:00 +1300</pubDate>
+      
+      <guid>https://willsnell.com/posts/math_composition/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;This post was inspired by, and heavily leans upon, the structure set out in
+&lt;a href=&#34;https://transformer-circuits.pub/2021/framework/index.html&#34;&gt;&amp;ldquo;A Mathematical Framework for Transformer Circuits.&amp;rdquo;&lt;/a&gt;
+In it, the authors present
+a compelling way to decompose the transformer architecture into individual,
+more interpretable pieces. &lt;br&gt;
+&lt;br&gt;
+If you haven&amp;rsquo;t read it yet, I&amp;rsquo;d recommend doing so. Most of what I present
+won&amp;rsquo;t make sense without context.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;A transformer&amp;rsquo;s ability to process long sequences of text is
+facilitated by multiple attention layers, which we can decompose into
+multiple attention &lt;em&gt;heads&lt;/em&gt; per layer.&lt;/p&gt;</description>
+      <content>&lt;blockquote&gt;
+&lt;p&gt;This post was inspired by, and heavily leans upon, the structure set out in
+&lt;a href=&#34;https://transformer-circuits.pub/2021/framework/index.html&#34;&gt;&amp;ldquo;A Mathematical Framework for Transformer Circuits.&amp;rdquo;&lt;/a&gt;
+In it, the authors present
+a compelling way to decompose the transformer architecture into individual,
+more interpretable pieces. &lt;br&gt;
+&lt;br&gt;
+If you haven&amp;rsquo;t read it yet, I&amp;rsquo;d recommend doing so. Most of what I present
+won&amp;rsquo;t make sense without context.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;A transformer&amp;rsquo;s ability to process long sequences of text is
+facilitated by multiple attention layers, which we can decompose into
+multiple attention &lt;em&gt;heads&lt;/em&gt; per layer.&lt;/p&gt;
+&lt;p&gt;Because all information moving between tokens in a sequence must pass through an attention head,
+tracing how they are wired together should give us a circuit diagram of where a good chunk of
+the internal information is moving, and might let us
+decompose the monolithic transformer into many smaller, interconnected pieces.&lt;/p&gt;
+&lt;p&gt;While MLPs can and do move information, attention heads can &lt;em&gt;only&lt;/em&gt; move and scale information,
+and do so in an almost linear way.&lt;/p&gt;
+&lt;p&gt;We have a strong motivation to want to analyse a model by direct inspection of its weights,
+rather than by actually using the model for inference. Firstly, running models can be computationally expensive, while
+inspecting weights is typically quite cheap.
+Secondly, if we have to run the model, we need data for it to process. If we want to make
+strong conclusions about our observations, we need a breadth and depth of data, and often
+we need to curate the data appropriately. Direct inspection of weights bypasses all of that - the
+numbers that make up the model are unchanging (once trained) and easily accessible.&lt;/p&gt;
+&lt;p&gt;If we can treat attention head information movement as linear, we gain access to a host of linear
+algebra tools to analyse the system. The promise of this approach is a large and reasonably comprehensive circuit diagram,
+purely by inspecting the values of the models various weight matrices.&lt;/p&gt;
+&lt;p&gt;I am not the first to try and measure composition this way. In
+&lt;a href=&#34;https://transformer-circuits.pub/2021/framework/index.html&#34;&gt;A Mathematical Framework&lt;/a&gt;,
+the authors use the Frobenius norm to measure how much two heads compose with one another.&lt;/p&gt;
+&lt;p&gt;In &lt;a href=&#34;https://www.lesswrong.com/posts/vaHxk9jSfmGbzvztT/thoughts-on-formalizing-composition&#34;&gt;Thoughts on Formalizing Composition&lt;/a&gt;,
+Lieberum takes this further, axiomatizing what it means to measure composition. These axioms can
+be summarized (imprecisely) as follows:&lt;/p&gt;
+&lt;h3 id=&#34;lieberums-axioms&#34;&gt;Lieberum&amp;rsquo;s Axioms&lt;/h3&gt;
+&lt;p&gt;Let&amp;rsquo;s imagine two matrices \(A\) and \(B\), defined as &lt;/p&gt;
+\[B \in \mathbb{R}^{m \times n}, \;A \in \mathbb{R}^{n \times m}\]&lt;p&gt;\(A\) is the matrix in an early head that &lt;strong&gt;writes to&lt;/strong&gt; the residual stream.&lt;/p&gt;
+&lt;p&gt;\(B\) is the matrix in a later head that &lt;strong&gt;reads from&lt;/strong&gt; the residual stream.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s define a score as &lt;/p&gt;
+\[C(A,B)\]&lt;p&gt;\(C \) takes the two matrices and outputs some kind of a score.&lt;/p&gt;
+&lt;h4 id=&#34;axiom-1&#34;&gt;Axiom 1:&lt;/h4&gt;
+&lt;p&gt;If \(C(A,B) = 1\) - that is, two heads are composing as much as possible - \(A\) should only
+write where \(B\) can read.&lt;/p&gt;
+&lt;h4 id=&#34;axiom-2&#34;&gt;Axiom 2:&lt;/h4&gt;
+&lt;p&gt;If \(C(A,B) = 0\) - the two heads are not composing at all - \(B\) cannot read anything that
+\(A\) writes.&lt;/p&gt;
+&lt;h4 id=&#34;axiom-3&#34;&gt;Axiom 3:&lt;/h4&gt;
+&lt;p&gt;\(C\) should vary &amp;lsquo;smoothly&amp;rsquo; and &amp;lsquo;monotonically&amp;rsquo; in some sense, i.e. if there is more overlap, then \(C\)
+should be larger, and vice versa.&lt;/p&gt;
+&lt;p&gt;Axiom 3 is fairly complicated, and really says 2 different things:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;\(C\) should be smooth: We cannot just count the number of overlapping dimensions
+between our writing and reading heads. Instead, there now exists a grey area where
+a writing dimension partially overlaps a reading dimension, and our metric must account
+for this. In some sense, we can describe this as how much the reading head is &amp;ldquo;focused&amp;rdquo;
+on the writing head, versus just randomly reading in some of its outputs as background noise.&lt;/li&gt;
+&lt;li&gt;\(C\) should be monotonic: More overlap should lead to a higher \(C\) score.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We can extend this definition to make it more rigorous, in the spirit of what Axiom 3 was trying
+to convey. We will then show that, assuming communication in the residual stream is linear (i.e. ignoring input norm and MLPs),
+none of the current methods for analysing composition meet axioms 3 and 4.&lt;/p&gt;
+&lt;h4 id=&#34;proposed-axiom-4&#34;&gt;(Proposed) Axiom 4:&lt;/h4&gt;
+&lt;p&gt;\(C\) should measure the underlying information flow, and thus the relative ordering of composition scores between
+pairs of heads should be preserved when the model is changed in a way that does not affect information flow.&lt;/p&gt;
+&lt;p&gt;If \(C(A, B) &gt; C(A, C)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
+transformation which leaves the information flow through the model unchanged. That is,
+&lt;/p&gt;
+\[
+\begin{align}
+C(A^*, B^*) &gt; C(A^*, C^*) &amp;\iff C(A, B) &gt; C(A, C) \\
+\\
+    \text{Where } A^* &amp;= T\:A \\
+    B^* &amp;= T^{-1}\:A \\
+    C^* &amp;= T^{-1}\:A \\
+\end{align}
+\]&lt;p&gt;Where \(T\) is an invertible matrix which exploits a symmetry of the model to leave information flow unchanged.&lt;/p&gt;
+&lt;p&gt;A concrete example of \(T\) which will effectively always work is&lt;/p&gt;
+\[
+T = \begin{bmatrix}
+        0&amp; 1&amp; ... &amp;0\\
+        1&amp; 0&amp; ... &amp;0\\
+        \vdots &amp; \vdots &amp; \vdots &amp; \vdots\\
+        0 &amp;... &amp;...  &amp; 1\\
+\end{bmatrix}
+\]&lt;p&gt;That is, we simply swap the order of the first and second residual stream directions, and leave everything
+else unchanged. Heads which previously wrote to direction 1 will now write to direction 2, and vice versa.
+A head which previously read from direction 1 will now read from direction 2, etc. The actual information
+flow has not changed, and we have effectively just relabelled the axes.&lt;/p&gt;
+&lt;p&gt;All our typical tools for measuring composition easily survive this relabelling, and so they should!
+We will see through the remainder of this post that there are subtler manipulations we can use which
+pose actual problems if we hope to meet axioms 3 and 4.&lt;/p&gt;
+&lt;h1 id=&#34;linear-analysis&#34;&gt;Linear Analysis&lt;/h1&gt;
+&lt;p&gt;Following the work in &lt;a href=&#34;https://transformer-circuits.pub/2021/framework/index.html&#34;&gt;[1]&lt;/a&gt; and
+&lt;a href=&#34;https://www.lesswrong.com/posts/vaHxk9jSfmGbzvztT/thoughts-on-formalizing-composition&#34;&gt;[2]&lt;/a&gt;,
+we will begin by ignoring MLP layers and layer normalization. We know that both of these
+non-linearities can contribute to information movement, and hence composition. Later on,
+we&amp;rsquo;ll touch on layer normalization.&lt;/p&gt;
+&lt;p&gt;For now, removing them gives us purely linear communication from component to component
+in the residual stream.&lt;/p&gt;
+&lt;h2 id=&#34;the-unavoidable-symmetries-of-the-residual-stream&#34;&gt;The unavoidable symmetries of the residual stream.&lt;/h2&gt;
+&lt;h4 id=&#34;symmetries-inside-heads&#34;&gt;Symmetries &lt;em&gt;Inside&lt;/em&gt; Heads&lt;/h4&gt;
+&lt;p&gt;&amp;ldquo;A Mathematical Framework&amp;rdquo; points out that the specific
+vector we get when looking inside a transformer head is not
+particularly meaningful. We&amp;rsquo;ll work through the OV-circuit
+to show why this is the case.&lt;/p&gt;
+&lt;p&gt;Denoting the residual stream read a head can read from as \(\vec{x}_0\), the residual stream the same
+head writes to as \(\vec{x}_1\), and
+the hidden layer inside the head itself as \(\vec{y}\), the OV circuit is implemented as:&lt;/p&gt;
+\[
+\begin{align}
+    \vec{x}_1 &amp;= W_O\:\vec{y} \\
+    \vec{y}   &amp;= W_V\:\vec{x}_0
+\end{align}
+\]&lt;p&gt;We can make \(\vec{y}\) disappear by combining the O and V matrices, without any
+loss of generality:&lt;/p&gt;
+\[
+\begin{align}
+    \vec{x}_1 &amp;= (W_O W_V) \vec{x}_0 \\
+              &amp;= W_{OV} \vec{x}_0 \\
+\end{align}
+\]&lt;p&gt;It&amp;rsquo;s common to think of the combination of the \(W_O\) and \(W_V\) matrices
+as a single low-rank matrix \(W_{OV}\), exactly because we have so many
+different ways to slice up \(W_O\) and \(W_V\), all of which are valid.&lt;/p&gt;
+&lt;p&gt;To be precise, for any invertible matrix of appropriate shape \(T\):&lt;/p&gt;
+\[
+\begin{align}
+    \vec{x}_1 &amp;= W_O\:(T\:T^{-1})\:\vec{y} \\
+              &amp;= (W_O\:T)(T^{-1}\:W_V)\:\vec{x}_0 \\
+              &amp;= (W_O^*)(W_V^*)\:\vec{x}_0 \\
+    \vec{y}^* &amp;= W_V^*\:\vec{x}_0
+\end{align}
+\]&lt;p&gt;We can pick the basis of \(\vec{y}^*\) by any (invertible) transformation.
+The dimensionality of \(\vec{y}^*\) cannot be changed (because then \(T\) wouldn&amp;rsquo;t be invertible),
+but otherwise we are free to do whatever we want.&lt;/p&gt;
+&lt;p&gt;More than that, we should &lt;strong&gt;expect&lt;/strong&gt; any applicable \(T\) to have &lt;strong&gt;already been applied&lt;/strong&gt; by the time
+we are handed our model to analyse.&lt;/p&gt;
+&lt;p&gt;Our model and any techniques we apply must respect
+that \(\vec{y}\) is &lt;strong&gt;symmetric&lt;/strong&gt; with respect to the
+&lt;a href=&#34;https://en.wikipedia.org/wiki/General_linear_group&#34;&gt;group \[\text{GL}_n(\mathbb{R})\]&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;In other words, there are an infinite collection of \(W_O\)&amp;rsquo;s, and for every one a partner \(W_V\).
+However, there is only one unique \(W_{OV}\).&lt;/p&gt;
+&lt;p&gt;The same analysis can be applied to the matrix used to compute the dot-product attention, \(W_Q^T\:W_K\).&lt;/p&gt;
+&lt;h4 id=&#34;symmetries-between-heads&#34;&gt;Symmetries &lt;em&gt;Between&lt;/em&gt; Heads&lt;/h4&gt;
+&lt;p&gt;If we&amp;rsquo;re serious about ignoring LayerNorm (or its equivalent), we can extend this idea of symmetry
+outwards, to the residual stream (\(\vec{x}\)) itself.&lt;/p&gt;
+&lt;p&gt;Looking at the first few layers, for a single attention head:&lt;/p&gt;
+\[
+\begin{align}
+            \vec{x}_0 &amp;= W_E \\
+            \vec{x}_n &amp;= \mathbb{A} \cdot W_O W_V \vec{x}_{n-1} \\
+            \mathbb{A} &amp;= f(\vec{x}_{n-1}^T W_Q^T W_K \vec{x}_{n-1}) \\
+            \ell &amp;= W_U \vec{x}_{n}
+\end{align}
+\]&lt;p&gt;Where \(W_E\) is the embedding matrix, \(\mathbb{A}\) is the attention pattern calculated
+between sequence positions, and \(\ell\) the log-probabilities.&lt;/p&gt;
+&lt;p&gt;We can multiply anything which writes to the residual stream by an invertible matrix \(T\),
+and anything which reads from the residual stream
+by its inverse \(T^{-1}\).
+The following system is identical to the previous:&lt;/p&gt;
+\[
+\begin{align}
+            T \vec{x}_0 &amp;= T\: W_E \\
+\\
+            T \vec{x}_n &amp;= \mathbb{A} \cdot T\;W_O W_V\;T^{-1}\;T\vec{x}_{n-1} \\ 
+                        &amp;= \mathbb{A} \cdot (T W_O W_V T^{-1})\;T\vec{x}_{n-1} \\ 
+\\
+            \mathbb{A} &amp;= f((T \vec{x}_{n-1})^T (T^{-1})^T W_Q^T W_K T^{-1}\;T \vec{x}_{n-1}) \\
+                       &amp;= f((T \vec{x}_{n-1})^T (T^{-T} W_Q^T W_K T^{-1})\;T \vec{x}_{n-1}) \\
+\\
+            \ell &amp;= W_U\;T^{-1}\;T\;\vec{x}_{n}\\
+\end{align}
+\]&lt;p&gt;In other words, there are an infinite family of symmetric models. These are, for all intents and
+purposes, &lt;strong&gt;the same model&lt;/strong&gt;, but have completely different weights.&lt;/p&gt;
+&lt;p&gt;Just as \(W_O\) and \(W_V\) were not unique in our previous example, the aggregate matrices
+\(W_O W_V\) and \(W_Q^T W_K\) are symmetric, and can be arbitrarily modified by our choice of \(T\).
+The residual stream is symmetric about the group \(\text{GL}_n\), and (ignoring non-linearities), our
+analysis must respect that.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s worth pointing out that \(W_{OV}\) and \(W_Q^T\:W_K\) transform differently.
+\(W_{OV}\) transforms by \(T (.) T^{-1}\), while \(W_Q^T\:W_K\) transforms by \(T^{-T}\:(.)\:T^{-1}\).&lt;/p&gt;
+&lt;p&gt;The composite matrix \(W_{Q}^TW_K\:W_{OV}\) therefore transforms by \(T^{-T}\:(.)\:T^{-1}\).&lt;/p&gt;
+&lt;h4 id=&#34;why-does-this-matter&#34;&gt;Why does this matter?&lt;/h4&gt;
+&lt;p&gt;\(\text{GL}_N(\mathbb{R})\) is a very extensive group. Not only does it contain the group
+of all rotations and reflections \(\text{O}(n)\), but it allows us to arbitrarily scale
+different directions of the residual stream, or shear different directions to bring them
+arbitrarily close together (but never parallel), or far apart.&lt;/p&gt;
+&lt;p&gt;If we continue to work in this symmetric basis, we are left with very few linear algebra tools
+to measure composition
+that could not be confounded by an adversarial choice of \(T\). To enumerate:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We can&amp;rsquo;t rely on the angle between vectors (e.g. writing directions vs reading directions)
+to be meaningful (unless they are exactly parallel or perpendicular), because a small angle could
+just be the result of an adversarial \(T\) shearing directions to be close together.&lt;/li&gt;
+&lt;li&gt;We can&amp;rsquo;t rely on the ordering of singular values (or eigenvalues). A singular value could be large
+merely because an adversarial \(T\) scaled down the direction in the residual stream we
+are reading from, or scaled up the direction we are writing to.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;a-way-out&#34;&gt;A Way Out&lt;/h4&gt;
+&lt;p&gt;Possible ways to get out of this symmetry are:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Observe the model during runtime, collecting statistics on the residual stream directions.
+Use this data to rescale the residual stream to something more regular (assuming such a regularization
+exists).&lt;/li&gt;
+&lt;li&gt;Gather statistics of the weight matrices of the model, which exploit the fact
+that the same \(T\) and \(T^{-1}\) must be applied to all heads in the model at the same time,
+and use these to normalize our measures of composition.&lt;/li&gt;
+&lt;li&gt;Perform the measurements in a way that removes the symmetry.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Option 2 is actually fairly easy to do without leaving our linear world. This uses the same technique
+that gave us the \(W_{OV}\) combined matrix, namely: climb out of the hidden layer where the symmetry exists.&lt;/p&gt;
+&lt;p&gt;Instead of analysing \(W_{OV}\) and \(W_{QK}\) within the residual stream,
+we analyse them in the token space. That is, when performing measurements,
+instead of considering \(W_{OV}\) we consider&lt;/p&gt;
+\[
+        W_U W_O W_V W_E = W_U\:T^{-1}\:T\:W_O W_V\:T^{-1}\:T\:W_E \\
+\]&lt;p&gt;and instead of \(W_Q^T\:W_K\), we look at&lt;/p&gt;
+\[
+        W_E^T W_Q^T W_K W_E = W_E^T\:(T\:T^{-1})^T W_Q^T\;W_K\:T^{-1}\:T\:W_E \\
+\]&lt;p&gt;This is a lot more unwieldy, given we&amp;rsquo;ve gone from a ~1,000 dimensional space to 50,000+.
+But, it does mean that all our linear analysis tools start working again.&lt;/p&gt;
+&lt;p&gt;Operating in the token space works because \(W_E\) only ever receives one-hot vectors,
+and \(W_U\) must output into the token space for decoding, and so neither are symmetric
+(beyond global scaling, which can be easily ignored.)&lt;/p&gt;
+&lt;h1 id=&#34;what-about-normalization&#34;&gt;What about Normalization?&lt;/h1&gt;
+&lt;p&gt;Our linear model is well and good, but real transformers have normalization between reading the residual stream
+and feeding it into the Q, K, and V matrices. Adding normalization to our simplified transformer:&lt;/p&gt;
+\[
+\begin{align}
+            \vec{x}_0 &amp;= W_E \\
+            \vec{x}_n &amp;= \mathbb{A} \cdot W_O W_V\;\mathcal{G}(\vec{x}_{n-1}) \\
+            \mathbb{A} &amp;= f(\mathcal{G}(\vec{x}_{n-1})^T W_Q^T W_K\:\mathcal{G}(\vec{x}_{n-1})) \\
+            \ell &amp;= W_U\;\mathcal{G}(\vec{x}_{n})
+\end{align}
+\]&lt;p&gt;Where \(\mathcal{G}\) is a non-linear normalization function.&lt;/p&gt;
+&lt;p&gt;For our purposes, we&amp;rsquo;ll consider &lt;a href=&#34;https://arxiv.org/pdf/1910.07467&#34;&gt;RMS norm&lt;/a&gt;, used
+in models like LLaMA and Gemma. This has the functional form:&lt;/p&gt;
+\[
+\begin{align}
+            \mathcal{G}(\vec{x}) = \frac{\vec{x}}{\text{RMS}(\vec{x})} \\
+            \\
+            \text{where RMS}(\vec{x}) = \sqrt{ \frac{1}{n} \sum_{i=1}^{n} x_i^2} \\ 
+\end{align}
+\]&lt;p&gt;Importantly for us, although the residual stream is still symmetric with this transformation,
+it is only symmetric with respect to a matrix \(R\) that preserves the relation:&lt;/p&gt;
+\[
+\begin{align}
+            R^{-1}\:\mathcal{G}(R\:\vec{x}) &amp;= \mathcal{G}(\vec{x})\\
+            \therefore \mathcal{G}(R\:\vec{x}) &amp;= R \mathcal{G}(\vec{x})\\
+\end{align}
+\]&lt;p&gt;\(\text{RMS}(\vec{x})\) is just \(\frac{1}{\sqrt{n}} \cdot \vert \vert \vec{x} \vert \vert_2\), and
+so we can satisfy this relation with any matrix \(R\) that scales all distances from the origin by the
+same value, \(\alpha\). This gives us the group \(\mathcal{O}(n)\) in combination with any scalar \(\alpha\) applied
+globally.&lt;/p&gt;
+&lt;p&gt;Because \(\mathcal{O}(n)\) comprises all the reflections and rotations about the origin, it preserves not only
+angles between vectors, but also the magnitude of singular values. In some sense, RMS norm leaves us only with
+the most boring symmetries, implying &lt;strong&gt;all&lt;/strong&gt; of our typical tools for measuring composition should be valid.&lt;/p&gt;
+&lt;p&gt;Also of note, our symmetry-breaking trick shouldn&amp;rsquo;t be expected to work once we include normalization, because:
+&lt;/p&gt;
+\[
+            W_U\:W_{OV}\:W_E \neq W_U\:W_{OV}\:\mathcal{G}(W_E)\\
+\]&lt;h2 id=&#34;things-get-murkier&#34;&gt;Things Get Murkier&lt;/h2&gt;
+&lt;p&gt;Real models use input normalizations, and so we should be able to conclude that the residual stream in a real
+model is unique, modulo a rotation, reflection, or global scaling. Hence, any metric which is
+invariant under these simple symmetries (the inner product, for one, or the relative sizes of singular values)
+can be used to measure interactions in the residual stream.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;However&lt;/strong&gt;, things are unfortunately not so simple. There is no clear consensus on what normalization does
+at inference time, nor on whether its impact is meaningful:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://arxiv.org/pdf/2409.13710&#34;&gt;Heimersheim&lt;/a&gt; removed LayerNorm entirely from GPT-2. After fine-tuning,
+the resulting model performed almost as well as the original.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://arxiv.org/pdf/1911.07013&#34;&gt;Xu et. al&lt;/a&gt; find that LayerNorm provides most of its benefits by regularizing
+&lt;strong&gt;gradients&lt;/strong&gt; during &lt;strong&gt;backpropagation&lt;/strong&gt;. They trained and evaluated models with LayerNorm, without LayerNorm, and with DetachNorm,
+which behaves like LayerNorm but does not allow the gradients of the mean and variance terms to back-propagate.
+DetachNorm performs the worst of the three, suggesting LayerNorm&amp;rsquo;s benefit does not originate from
+its effect at inference time.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://aclanthology.org/2023.findings-acl.895.pdf&#34;&gt;Brody, Alon, &amp;amp; Yahav&lt;/a&gt; argue the opposite - that LayerNorm
+is crucial to the ability of attention heads to learn and express certain functions easily. A major caveat is that
+they studied very small models (8-dimensional residual stream, with 2-dimensional hidden head layers).&lt;/p&gt;
+&lt;p&gt;As models grow in size, they suggest the benefits of LayerNorm become less useful.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If we really can ignore input normalizations and treat the residual stream as linear, then we are left with a
+highly symmetric residual stream and need to use a technique that breaks the symmetry (such as working in token space.)
+Actually removing the normalization functions with fine-tuning (as &lt;a href=&#34;https://arxiv.org/pdf/2409.13710&#34;&gt;Heimersheim did&lt;/a&gt;)
+is not ideal, because it requires considerable compute and leaves us analysing a different model than what we started with.&lt;/p&gt;
+&lt;p&gt;If input normalization &lt;em&gt;is&lt;/em&gt; important to the expressivity and performance of a transformer, there still remains the question
+of whether the residual stream is a meaningful-enough basis to analyse it in. As the dimensionality of the residual stream grows,
+the impact of
+any one direction on the normalization statistics (such as variance) shrinks. It&amp;rsquo;s not hard to imagine scaling up
+or down residual stream directions, perhaps enough to reorder the singular values in a few attention heads, without
+meaningfully changing the effect of input normalization. We are no longer talking about &lt;strong&gt;identical&lt;/strong&gt; models related by
+a perfect symmetry, and so our conclusions are not quite so strong.&lt;/p&gt;
+&lt;p&gt;Nonetheless, if we work purely in the residual stream,
+there still appears room for inner-products between vectors, or singular values of matrices, to be nudged
+such that any score relying on these two metrics could be altered without meaningfully altering how the involved heads communicate
+with one another.&lt;/p&gt;
+&lt;p&gt;In the formalism of axiom 4, it&amp;rsquo;s hard to prove that two very similar (but not strictly identical) models will always
+preserve \(C(A, B) &gt; C(A, C) \therefore C(A^*, B^*) &gt; C(A^*, C^*)\).&lt;/p&gt;
+&lt;p&gt;Finally, there&amp;rsquo;s the (reasonably likely) case where input normalization isn&amp;rsquo;t important, per se, but its effects
+are baked into the pretrained transformers we&amp;rsquo;d like to analyse. &lt;a href=&#34;https://arxiv.org/pdf/2409.13710&#34;&gt;Heimersheim&lt;/a&gt;
+shows that layer norm cannot just be turned off - further finetuning is required. So if we apply our linear
+metrics to an unaltered model with layer norm, it&amp;rsquo;s unclear if our linear metrics are meaningful.&lt;/p&gt;
+&lt;h1 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h1&gt;
+&lt;p&gt;I&amp;rsquo;m fairly convinced at this point that trying to measure composition directly in the residual stream, using
+linear algebra tools, is not as straightforward as hoped.
+That&amp;rsquo;s not to say, however, that we have no avenues left to pursue. Three options
+available are:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Analyse composition in the token basis. This lets us confidently work with angles between vectors,
+and with relative ordering of (if not the absolute value of) singular values. However, this requires
+once again ignoring the effects of input normalization, which I am not yet convinced is completely valid.&lt;/li&gt;
+&lt;li&gt;Find some way of normalizing the weight matrices, without resorting to actual model inference, in order
+to bolster the linear algebra tools enough that they pass axiom 4.&lt;/li&gt;
+&lt;li&gt;Use some kind of inference-time methods that pass data through the network to measure composition. This gives up
+a lot of our linear algebra tools, but lets us actually characterise what non-linear parts of the system
+(the input normalizations and especially the MLPs) are doing.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I&amp;rsquo;m currently planning on how to pursue #3 - in particular, I suspect we have a lot of useful information via
+the compute graphs and gradient functions embedded in the models, and intended for network training.&lt;/p&gt;
+</content>
+    </item>
+    
     <item>
       <title>Navigating Hyperspace</title>
       <link>https://willsnell.com/posts/hyperspace/</link>
@@ -157,8 +505,7 @@ arranged in a single column or row, like so:&lt;/p&gt;
         -3.1 \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;An n-dimensional vector is \(n\) items long:&lt;/p&gt;
+\]&lt;p&gt;An n-dimensional vector is \(n\) items long:&lt;/p&gt;
 \[
 \begin{align}
     \vec{v}_{n} = \begin{bmatrix}
@@ -167,8 +514,7 @@ arranged in a single column or row, like so:&lt;/p&gt;
         x_{n}
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;Vectors can be used to represent all sorts of things, but here we&amp;rsquo;re
+\]&lt;p&gt;Vectors can be used to represent all sorts of things, but here we&amp;rsquo;re
 going to use them to represent &lt;em&gt;cartesian coordinates&lt;/em&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;1-space&#34;&gt;1-space&lt;/h2&gt;
 &lt;p&gt;If we had only 1 spatial dimension to play with, we could represent every
@@ -179,8 +525,7 @@ possible position with a 1-dimensional vector:&lt;/p&gt;
         x_{1} \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;If we were to fill our space with lots of random points, uniformly
+\]&lt;p&gt;If we were to fill our space with lots of random points, uniformly
 distributed from -1 to 1, it would look like this:&lt;/p&gt;
 &lt;div id=&#34;1d_space_chart&#34; class=&#34;plotly&#34;&gt;&lt;/div&gt;
 &lt;script&gt;
@@ -209,8 +554,7 @@ define an exact point through something like:&lt;/p&gt;
         0.24 \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;h2 id=&#34;3-space&#34;&gt;3-space&lt;/h2&gt;
+\]&lt;h2 id=&#34;3-space&#34;&gt;3-space&lt;/h2&gt;
 &lt;p&gt;Extending up to 3D is quite straightforward, where we
 now have 3-long vectors like this:&lt;/p&gt;
 &lt;div id=&#34;3_vec&#34;&gt;
@@ -247,8 +591,7 @@ inside its vector space:&lt;/p&gt;
         0.12  \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;We could &lt;em&gt;try&lt;/em&gt; using time as an extra dimension,
+\]&lt;p&gt;We could &lt;em&gt;try&lt;/em&gt; using time as an extra dimension,
 but we&amp;rsquo;ve already run out of spatial dimensions.&lt;/p&gt;
 &lt;p&gt;Of course, we want to go far beyond a mere &lt;em&gt;four&lt;/em&gt; dimensions.
 Even if we used time, how would we visualize something like this?&lt;/p&gt;
@@ -261,8 +604,7 @@ Even if we used time, how would we visualize something like this?&lt;/p&gt;
         x_{1000}   \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;h2 id=&#34;projecting&#34;&gt;Projecting&lt;/h2&gt;
+\]&lt;h2 id=&#34;projecting&#34;&gt;Projecting&lt;/h2&gt;
 &lt;p&gt;To glimpse higher dimensions, we&amp;rsquo;re
 necessarily going to need to make compromises.
 With &lt;em&gt;up to&lt;/em&gt; 3 dimensions to play with, any given
@@ -280,8 +622,7 @@ in three dimensions, and visualizing it with two.&lt;/p&gt;
         -0.32  \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;We can display the first 2 elements, i.e.:&lt;/p&gt;
+\]&lt;p&gt;We can display the first 2 elements, i.e.:&lt;/p&gt;
 \[
 \begin{align}
     \vec{c}_2 = \begin{bmatrix}
@@ -289,14 +630,12 @@ in three dimensions, and visualizing it with two.&lt;/p&gt;
         -0.85 \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;Where \(\vec{c}_2\) represents a &lt;strong&gt;cartesian projection&lt;/strong&gt;
+\]&lt;p&gt;Where \(\vec{c}_2\) represents a &lt;strong&gt;cartesian projection&lt;/strong&gt;
 down to 2 dimensions.&lt;/p&gt;
 &lt;p&gt;We can write this as an equation:&lt;/p&gt;
 \[
     \vec{v}_3 \mapsto \vec{c}_2
-\]
-&lt;p&gt;Where the arrow \(\mapsto\) means
+\]&lt;p&gt;Where the arrow \(\mapsto\) means
 &amp;ldquo;maps to&amp;rdquo;.&lt;/p&gt;
 &lt;p&gt;Visualized, it looks like so:&lt;/p&gt;
 &lt;div id=&#34;3d_into_2d&#34; style=&#34;width: 100%;&#34;&gt;&lt;/div&gt;
@@ -317,8 +656,7 @@ and the second element \(x_{2}\):&lt;/p&gt;
         -0.85 \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;What does our 2D projection tell us about the 3D space?
+\]&lt;p&gt;What does our 2D projection tell us about the 3D space?
 Well, we effectively get the same view as if we rotated
 our 3D view until we were just looking at one face.&lt;/p&gt;
 &lt;p&gt;If we&amp;rsquo;re plotting, say, \(x_{1}\) and \(x_{2}\),
@@ -349,8 +687,7 @@ on two distances, which we typically call x and y.
         y \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;In higher dimensions, we can add more directions, provided they are
+\]&lt;p&gt;In higher dimensions, we can add more directions, provided they are
 perpendicular to all the other directions. Hence, for 3d, we might
 use (x, y, z).&lt;/p&gt;
 &lt;p&gt;In a spherical coordinate system, however, a point in space is defined
@@ -369,8 +706,7 @@ one angle, \(\theta_1\).&lt;/p&gt;
         \theta_{1} \\
     \end{bmatrix}
 \end{align}
-\]
-&lt;p&gt;Notice that &lt;strong&gt;both \(\vec{v}_2\) and \(\vec{s}_2\)&lt;/strong&gt; refer to
+\]&lt;p&gt;Notice that &lt;strong&gt;both \(\vec{v}_2\) and \(\vec{s}_2\)&lt;/strong&gt; refer to
 the exact same point in space. The actual numbers inside the vectors,
 and the coordinate &lt;strong&gt;system&lt;/strong&gt; used are very different, but the point
 in space is the same.&lt;/p&gt;
@@ -392,8 +728,7 @@ another angle \(\theta_2\).&lt;/p&gt;
         1.32  \\
     \end{bmatrix}_{[r, \theta_1, \theta_2]}
 \end{align}
-\]
-&lt;h3 id=&#34;why-bother-with-spherical-coordinates&#34;&gt;Why bother with spherical coordinates?&lt;/h3&gt;
+\]&lt;h3 id=&#34;why-bother-with-spherical-coordinates&#34;&gt;Why bother with spherical coordinates?&lt;/h3&gt;
 &lt;p&gt;How does this help us? After all, you still
 need an n-length vector to represent a point in n-space.&lt;/p&gt;
 &lt;p&gt;What&amp;rsquo;s interesting, however, is when you start looking at
@@ -579,16 +914,14 @@ If \(n = 1000\) dimensions, the difference between a sphere of radius
 0.999 and radius 1.000 is&lt;/p&gt;
 \[
 1.000^{1000} - 0.99^{1000} \approx 0.9999
-\]
-&lt;p&gt;In other words, &amp;gt;99% of all of our volume is contained in an outer shell, with
+\]&lt;p&gt;In other words, &amp;gt;99% of all of our volume is contained in an outer shell, with
 thickness of 1% the radius of our space.
 The reason this collosal growth of volume with radius is not intuitive, is because
 in 3D, the same calculation would give around 3% of the volume in the outermost
 shell of our sphere:&lt;/p&gt;
 \[
 1.000^3 - 0.99^3 \approx 0.03 
-\]
-&lt;p&gt;Hence, even though our probability density function is constant in space,
+\]&lt;p&gt;Hence, even though our probability density function is constant in space,
 when we go to higher dimensions, &lt;strong&gt;the amount of space near the origin is astronomically
 low, and the amount at the outer perimeter is astronomically high.&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Because so much space is so far out, our points will inevitably &amp;ldquo;cluster&amp;rdquo;
@@ -709,8 +1042,7 @@ In it, a rotation between two &lt;a href=&#34;https://www.youtube.com/watch?v=zj
 \(q_1\) and \(q_2\), is given by the formula:&lt;/p&gt;
 \[
     \text{Slerp}(q_1, q_2; u) = \frac{\sin( (1 - u)\omega)}{\sin \omega} q_1 + \frac{\sin u\omega}{\sin \omega} q_2
-\]
-&lt;p&gt;Where \(u\) is the &lt;code&gt;fraction&lt;/code&gt; parameter between 0 and 1, and \(q_1 \cdot q_2 = \cos \omega\).&lt;/p&gt;
+\]&lt;p&gt;Where \(u\) is the &lt;code&gt;fraction&lt;/code&gt; parameter between 0 and 1, and \(q_1 \cdot q_2 = \cos \omega\).&lt;/p&gt;
 &lt;p&gt;It turns out that this equation generalizes to n-dimensional vectors. Hence, we have part 1): a function to
 rotate from one vector to another. I&amp;rsquo;m unclear how &amp;ldquo;optimal&amp;rdquo; this rotation is, since there are many ways to
 rotate between two vectors in hyperspace. However, rotation - or &amp;ldquo;distance preserving linear maps&amp;rdquo; - are
@@ -718,13 +1050,11 @@ very complicated and dimension-specific, so sticking with a general formula that
 &lt;p&gt;If we recall the definition of the dot product of two vectors:&lt;/p&gt;
 \[
     a \cdot b = \vert \vert a \vert \vert  \space  \vert \vert b \vert \vert \cos \omega
-\]
-&lt;p&gt;Where \(\omega\) is the angle between the two vectors. We need \(\omega\) for our
+\]&lt;p&gt;Where \(\omega\) is the angle between the two vectors. We need \(\omega\) for our
 slerp formula. So, we can rewrite the formula as:&lt;/p&gt;
 \[
     \omega = \arccos( \frac{a}{\vert\vert a \vert \vert} \cdot \frac{b}{\vert \vert b \vert \vert} )
-\]
-&lt;p&gt;Another way of thinking about \(\frac{a}{\vert \vert a \vert \vert}\) is that is this is \(\hat{a}\)
+\]&lt;p&gt;Another way of thinking about \(\frac{a}{\vert \vert a \vert \vert}\) is that is this is \(\hat{a}\)
 (pronounced a-hat) - the unit (length 1) vector which represents only the direction components of a.&lt;/p&gt;
 &lt;p&gt;This is indeed what the python slerp function does:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;omega &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arccos(np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;clip(np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;dot(start_vec&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;linalg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;norm(start_vec), stop_vec&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;linalg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;norm(stop_vec)), &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;))
@@ -835,8 +1165,7 @@ an (almost) exact opposite of the first - that is, the vector \(\vec{v}^2\)
 used to generate the second image was calculated as:&lt;/p&gt;
 \[
     \vec{v}^2 = - \vec{v}^1 + \epsilon
-\]
-&lt;p&gt;Where \(\epsilon\) was a very small offset necessary to prevent &lt;code&gt;slerp&lt;/code&gt; and &lt;code&gt;slerp2&lt;/code&gt; from blowing
+\]&lt;p&gt;Where \(\epsilon\) was a very small offset necessary to prevent &lt;code&gt;slerp&lt;/code&gt; and &lt;code&gt;slerp2&lt;/code&gt; from blowing
 up with a \(\frac{1}{\sin(0)}\) term. \(\vec{v}^1\) was a random vector
 from the correct distribution.&lt;/p&gt;
 &lt;p&gt;This means our &lt;code&gt;lerp&lt;/code&gt; from the first portrait to the second is a straight
@@ -938,9 +1267,16 @@ not matter, and certainly depends on the actual system being studied.&lt;/p&gt;
       <pubDate>Mon, 22 Jul 2024 09:25:17 +1200</pubDate>
       
       <guid>https://willsnell.com/posts/gans/</guid>
-      <description>What are GANs? Much ink has already been spilled on the class of machine learning networks called GANs, or Generative Adversarial Networks, so I will only summarize it here.
-If you&amp;rsquo;re interested in learning more, this short course is a great resource.
-Although replaced in contemporary applications by diffusion models for tasks like image generation, GANs provide a unique opportunity to study the interplay of two tightly-coupled systems, each seeking a different goal.</description>
+      <description>&lt;h2 id=&#34;what-are-gans&#34;&gt;What are GANs?&lt;/h2&gt;
+&lt;p&gt;Much ink has already been spilled on the class of machine learning networks called
+GANs, or Generative Adversarial Networks, so I will only summarize it here.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;If you&amp;rsquo;re interested in learning more, &lt;a href=&#34;https://developers.google.com/machine-learning/gan/gan_structure&#34;&gt;this short course is a great resource.&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Although replaced in contemporary applications by diffusion models for
+tasks like image generation, GANs provide a unique opportunity
+to study the interplay of two tightly-coupled systems, each seeking a
+different goal.&lt;/p&gt;</description>
       <content>&lt;h2 id=&#34;what-are-gans&#34;&gt;What are GANs?&lt;/h2&gt;
 &lt;p&gt;Much ink has already been spilled on the class of machine learning networks called
 GANs, or Generative Adversarial Networks, so I will only summarize it here.&lt;/p&gt;

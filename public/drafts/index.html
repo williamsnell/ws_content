@@ -14,9 +14,6 @@
 <link rel="canonical" href="https://willsnell.com/drafts/" />
 
 
-  
-
-
 
 
 
@@ -146,7 +143,552 @@
 
         <div class="post-content">
           
-            <!DOCTYPE html> + - vec_len - vec_len + 
+            <!DOCTYPE html>
+<head>
+<script src="plotly-2.32.0.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+  <div id="myDiv"></div>
+<button onclick="vector_position = Math.min(VEC_LEN, vector_position + 1); redraw_background();"> + </button>
+  <span id="vector_display"></span>
+<button onclick="vector_position = Math.max(0, vector_position - 1); redraw_background();"> - </button>
+<button onclick="vec_pos = Math.max(0, vec_pos - 1); calc_vecs(); redraw_background();"> vec_len - </button>
+  <span id="vec_len"></span>
+<button onclick="vec_pos = Math.min(vec_pos + 1, VEC_LENGTHS.length - 1); calc_vecs(); redraw_background();"> vec_len + </button>
+
+  <div id="hyperspace" style="flexbox">
+    <div id="circular"></div>
+    <div id="spherical"></div>
+  </div>
+
+<div class="slidecontainer">
+  <input type="range" min="0." max="1." value="0.5" class="slider" id="myRange"
+    oninput="frac = this.value; draw_point();">
+</div>
+
+<script>
+
+const NUM_VECS = 10_000;
+
+const VEC_LENGTHS = [1, 2, 3, 4, 5, 6, 10, 20, 50, 100, 1000];
+let vec_pos = 2;
+let VEC_LEN = VEC_LENGTHS[vec_pos];
+
+
+// Hopefully all this configuration stuff can be
+// pulled in from CSS from the site...
+const point_color = 'grey';
+const DEFAULT_MARKER_SIZE = 2.0;
+
+// User-selectable elements
+let vector_position = 0;
+
+function gaussianRandom(mean=0, stdev=1) {
+  const u = 1 - Math.random();
+  const v = Math.random();
+  const z = Math.sqrt( -2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  return z * stdev + mean;
+}
+
+function uniformRandom(min=-1, max=1) {
+  return Math.random() * (max - min) + min;
+}
+
+function vec_to_spherical_xyz(vec, elem0=0, elem1=1, elem2=2) {
+  // Consider only calculating this once, when generating the
+  // vectors.
+  const two_norm = Math.sqrt(vec.reduce((acc, x) => (acc + x**2), 0));
+  if (vec.length == 0) {
+    return [0, 0, 0];
+  }
+  if (vec.length == 1) {
+    return [two_norm, 0, 0];
+  }
+  if (vec.length == 2 | elem2 == null) {
+    let angle_1 = Math.atan2(vec[elem1], vec[elem0]);
+    return [two_norm * Math.cos(angle_1), two_norm * Math.sin(angle_1), 0];
+  }
+
+  let angle_1 = Math.atan2(vec[elem1], vec[elem0]);
+  let angle_2 = Math.atan2(vec[elem2], Math.sqrt(vec[elem0]**2 + vec[elem1]**2));
+
+  return [
+    two_norm * Math.cos(angle_1) * Math.cos(angle_2), 
+    two_norm * Math.sin(angle_1) * Math.cos(angle_2), 
+    two_norm * Math.sin(angle_2)
+  ];
+}
+
+function vec_norm(vec) {
+  let acc = 0;
+  for (var i = 0; i < vec.length; i++) {
+    acc += vec[i]**2;
+  }
+  return Math.sqrt(acc);
+}
+
+function vec_to_spherical_maybe_faster(vec, elem0=0, elem1=1, elem2=2) {
+  if (vec.length == 1) {
+    return [vec[elem0], 0, 0];
+  }
+  const norm = vec_norm(vec);
+
+  if (vec.length == 2 | elem2 == null) {
+    // This feels like cheating, but really 
+    // we don't need to do anything up until 
+    // 4 dimensions
+    return [vec[elem0], vec[elem1], 0];
+  }
+
+  const dir_norm = vec_norm([vec[elem0], vec[elem1], vec[elem2]]);
+  const mag = norm / dir_norm;
+  return [vec[elem0] * mag, vec[elem1] * mag, vec[elem2] * mag];
+}
+
+function vecs_to_spherical(vecs, elem0=0, elem1=1, elem2=2) {
+  let x = [];
+  let y = [];
+  let z = [];
+
+  vecs.map((vec) => {
+    let [vec_x, vec_y, vec_z] = vec_to_spherical_xyz(vec, elem0, elem1, elem2);
+    x.push(vec_x);
+    y.push(vec_y);
+    z.push(vec_z);
+  });
+
+  return [x, y, z];
+}
+
+function newVec(initializer) {
+  return Array.from({length: VEC_LEN}, (x, i) => initializer());
+}
+  
+let vecs = [];
+
+function calc_vecs() {
+  VEC_LEN = VEC_LENGTHS[vec_pos];
+  vecs = [];
+  for (let i = 0; i < NUM_VECS; i++) {
+    vecs.push(newVec(gaussianRandom));
+  }
+}
+
+function slice_arrays(index, array) {
+  let x = [];
+  let y = [];
+  let z = [];
+  
+  for (var i = 0; i < array.length; i++) {
+    x.push(array[i][index]);
+    y.push(array[i][index + 1]);
+    z.push(array[i][index + 2]);
+  }
+  return [x, y, z];
+}
+
+
+let layout = {
+  width: "30%",
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  plot_bgcolor: 'rgba(0,0,0,0)',
+  hovermode: false,
+  
+  xaxis: {
+    zeroline: false,
+    tickmode: "array",
+    tickvals: [-3, 0, 3], 
+  },
+  yaxis: {
+    zeroline: false,
+    tickmode: "array",
+    tickvals: [-3, 0, 3], 
+  },
+  scene: {
+    aspectmode: 'data',
+    xaxis: {
+      zeroline: false,
+      tickmode: "array",
+      tickvals: [-3, 0, 3], 
+    },
+    yaxis: {
+      zeroline: false,
+      scaleanchor: "x",
+      scaleratio: 1,
+      tickmode: "array",
+      tickvals: [-3, 0, 3], 
+    },
+    zaxis: {
+      zeroline: false,
+      tickmode: "array",
+      tickvals: [-3, 0, 3], 
+    }
+  }
+};
+
+calc_vecs();
+
+let [x, y, z] = slice_arrays(vector_position, vecs);
+/* let [hero_x, hero_y, hero_z] = slice_arrays(vector_position, hero_vec); */
+
+const data = [
+  {
+    type: 'scatter3d',
+    mode: 'markers',
+    x: x,
+    y: y,
+    z: z,
+    opacity: 1,
+    marker: {
+      size: vecs.map((x) => DEFAULT_MARKER_SIZE),
+      color: vecs.map((x) => point_color),
+      line: {
+        width: 0,
+      }
+    }
+  },
+  // {
+  //   type: 'scatter3d',
+  //   mode: 'markers',
+  //   x: hero_x,
+  //   y: hero_y,
+  //   z: hero_z,
+  //   marker: {
+  //     size: 2,
+  //     color: 'red',
+  //   }
+  //}
+]
+data[0].marker.color[0] = 'red';
+data[0].marker.color[1] = 'red';
+data[0].marker.size[0] = 6;
+data[0].marker.size[1] = 6;
+
+const config = {
+  displayModeBar: false,
+  dragMode: false,
+  scrollZoom: true,
+};
+
+let plot = document.getElementById("myDiv");
+let spherical = document.getElementById("spherical");
+let circular = document.getElementById("circular");
+let vec_display = document.getElementById("vector_display");
+
+function redraw_background() {
+  let [x, y, z] = slice_arrays(vector_position, vecs);
+  data[0].x = x;
+  data[0].y = y;
+  data[0].z = z;
+  data[0].marker.color[0] = 'red';
+  data[0].marker.color[1] = 'red';
+  data[0].marker.size[0] = 6;
+  data[0].marker.size[1] = 6;
+
+  Plotly.react(plot, data, layout, config);
+
+  let [s_x, s_y, s_z] = vecs_to_spherical(vecs, vector_position, vector_position + 1, vector_position + 2);
+  spherical_data[0].x = s_x;
+  spherical_data[0].y = s_y;
+  spherical_data[0].z = s_z;
+  spherical_data[0].marker.color[0] = 'red';
+  spherical_data[0].marker.color[1] = 'red';
+  spherical_data[0].marker.size[0] = 6;
+  spherical_data[0].marker.size[1] = 6;
+
+  layout.scene.xaxis.tickmode = "array";
+  layout.scene.yaxis.tickmode = "array";
+  layout.scene.zaxis.tickmode = "array";
+  let sigma = 1.0;
+  let bound = Math.ceil(Math.sqrt(vecs[0].length) * sigma);
+  layout.scene.xaxis.tickvals = [-bound, bound];
+  layout.scene.yaxis.tickvals = [-bound, bound];
+  layout.scene.zaxis.tickvals = [-bound, bound];
+  layout.xaxis.tickvals = [-bound, bound];
+  layout.yaxis.tickvals = [-bound, bound];
+
+
+  Plotly.react(spherical, spherical_data, layout, config);
+
+
+  let [c_x, c_y, c_z] = vecs_to_spherical(vecs, vector_position, vector_position + 1, null);
+  circular_data[0].x = c_x;
+  circular_data[0].y = c_y;
+  circular_data[0].marker.color[0] = 'red';
+  circular_data[0].marker.color[1] = 'red';
+  circular_data[0].marker.size[0] = 6;
+  circular_data[0].marker.size[1] = 6;
+  circular_data[0].test = "true";
+
+  Plotly.react(circular, circular_data, layout, config);
+
+  // show interpolation
+  let lerp_path = draw_interp(vecs, lerp);
+  let [p_x, p_y, p_z] = slice_arrays(vector_position, lerp_path);
+  let new_data = {
+    type: 'scatter3d',
+    mode: 'lines',
+    x: p_x,
+    y: p_y,
+    z: p_z,
+  }
+
+  Plotly.addTraces(plot, new_data);
+  Plotly.deleteTraces(plot, 1);
+
+  let [ns_x, ns_y, ns_z] = vecs_to_spherical(lerp_path, vector_position, vector_position + 1, vector_position + 2);
+  let new_sphere = {
+    type: 'scatter3d',
+    mode: 'lines',
+    x: ns_x,
+    y: ns_y,
+    z: ns_z,
+  }
+
+  Plotly.deleteTraces(spherical, 1);
+  Plotly.addTraces(spherical, new_sphere);
+
+  let [nc_x, nc_y, nc_z] = vecs_to_spherical(lerp_path, vector_position, vector_position + 1, null);
+  let new_circ = {
+    type: 'scattergl',
+    mode: 'lines',
+    x: nc_x,
+    y: nc_y,
+  }
+
+  Plotly.deleteTraces(circular, 1);
+  Plotly.addTraces(circular, new_circ);
+
+  showVecText();
+  draw_point();
+}
+
+function showVecText() {
+  let vec_string = "[";
+  if (vector_position > 0) {
+    vec_string += "..., "; 
+  }
+
+  // TODO bounds check on vector_position
+  const NUM_DISPLAYED = 3;
+  for (var pos = vector_position; pos < Math.min(VEC_LEN, vector_position + NUM_DISPLAYED); pos++) {
+    vec_string += `${vecs[0][pos].toFixed(2)}, `;
+  }
+
+  if (vector_position + NUM_DISPLAYED < VEC_LEN) {
+    vec_string += "...";
+  }
+
+  vec_string += "]";
+  
+  vec_display.textContent = vec_string;
+
+  let vec_len = document.getElementById("vec_len");
+  vec_len.textContent = VEC_LEN;
+}
+
+Plotly.newPlot(plot, data, layout, config);
+
+// 3-sphere
+let [s_x, s_y, s_z] = vecs_to_spherical(vecs);
+
+
+const spherical_data = [
+  {
+    type: 'scatter3d',
+    mode: 'markers',
+    x: s_x,
+    y: s_y,
+    z: s_z,
+    opacity: 1,
+    marker: {
+      size: vecs.map((x) => DEFAULT_MARKER_SIZE),
+      color: vecs.map((x) => point_color),
+      line: {
+        width: 0,
+      } 
+    }
+  },
+]
+spherical_data[0].marker.color[0] = 'red';
+spherical_data[0].marker.color[1] = 'red';
+spherical_data[0].marker.size[0] = 6;
+spherical_data[0].marker.size[1] = 6;
+
+Plotly.newPlot(spherical, spherical_data, layout, config);
+
+// 2-sphere
+let [c_x, c_y, c_z] = vecs_to_spherical(vecs, vector_position, vector_position + 1, null);
+
+const circular_data = [
+  {
+    type: 'scattergl',
+    mode: 'markers',
+    x: c_x,
+    y: c_y,
+    opacity: 1,
+    marker: {
+      size: vecs.map((x) => DEFAULT_MARKER_SIZE),
+      color: vecs.map((x) => point_color),
+      line: {
+        width: 0,
+      } 
+    }
+  },
+]
+circular_data[0].marker.color[0] = 'red';
+circular_data[0].marker.color[1] = 'red';
+circular_data[0].marker.size[0] = 6;
+circular_data[0].marker.size[1] = 6;
+
+Plotly.newPlot(circular, circular_data, layout, config);
+// Plotly.restyle(plot, 'marker.size', [['red']]);
+showVecText();
+
+// lerp
+
+function lerp(fraction, start, stop) {
+  let out = [];
+  for (var i = 0; i < start.length; i++) {
+    out[i] = start[i] + fraction * (stop[i] - start[i]);
+  }
+  return out;
+}
+
+function _v(func, array) {
+  // Apply a function along a vector.
+  return array.map((x) => func(x));
+}
+
+function clamp(val, min, max) {
+  // Mirror's numpy's 'clip' function
+  return Math.max(min, Math.min(val, max));
+}
+
+function mult(array, num) {
+  // elemwise multiplication
+  return array.map((x) => x * num);
+}
+
+function dot(arr1, arr2) {
+  // Implicitly assumes arr1 and arr2 
+  // have the same length.
+  acc = 0;
+  for (var i = 0; i < arr1.length; i++) {
+    acc += arr1[i] * arr2[i]; 
+  }
+  return acc;
+}
+
+function slerp(fraction, start, stop) {
+  const norm_start = mult(start, 1 / vec_norm(start));
+  const norm_stop = mult(stop, 1 / vec_norm(stop));
+
+  const omega = Math.acos(clamp(dot(norm_start, norm_stop), -1, 1));
+  const so = Math.sin(omega);
+
+  let out = new Array(start.length);
+
+  if (so == 0) {
+    for (let i = 0; i < start.length; i++) {
+      out[i] = (1.0 - fraction) * start[i] + fraction * stop[i];
+    }
+  }
+  else {
+    let s_omega_minus = Math.sin((1.0 - fraction) * omega) / so;
+    let s_omega_plus = Math.sin(fraction * omega) / so;
+    for (let i = 0; i < start.length; i++) {
+      out[i] = s_omega_minus * start[i] + s_omega_plus * stop[i];
+    }
+  }
+  return out;
+}
+
+// Returns an array of vectors, i.e. NOT transformed into x, y, z
+function draw_interp(vecs, interpolator, num_steps=100) {
+  let tweens = Array.from({ length: num_steps}, (v, i) => i / (num_steps - 1));
+  
+  return tweens.map((fraction) => interpolator(fraction, vecs[0], vecs[1]));
+     
+}
+
+// show interpolation
+let lerp_path = draw_interp(vecs, lerp);
+let [p_x, p_y, p_z] = slice_arrays(vector_position, lerp_path);
+let new_data = {
+  type: 'scatter3d',
+  mode: 'lines',
+  x: p_x,
+  y: p_y,
+  z: p_z,
+}
+
+Plotly.addTraces(plot, new_data);
+
+let [ns_x, ns_y, ns_z] = vecs_to_spherical(lerp_path, vector_position, vector_position + 1, vector_position + 2);
+let new_sphere = {
+  type: 'scatter3d',
+  mode: 'lines',
+  x: ns_x,
+  y: ns_y,
+  z: ns_z,
+}
+
+Plotly.addTraces(spherical, new_sphere);
+
+let [nc_x, nc_y, nc_z] = vecs_to_spherical(lerp_path, vector_position, vector_position + 1, null);
+let new_circ = {
+  type: 'scattergl',
+  mode: 'lines',
+  x: nc_x,
+  y: nc_y,
+}
+
+Plotly.addTraces(circular, new_circ);
+
+let frac = 0.5;
+
+function draw_point(del_old=true) {
+  let midpoint = slerp(frac, vecs[0], vecs[1]);
+  midpoint_circ = vecs_to_spherical([midpoint], vector_position, vector_position + 1, null);
+  midpoint_spher = vecs_to_spherical([midpoint], vector_position, vector_position + 1, vector_position + 2);
+  if (del_old) {
+    Plotly.deleteTraces(spherical, 1);
+    Plotly.deleteTraces(circular, 1);
+    Plotly.deleteTraces(plot, 1);
+  }
+  let spher_point = {
+    type: 'scatter3d',
+    mode: 'marker',
+    x: midpoint_spher[0],
+    y: midpoint_spher[1],
+    z: midpoint_spher[2],
+  }
+  let circ_point = {
+    type: 'scattergl',
+    mode: 'marker',
+    x: midpoint_circ[0],
+    y: midpoint_circ[1],
+  } 
+  let point = {
+    type: 'scatter3d',
+    mode: 'marker',
+    x: midpoint[0],
+    y: midpoint[1],
+    z: midpoint[2],
+  }
+
+  Plotly.addTraces(spherical, spher_point);
+  Plotly.addTraces(circular, circ_point);
+  Plotly.addTraces(plot, point);
+}
+
+draw_point(false);
+
+
+</script>
+</body>
           
         </div>
 
@@ -170,7 +712,113 @@
 
         <div class="post-content">
           
-            <!DOCTYPE html> 
+            <!DOCTYPE html>
+<head>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<script src="plotly-2.32.0.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+<div id='vector'></div>
+
+<script>
+const VEC_ELEMS_DISPLAYED = 8;
+const AVAILABLE_DIMENSIONS = [1, 2, 3, 4, 5, 6, 10, 20, 50, 100, 1000];
+
+
+function latexize_vector(vector, element_id, slice_offset, dimensions, num_selected) {
+  if (dimensions > vector.length) throw("Dimensions > vector length");
+  let latex_str = `
+    \\[
+    \\mathbf{
+    \\begin{align}
+\\vec{v_{${dimensions}}} = \\begin{bmatrix}`;
+
+  const start = Math.max(0, Math.min(slice_offset, dimensions - VEC_ELEMS_DISPLAYED));
+  const desired_stop = Math.min(dimensions, slice_offset + VEC_ELEMS_DISPLAYED);
+    
+  // Adding dots increases the size of the vector, so we need
+  // this check to stop the vector increasing and decreasing
+  // in length as we scroll through.
+  const stop = (start > 0 && desired_stop < dimensions) ? desired_stop - 1 : desired_stop;
+
+  if (start > 0) latex_str += `\\vdots \\\\`;
+  for (let i = start; i < stop; i++) {
+    if ((i - slice_offset) >= 0 && (i - slice_offset) < num_selected) {
+      latex_str += `\\mathbf{${vector[i].toFixed(2)}} \\\\`
+    } else {
+      latex_str += `${vector[i].toFixed(2)} \\\\`
+    }
+  }
+  if (stop < dimensions) latex_str += `\\vdots \\\\`;
+
+  latex_str += `\\end{bmatrix}
+              \\end{align}
+            }
+            \\]`;
+  document.getElementById(element_id).innerHTML = latex_str;
+}
+
+function get_vector_widget(vector, id, start_dims=0, start_offset=0, num_selected=2) {
+  let current_dims = start_dims;
+  let current_offset = start_offset;
+
+  const container = document.getElementById(id);
+  const dim_plus = container.appendChild(document.createElement("button"));
+  const dim_minus = container.appendChild(document.createElement("button"));
+  const slice_plus = container.appendChild(document.createElement("button"));
+  const slice_minus = container.appendChild(document.createElement("button"));
+  
+  const vec_div = container.appendChild(document.createElement("div"));
+  vec_div.id = id + "_vec_div";
+
+  async function redraw_vec() {
+    latexize_vector(vector, vec_div.id, current_offset, AVAILABLE_DIMENSIONS[current_dims], num_selected);
+    await MathJax.typesetPromise();
+  }
+
+  redraw_vec();
+
+
+  // create +dimensions button
+  dim_plus.textContent = "dim+";
+  dim_plus.onclick = () => {
+    if (AVAILABLE_DIMENSIONS[current_dims + 1] <= vector.length) {
+      current_dims = current_dims + 1
+      current_offset = Math.min(current_offset, AVAILABLE_DIMENSIONS[current_dims] - num_selected);
+      redraw_vec();
+    };
+  };
+  // create -dimensions button
+  dim_minus.textContent = "dim-";
+  dim_minus.onclick = () => {
+    current_dims = Math.max(0, current_dims - 1);
+    current_offset = Math.min(current_offset, AVAILABLE_DIMENSIONS[current_dims] - num_selected);
+    redraw_vec();
+  }; 
+  // create +slice button
+  slice_plus.textContent = "slice+";
+  slice_plus.onclick = () => {
+    current_offset = Math.min(AVAILABLE_DIMENSIONS[current_dims] - num_selected, current_offset + 1); 
+    redraw_vec();
+  };
+
+  // create -slice button
+  slice_minus.textContent = "slice-";
+  slice_minus.onclick = () => {
+    current_offset = Math.max(0, current_offset - 1); 
+    redraw_vec();
+  };
+
+
+}
+  // hook buttons up to relevant plot callbacks
+
+get_vector_widget(Array.from({length: 1000}, (v, i) => i), 'vector', 0, 0, 1);
+
+</script>
           
         </div>
 

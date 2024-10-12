@@ -1,0 +1,4 @@
+.button_bar {
+    display: flex;
+    gap: 10px 10px;
+}

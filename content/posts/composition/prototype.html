@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<head>
+        <title>Title</title>
+        <link rel="stylesheet" href="style.css" />
+<script src="https://cdn.plot.ly/plotly-2.35.0.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+
+<body>
+    <div id="myDiv"></div>
+    <div id="myDiv2"></div>
+    <div id="myDiv3"></div>
+<script type="module">
+import { DEFAULT_MARKERS, DEFAULT_2D_LAYOUT, DEFAULT_3D_LAYOUT, DEFAULT_CONFIG, MAX_SIDEBYSIDE_WIDTH, colors } from "./config.js";
+
+let start_time = Date.now();
+
+let last_time = start_time;
+
+const FREQUENCY = 0.008; // rad/s
+
+function plot(id) {
+    let elem = document.getElementById(id);
+    let initialized = false;
+    let paused = false;
+           /* Plot vectors of shape
+           *
+           */
+    return function plot_vectors(tensors) {
+        let traces = [];
+        let trace_numbers = [];
+
+        for (let j = 0; j < tensors.length; j++) {
+           let tensor = tensors[j];
+           let vectors = tensor.arraySync();
+
+           for (let i = 0; i < vectors.length; i++) {
+                trace_numbers.push(traces.length);
+
+                let vector = vectors[i];
+
+                let marker = structuredClone(DEFAULT_MARKERS);
+                marker.color = colors[i % colors.length];
+
+                if (vector.length >= 3) {
+                    // 3D or greater
+                    traces.push(
+                    {
+                       x: [vector[0]],
+                       y: [vector[1]],
+                       z: [vector[2]],
+                       mode: 'markers',
+                       marker: marker,
+                       type: 'scatter3d',
+                       scene: `scene${j+1}`,
+                    })
+                } else {
+                    // 2D or 1D 
+                    let y;
+                    if (vector.length == 1) {
+                        y = [0];
+                    } else {
+                        y = [vector[1]];
+                    }
+                    traces.push(
+                    {
+                        x: [vector[0]],
+                        y: y,
+                        z: [0],
+                        mode: 'markers',
+                        marker: marker,
+                        type: 'scatter3d',
+                        scene: `scene${j+1}`,
+                    })
+                }
+            }
+        }
+
+        if (initialized) {
+            if (!paused) {
+                Plotly.animate(id, [{data: traces, traces: trace_numbers}], 
+                   {
+                     transition: {
+                         duration: 0,
+                         easing: 'linear'
+                     },
+                     frame: {
+                         duration: 0,
+                         redraw: true,
+                     }   
+                   }
+                );
+            }
+        } else {
+            Plotly.newPlot(elem, traces, DEFAULT_3D_LAYOUT, DEFAULT_CONFIG);
+            initialized = true;
+
+            elem.addEventListener('pointerdown', () => {paused = true;});
+            elem.addEventListener('click', () => {paused = false;});
+            //elem.addEventListener('pointerup', () => {setTimeout(() => {paused = false;}, 1000);});
+        }
+    }
+}
+
+let plotter = plot('myDiv');
+let plotter2 = plot('myDiv2');
+let plotter3 = plot('myDiv3');
+
+function animate_point() {
+    let elapsed = Date.now() - start_time;
+
+    let sine = Math.sin(elapsed * FREQUENCY);
+    let cosine = Math.cos(elapsed * FREQUENCY);
+
+    let vectors = tf.tensor([
+        [0.5 * sine, -0.75,    -0.5   ],
+        [0.75,   0.5 * cosine, -0.5   ],
+        [0.5,     0,      0.5 * sine + 0.75]
+        ]);
+
+
+    let plane = tf.tensor([
+        [1, 0, 0],
+        [0, 1, 0]
+    ]);
+
+    let hidden = tf.einsum("br, hr -> bh", vectors, plane);
+
+    let projected = tf.einsum("bh, hr -> br", hidden, plane);
+
+
+    plotter([vectors, hidden, projected]);
+     
+    requestAnimationFrame(animate_point);
+}
+
+animate_point();
+
+
+
+function make_double_chart(id, charts, labels) {
+    const plot_container = document.getElementById(id); 
+
+    if (plot_container === null) throw ("element not defined");
+    const width = plot_container.offsetWidth;
+
+    // for now, assume there are 2 charts
+    let fig1 = document.createElement("div");
+    fig1.id = id + "_fig1";
+    let fig2 = document.createElement("div");
+    fig2.id = id + "_fig2";
+
+    if (width < MAX_SIDEBYSIDE_WIDTH) {
+        // ---------- Mobile Layout -----------
+        
+        let button_bar = plot_container.appendChild(document.createElement("div"));
+        // add tab buttons
+        let left_button = button_bar.appendChild(document.createElement("button"));
+    }
+
+}
+</script>
+
+</body>

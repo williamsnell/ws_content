@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  
+    <title> :: willsnell</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="&lt;!DOCTYPE html&gt; Title " />
+<meta name="keywords" content="" />
+
+  <meta name="robots" content="noodp" />
+
+<link rel="canonical" href="http://localhost:1313/posts/composition/prototype/" />
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="http://localhost:1313/styles.css">
+
+
+
+
+
+
+
+  <link rel="shortcut icon" href="http://localhost:1313/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="http://localhost:1313/img/theme-colors/orange.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="">
+<meta property="og:description" content="&lt;!DOCTYPE html&gt; Title " />
+<meta property="og:url" content="http://localhost:1313/posts/composition/prototype/" />
+<meta property="og:site_name" content="willsnell" />
+
+  
+    <meta property="og:image" content="http://localhost:1313/img/favicon/orange.png">
+  
+
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="orange">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    will_snell
+  </div>
+</a>
+
+    </div>
+    
+      <ul class="menu menu--mobile">
+  <li class="menu__trigger">Menu&nbsp;▾</li>
+  <li>
+    <ul class="menu__dropdown">
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+      
+    </ul>
+  </li>
+</ul>
+
+    
+    
+  </div>
+  
+    <nav class="navigation-menu">
+  <ul class="navigation-menu__inner menu--desktop">
+    
+      
+        
+          <li><a href="/about" >About</a></li>
+        
+      
+      
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<article class="post">
+  <h1 class="post-title">
+    <a href="http://localhost:1313/posts/composition/prototype/"></a>
+  </h1>
+  <div class="post-meta"><span class="post-reading-time">1 min read (3 words)</span></div>
+
+  
+  
+
+
+  
+
+  <div class="post-content"><div>
+        <!DOCTYPE html>
+<head>
+        <title>Title</title>
+        <link rel="stylesheet" href="style.css" />
+<script src="https://cdn.plot.ly/plotly-2.35.0.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+
+<body>
+    <div id="myDiv"></div>
+    <div id="myDiv2"></div>
+    <div id="myDiv3"></div>
+<script type="module">
+import { DEFAULT_MARKERS, DEFAULT_2D_LAYOUT, DEFAULT_3D_LAYOUT, DEFAULT_CONFIG, MAX_SIDEBYSIDE_WIDTH, colors } from "./config.js";
+
+let start_time = Date.now();
+
+let last_time = start_time;
+
+const FREQUENCY = 0.008; // rad/s
+
+function plot(id) {
+    let elem = document.getElementById(id);
+    let initialized = false;
+    let paused = false;
+           /* Plot vectors of shape
+           *
+           */
+    return function plot_vectors(tensors) {
+        let traces = [];
+        let trace_numbers = [];
+
+        for (let j = 0; j < tensors.length; j++) {
+           let tensor = tensors[j];
+           let vectors = tensor.arraySync();
+
+           for (let i = 0; i < vectors.length; i++) {
+                trace_numbers.push(traces.length);
+
+                let vector = vectors[i];
+
+                let marker = structuredClone(DEFAULT_MARKERS);
+                marker.color = colors[i % colors.length];
+
+                if (vector.length >= 3) {
+                    // 3D or greater
+                    traces.push(
+                    {
+                       x: [vector[0]],
+                       y: [vector[1]],
+                       z: [vector[2]],
+                       mode: 'markers',
+                       marker: marker,
+                       type: 'scatter3d',
+                       scene: `scene${j+1}`,
+                    })
+                } else {
+                    // 2D or 1D 
+                    let y;
+                    if (vector.length == 1) {
+                        y = [0];
+                    } else {
+                        y = [vector[1]];
+                    }
+                    traces.push(
+                    {
+                        x: [vector[0]],
+                        y: y,
+                        z: [0],
+                        mode: 'markers',
+                        marker: marker,
+                        type: 'scatter3d',
+                        scene: `scene${j+1}`,
+                    })
+                }
+            }
+        }
+
+        if (initialized) {
+            if (!paused) {
+                Plotly.animate(id, [{data: traces, traces: trace_numbers}], 
+                   {
+                     transition: {
+                         duration: 0,
+                         easing: 'linear'
+                     },
+                     frame: {
+                         duration: 0,
+                         redraw: true,
+                     }   
+                   }
+                );
+            }
+        } else {
+            Plotly.newPlot(elem, traces, DEFAULT_3D_LAYOUT, DEFAULT_CONFIG);
+            initialized = true;
+
+            elem.addEventListener('pointerdown', () => {paused = true;});
+            elem.addEventListener('click', () => {paused = false;});
+            //elem.addEventListener('pointerup', () => {setTimeout(() => {paused = false;}, 1000);});
+        }
+    }
+}
+
+let plotter = plot('myDiv');
+let plotter2 = plot('myDiv2');
+let plotter3 = plot('myDiv3');
+
+function animate_point() {
+    let elapsed = Date.now() - start_time;
+
+    let sine = Math.sin(elapsed * FREQUENCY);
+    let cosine = Math.cos(elapsed * FREQUENCY);
+
+    let vectors = tf.tensor([
+        [0.5 * sine, -0.75,    -0.5   ],
+        [0.75,   0.5 * cosine, -0.5   ],
+        [0.5,     0,      0.5 * sine + 0.75]
+        ]);
+
+
+    let plane = tf.tensor([
+        [1, 0, 0],
+        [0, 1, 0]
+    ]);
+
+    let hidden = tf.einsum("br, hr -> bh", vectors, plane);
+
+    let projected = tf.einsum("bh, hr -> br", hidden, plane);
+
+
+    plotter([vectors, hidden, projected]);
+     
+    requestAnimationFrame(animate_point);
+}
+
+animate_point();
+
+
+
+function make_double_chart(id, charts, labels) {
+    const plot_container = document.getElementById(id); 
+
+    if (plot_container === null) throw ("element not defined");
+    const width = plot_container.offsetWidth;
+
+    // for now, assume there are 2 charts
+    let fig1 = document.createElement("div");
+    fig1.id = id + "_fig1";
+    let fig2 = document.createElement("div");
+    fig2.id = id + "_fig2";
+
+    if (width < MAX_SIDEBYSIDE_WIDTH) {
+        // ---------- Mobile Layout -----------
+        
+        let button_bar = plot_container.appendChild(document.createElement("div"));
+        // add tab buttons
+        let left_button = button_bar.appendChild(document.createElement("button"));
+    }
+
+}
+</script>
+
+</body>
+
+      </div></div>
+
+  
+    
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="http://localhost:1313/posts/gans/">
+                <span class="button__icon">←</span>
+                <span class="button__text">Why does my GAN do that?</span>
+            </a>
+        </span>
+        
+        
+    </div>
+</div>
+
+  
+
+  
+    
+
+  
+</article>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2024 Powered by <a href="https://gohugo.io">Hugo</a></span>
+    
+      <span>:: <a href="https://github.com/panr/hugo-theme-terminal" target="_blank">Theme</a> made by <a href="https://github.com/panr" target="_blank">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+
+
+
+
+
+<script type="text/javascript" src="/bundle.min.js"></script>
+
+
+
+
+
+  
+
+  
+    
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      displayMath: [['\\[', '\\]'], ['$$', '$$']],  
+      inlineMath: [['\\(', '\\)']]                  
+    }
+  };
+</script>
+
+
+  
+</div>
+
+</body>
+</html>

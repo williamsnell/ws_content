@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  
+    <title>Composition and Subspaces :: willsnell</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content=" In this post, we will explore how, and why, to project from a high-dimensional space to a low-dimensional space and back.
+For the first section, we will play with some simple models intended to build an intuition for what is and isn&rsquo;t possible with these projections. We&rsquo;ll also build some techniques for analysing these subspaces, and comparing different subspaces.
+In the second section, we will dive into how, and why, we can apply this to machine learning, and in particular to the transformer architecture. For this section, I&rsquo;d recommend reading A Mathematical Framework for Transformer Circuits. In particular, understanding the transformer architecture, and the idea of composition between heads.
+" />
+<meta name="keywords" content=", " />
+
+  <meta name="robots" content="noodp" />
+
+<link rel="canonical" href="http://localhost:1313/posts/composition/" />
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="http://localhost:1313/styles.css">
+
+
+
+
+
+
+
+  <link rel="shortcut icon" href="http://localhost:1313/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="http://localhost:1313/img/theme-colors/orange.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Composition and Subspaces">
+<meta property="og:description" content=" In this post, we will explore how, and why, to project from a high-dimensional space to a low-dimensional space and back.
+For the first section, we will play with some simple models intended to build an intuition for what is and isn&rsquo;t possible with these projections. We&rsquo;ll also build some techniques for analysing these subspaces, and comparing different subspaces.
+In the second section, we will dive into how, and why, we can apply this to machine learning, and in particular to the transformer architecture. For this section, I&rsquo;d recommend reading A Mathematical Framework for Transformer Circuits. In particular, understanding the transformer architecture, and the idea of composition between heads.
+" />
+<meta property="og:url" content="http://localhost:1313/posts/composition/" />
+<meta property="og:site_name" content="willsnell" />
+
+  
+  
+  <meta property="og:image" content="http://localhost:1313/">
+
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+
+
+  <meta property="article:published_time" content="2024-09-12 13:26:15 &#43;1200 NZST" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="orange">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    will_snell
+  </div>
+</a>
+
+    </div>
+    
+      <ul class="menu menu--mobile">
+  <li class="menu__trigger">Menu&nbsp;▾</li>
+  <li>
+    <ul class="menu__dropdown">
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+      
+    </ul>
+  </li>
+</ul>
+
+    
+    
+  </div>
+  
+    <nav class="navigation-menu">
+  <ul class="navigation-menu__inner menu--desktop">
+    
+      
+        
+          <li><a href="/about" >About</a></li>
+        
+      
+      
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<article class="post">
+  <h1 class="post-title">
+    <a href="http://localhost:1313/posts/composition/">Composition and Subspaces</a>
+  </h1>
+  <div class="post-meta"><time class="post-date">2024-09-12</time></div>
+
+  
+    <span class="post-tags">
+      
+      #<a href="http://localhost:1313/tags/"></a>&nbsp;
+      
+      #<a href="http://localhost:1313/tags/"></a>&nbsp;
+      
+    </span>
+  
+  
+
+
+  
+
+  <div class="post-content"><div>
+        <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+<script src="config.js"></script>
+<script src="charts.js"></script>
+<script src="observer.js"></script>
+<p>In this post, we will explore how, and why, to
+project from a high-dimensional space to a low-dimensional space and back.</p>
+<p>For the first section, we will play with some simple models intended to build an intuition
+for what is and isn&rsquo;t possible with these projections. We&rsquo;ll also build some techniques
+for analysing these <em>subspaces</em>, and comparing different <em>subspaces</em>.</p>
+<p>In the second section, we will dive into how, and why, we can apply this to machine learning,
+and in particular to the transformer architecture. For this section, I&rsquo;d recommend reading
+<a href="https://transformer-circuits.pub/2021/framework/index.html">A Mathematical Framework for Transformer Circuits</a>.
+In particular, understanding the transformer architecture, and the idea of <strong>composition</strong> between
+heads.</p>
+<p>I was inspired to write this post after reading <em>A Mathematical Framework</em> and wondering if
+there was a way to get a more granular understanding of attention head composition. Beyond just
+asking if heads composed, I wanted to try quantify the effective &ldquo;bandwidth&rdquo; between two heads. This
+post summarizes that work, which was somewhat successful.</p>
+<h1 id="part-1-geometry-and-intuition">Part 1: Geometry and Intuition<a href="#part-1-geometry-and-intuition" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>To understand communication between attention heads, we need to understand projection.
+We will start out with low-dimensional examples, which we can visualize, to help build our intuition.
+A lot of this will carry over to higher dimensions, which we cannot fully visualize.</p>
+<h2 id="a-simple-projection-2d---1d">A simple projection (2D -&gt; 1D)<a href="#a-simple-projection-2d---1d" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>To explain what we mean by projection, imagine we have a 2D space.</p>
+<p>We&rsquo;ll call a vector living in this space \(\vec{x}\), and it will look like:</p>
+\[
+    \begin{align}
+        \vec{x} = \begin{bmatrix} 
+                x_0 \\
+                x_1 \\
+                  \end{bmatrix}
+    \end{align}
+\]<p>Here, \(x_0\) and \(x_1\) are just numbers. E.g. an element of our 2D space could be:</p>
+\[
+    \begin{align}
+        \vec{x} = \begin{bmatrix}
+                    5.2   \\
+                    -11.0 \\
+                  \end{bmatrix}
+    \end{align}
+\]<p>We can define a matrix, \(W_{(2\rightarrow 1)}\), to project vectors from our 2D space into a new 1D space.
+We&rsquo;ll call elements of this new 1D space \(\vec{y}\), and they will look like:</p>
+\[
+    \begin{align}
+        \vec{y} = \begin{bmatrix}
+                    y_0 \\
+                  \end{bmatrix}
+    \end{align}
+\]<p>All our projections will be linear, meaning \(W_{(2 \rightarrow 1)}\) will not depend on the
+values of \(\vec{x}\)</p>
+<p>To make things a little less abstract, lets pick some values for \(W_{(2 \rightarrow 1)}\).
+Any numbers will do, and these are picked somewhat arbitrarily.</p>
+<p>\(W_{(2 \rightarrow 1)}\) will be a <em>1 x 2</em> matrix:
+2 columns for the number going in, 1 row for the number coming out.</p>
+\[
+        \begin{align}
+            W_{(2 \rightarrow 1)} = \begin{bmatrix}
+                                    2 & -1 \\
+                                  \end{bmatrix}
+        \end{align}
+\]<p>Our 1-dimensional vector \(\vec{y}\) is then simply:</p>
+\[
+                            \vec{y} = W_{(2 \rightarrow 1)} \: \vec{x}
+\]<h4 id="projecting-down">Projecting Down<a href="#projecting-down" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>Let&rsquo;s throw a bunch of points in our 2D space, wiggling around randomly.
+We&rsquo;ll then project them to our 1D space, and visualize what happens.</p>
+<div id="plot1"></div>
+<script>
+spawn_plot("plot1", d2_d1);
+</script>
+<p>[[[
+Plot: 2D plot with wiggling points, 1D plot with wiggling points.</p>
+<pre><code>\(W_{(2 \rightarrow 1)}\) modifiable.
+
+Orient to line button.
+</code></pre>
+<p>]]]</p>
+<p>A few notes:</p>
+<ul>
+<li>The straight line in the 2D plot represents our matrix, \(W_{(2 \rightarrow 1)}\).</li>
+<li>Change the values of \(W_{(2 \rightarrow 1)}\) and seeing how the line changes.</li>
+<li>Try clicking the &ldquo;orient along line&rdquo; button, and then imagine collapsing the vertical
+direction in the plot. You should see that this is equivalent (minus a scaling factor)
+to the 1D plot.</li>
+</ul>
+<p>Hopefully, I have convinced you that the following concepts are all equivalent:</p>
+<ul>
+<li>Projecting a 2D point along a line.</li>
+<li>Multiplying a <em>1 x 2</em> matrix with a 2D vector</li>
+<li>Taking a weighted sum of components in 2D, i.e. \(y_0 = a \cdot x_0 + b \cdot x_1\)</li>
+</ul>
+<p>Finally, you should see that by doing this projection, we have fundamentally
+<strong>lost information</strong>. If this fact isn&rsquo;t obvious yet, that&rsquo;s ok - it&rsquo;ll become clear when
+we project back up.</p>
+<h4 id="projecting-up">Projecting Up<a href="#projecting-up" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>We&rsquo;ve seen that projecting down loses information, by collapsing our plane onto a line.
+Does projecting up similarly expand a line into a plane?</p>
+<p>No, it doesn&rsquo;t.</p>
+<p>In fact, we&rsquo;ll see that projecting a 1D vector to higher dimensions simply means writing
+to a line in that high-dimensional space. Since we&rsquo;re using constant matrices, that line
+is always going to be straight. Hence, even though our up-projected vector <em>looks</em> 2-dimensional,
+in some very real sense it is still squarely 1D.</p>
+<p>To show this, let&rsquo;s define our up-projection matrix, \(W_{(1\rightarrow2)}\).
+This will need to be of shape <em>2 x 1</em>: 1 column for the dimension going in, 2 rows
+for the dimensions coming out. Again, the numbers in this matrix were picked arbitrarily.</p>
+\[
+\begin{align}
+        W_{(1 \rightarrow 2)} = \begin{bmatrix}
+                                -1.5 \\
+                                3.2 \\
+                                \end{bmatrix}
+\end{align}
+\]<p>We&rsquo;ll continue calling our 1D vector \(\vec{y}\), and call the up-projection \(\vec{z}\).</p>
+<p>Then, we have:</p>
+\[
+                        \vec{z} = W_{(1 \rightarrow 2)} \: \vec{y}
+\]<p>Once again, play around with the values of \(W_{(1 \rightarrow 2)}\) and prove to yourself
+that up-projecting is <strong>always</strong> going to write along a line in the higher-dimensional space.</p>
+<div id="plot2"></div>
+<script>
+spawn_plot("plot2", d1_d2);
+</script>
+<p>It turns out that this fact generalizes into higher dimensions.</p>
+<p>If we want to, we can combine a down-projection with an up-projection.</p>
+<p>That is,</p>
+\[
+\begin{align}
+                        \vec{z} &= W_{(1 \rightarrow 2)} \: \vec{y} \\
+                        \vec{z} &= W_{(1 \rightarrow 2)} \: (W_{(2 \rightarrow 1)} \: \vec{x}) \\
+                        \vec{z} &= (W_{(1 \rightarrow 2)} \: W_{(2 \rightarrow 1)}) \: \vec{x} \\
+                        \vec{z} &= W_{(2 \rightarrow 1 \rightarrow 2)} \: \vec{x}
+\end{align}
+\]<p>Where \(W_{(2 \rightarrow 1 \rightarrow 2)}\) is a new matrix, of size <em>2 x 2</em>, created by multiplying
+the existing up-projection and down-projection matrices together.</p>
+<p>Because our matrix squeezes our 2D space through a 1D <strong>bottleneck</strong>,
+it will have a <strong><a href="https://en.wikipedia.org/wiki/Rank_(linear_algebra)">rank</a> of 1</strong>, despite being <em>2 x 2</em>.</p>
+<p>This is exactly equivalent to saying our matrix projects our higher dimensional space along a line,
+scales it by some amount, and then projects it out along another line.</p>
+<p>Hopefully by now you can guess what this combined matrix is doing:</p>
+<ol>
+<li>Squeeze 2D space into a 1D projection along a line.</li>
+<li>Write the 1D projection into a line in 2D space.</li>
+</ol>
+<p>Note that up-projecting doesn&rsquo;t &ldquo;unsqueeze&rdquo; the 1D data - that has been irreversibly squashed,
+and information has been lost.</p>
+<div id="plot3"></div>
+<script>
+spawn_plot("plot3", d2_d2);
+</script>
+<h2 id="aside-polarization">Aside: Polarization<a href="#aside-polarization" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Even with the very simple tools we&rsquo;ve developed, we can have some fun!</p>
+<p>In some sense, a low-rank matrix <em>filters</em> or <em>polarizes</em> the space it reads in along a particular
+direction. With very few assumptions, we can recreate a surprising fact from quantum mechanics!</p>
+<p>First, let&rsquo;s make a down-projection matrix \(W_{down}\).
+We&rsquo;ll fix the matrix elements to lie along the unit circle, with angle \(\theta\). This is the same as saying
+we won&rsquo;t rescale our projection along the line.</p>
+<p>That is,</p>
+\[
+\begin{align}
+                W_{down} = \begin{bmatrix}
+                        \cos{\theta} & \sin{\theta}
+                            \end{bmatrix}
+\end{align}
+\]<p>Here \(\theta\) gives us the angle of our line from the \(x_0\) direction.</p>
+<p>Next, we just assume that our up-projection matrix \(W_{up}\) writes in the direction of the
+same line that we just read from.</p>
+\[
+\begin{align} 
+                W_{up} = \begin{bmatrix}
+                        \cos{\theta} \\
+                        \sin{\theta} \\
+                        \end{bmatrix} 
+\end{align}
+\]<p>Our combined matrix \(W = W_{up} \: W_{down}\) is therefore:</p>
+\[
+\begin{align}
+               W_{\theta} = \begin{bmatrix}
+                    \cos^2{\theta} & \cos{\theta}\sin{\theta} \\
+                    \cos{\theta}\sin{\theta} & \sin^2{\theta} \\
+                   \end{bmatrix}
+\end{align}
+\]<p>It turns out this is <strong>exactly</strong> the <a href="https://en.wikipedia.org/wiki/Jones_calculus">Jones matrix</a> for
+the polarization of light! We can see it in action below:</p>
+<script>
+let p_angle1 = 1.52; // rad
+function get_jones_matrix(theta) {
+    let s = Math.sin(theta);
+    let c = Math.cos(theta);
+    return [s, c];   
+}
+let mat = get_jones_matrix(p_angle1);
+</script>
+<div id="polarization">
+    <div id="pz_plot"></div>
+    <input type="range" min="0" max="6.283" value="1.52" class="slider" id="p_angle1",
+     oninput="p_angle1 = this.value; 
+              mat = get_jones_matrix(p_angle1);
+              "
+</div>
+<script>
+spawn_plot(d2_d2("pz_plot", mat, mat));
+</script>
+<p>[[
+Interactive, 2D -&gt; 2D, with theta adjustable
+]]</p>
+<p>In many ways, this is the simplest bottleneck projection we could do - it reads and writes along
+the same direction, it doesn&rsquo;t rescale - and yet it already has some pretty wild emergent properties!</p>
+<p>Take the <a href="https://chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Quantum_Tutorials_(Rioux)/07%3A_Quantum_Optics/7.13%3A_The_Three-Polarizer_Paradox">Three-Polarizer Paradox</a>:</p>
+<p>Let&rsquo;s place two polarizers, at angles 90° from one another - e.g. 0°, 90°.</p>
+<p>The first polarizer cancels out any vertical component, leaving only horizontally polarized waves.
+The second cancels out the horizontal component, leaving&hellip; nothing.
+In real life, if we take two polarizing filters and place them 90° to
+each other, we do in fact block all of the light.</p>
+<p>We can see this in the maths:</p>
+\[
+\begin{align}
+            W_{0°} &= \begin{bmatrix}
+                        1 & 0 \\
+                        0 & 0 \\
+                        \end{bmatrix} \\
+            W_{90°} &= \begin{bmatrix}
+                        0 & 0 \\
+                        0 & 1 \\
+                        \end{bmatrix} \\
+            W_{90°} \: W_{0°} &= \begin{bmatrix}
+                                        0 & 0 \\
+                                        0 & 0 \\
+                                \end{bmatrix}
+\end{align}
+\]<p>However, lets try adding a 45° polarizer between the 0° and 90°:</p>
+\[
+\begin{align}
+            W_{45°} &= \begin{bmatrix}
+                        0.5 & 0.5 \\
+                        0.5 & 0.5 \\
+                      \end{bmatrix} \\
+                        \\
+                      \\
+            W_{90°} W_{45°} W_{0°} &= \begin{bmatrix}
+                       0 & 0 \\
+                       0.5 & 0 \\
+                       \end{bmatrix}
+\end{align}
+\]<p><strong>Light passes through!</strong></p>
+<p>If you can find 3 pairs of polarized sunglasses, I&rsquo;d highly recommend trying this for yourself.</p>
+<p>It can be fun to think of low-rank matrices as an abstract kind of polarizer. The difference,
+of course, is that most of the time we&rsquo;re not writing out to the same exact space we read in from.</p>
+<p>(Remember, saying a matrix is low-rank is exactly the same as saying we
+map down to a bottleneck layer of lower dimension, and then map back up.)</p>
+<h2 id="symmetry">Symmetry<a href="#symmetry" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>You might&rsquo;ve noticed that when we combine an up-projection matrix and a down-projection
+matrix (e.g. \(W_{\theta}\) in the polarization example), the hidden layer effectively
+disappears. We didn&rsquo;t <strong>need</strong> to explicitly write out the intermediate value of \(\vec{y}\),
+like so:</p>
+\[
+\begin{align}
+            \vec{z} &= W_{up} \: \vec{y} \\
+            \vec{y} &= W_{down} \: \vec{x}
+\end{align}
+\]<p>Because nothing in the equations depends on the value of \vec{y},
+we are free to fold it into the matrices. In some sense, the matrix
+\(W_{up}\:W_{down}\) is more unique than the two sub-matrices individually.</p>
+<p>We have a lot of freedom in how we slice and dice the combined matrix \(W_{ud} = W_{up}\:W_{down}\)
+into two rectangular matrices.</p>
+<p>Algebraically,</p>
+\[
+\begin{align}
+    W_{ud} &= W_{up}\:W_{down} \\
+           &= W_{up}\:A\;A^{-1}\:W_{down} \\ 
+\end{align}
+\]<p>Where \(A\) is any invertible matrix of shape \(d_{bottleneck} \times d_{bottleneck}\).</p>
+<p>In this formulation, we would fold \(A\) into \(W_{up}\) and \(A^{-1}\) into \(W_{down}\),
+and in doing so arbitrarily linearly transforming \(\vec{y}\):</p>
+\[
+\begin{align}
+    \vec{z} &= (W_{up}\:A) \vec{y} \\
+    \vec{y}&= (A^{-1}\:W_{down}) \vec{x} \\
+\end{align}
+\]<p>In some sense, we can say \(\vec{y}\) has a pretty extensive set of <em>symmetries</em>, whereby we can
+arbitrarily rotate, scale, etc. the definition of \(\vec{y}\), without ever changing the overall
+action performed by \(W_{ud}\). In my mind&rsquo;s eye, I imagine \(W_{ud}\) as a cube, and \(\vec{y}\) as
+slicing that cube in half about some arbitrary axis. Regardless of how the first half of the cube is
+sliced, the second half exactly cancels out that slice.</p>
+<p>Most of these symmetries will be quite boring.</p>
+<p>In a machine learning context, for example,
+we should expect matrices of this type (e.g. the OV-circuit in a transformer) to represent a
+randomly picked orientation in this huge group of symmetries. Because the model doesn&rsquo;t use \(\vec{y}\)
+for anything, we should expect the \(\vec{y}\) we find in a real model to be randomly oriented. The
+symmetries here mean no direction is special, and we shouldn&rsquo;t expect to find a privileged basis.</p>
+<h4 id="symmetry-in-qk-circuits">Symmetry in QK circuits<a href="#symmetry-in-qk-circuits" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>A QK circuit is responsible for computing the <a href="https://transformerlensorg.github.io/CircuitsVis/?path=/docs/attention-attentionpattern--induction-head">attention pattern</a>
+of the attention head, and
+involves down-projecting the residual stream through two different matrices \(W_Q\) and \(W_K\),
+before taking the dot product of these two vectors. This gives us the attention score, which is
+then softmax&rsquo;d to get the attention pattern.</p>
+<p>Writing this out, the attention score \(s\) is:</p>
+\[
+\begin{align}
+                s &= \langle \vec{y_q}, \vec{y_k} \rangle \\
+                  &= \langle W_K\:\vec{x}, W_Q\:\vec{x} \rangle \\
+                  &= (W_K\:\vec{x})^T\:W_Q\:\vec{x} \\
+                  &= \vec{x}^T\:W_K^T\:W_Q\:\vec{x} \\
+\end{align}
+\]<p>If we want to perform a basis in the bottleneck dimension,
+and we add the restriction that we want to multiply both \(W_Q\) and \(W_K\) by the same
+matrix \(A\), we get the following:</p>
+\[
+\begin{align}
+                s &= (A\:W_K\:\vec{x})^T\:A\:W_Q\:\vec{x} \\
+                  &= \vec{x}^T\:W_K^T\:A^T\:A\:W_Q\:\vec{x} \\
+   \therefore A^T &= A^{-1}
+\end{align}
+\]<p>The matrices \(A\) that match this requirement are all part of the <a href="https://en.wikipedia.org/wiki/Orthogonal_group">Orthogonal Group</a>
+\(O(n)\). For example, if our bottleneck layer was 3-dimensional, we could use any matrix in \(O(3)\) to find
+another basis. \(O(n)\) can be thought of as all possible flips, rotations, etc. we could perform in
+n-dimensions. By definition, it preserves the inner product (in our case, the dot product), which
+explains why we can use it for the attention score.</p>
+<h3 id="symmetries-in-symmetries">Symmetries in Symmetries<a href="#symmetries-in-symmetries" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>Part of what makes neural nets like transformers so hard to interpret is that big components, like
+the <a href="https://transformer-circuits.pub/2021/framework/index.html#residual-comms">residual stream</a>,
+exhibit these symmetries. As explained in <strong>A Mathematical Framework</strong>, the residual stream is
+just an arbitrary slice taken between the embedding and unembedding matrices. We could easily apply
+a transformation to every matrix that reads from or writes to the residual stream, and the model
+would be indistinguishable mathematically.</p>
+<p>How then can we make any meaningful claims about different components which communicate through
+the residual stream?</p>
+<h2 id="communication">Communication<a href="#communication" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>This is where everything we&rsquo;ve learned so far comes together. We&rsquo;ll start with a toy model -
+two 1-dimensional hidden layers communicating via a 2-dimensional channel - and build from there.</p>
+
+      </div></div>
+
+  
+    
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="http://localhost:1313/posts/math_composition/">
+                <span class="button__icon">←</span>
+                <span class="button__text">Why Is Measuring Composition So Difficult?</span>
+            </a>
+        </span>
+        
+        
+        <span class="button next">
+            <a href="http://localhost:1313/posts/hyperspace/">
+                <span class="button__text">Navigating Hyperspace</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+    
+
+  
+</article>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2024 Powered by <a href="https://gohugo.io">Hugo</a></span>
+    
+      <span>:: <a href="https://github.com/panr/hugo-theme-terminal" target="_blank">Theme</a> made by <a href="https://github.com/panr" target="_blank">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+
+
+
+
+
+<script type="text/javascript" src="/bundle.min.js"></script>
+
+
+
+
+
+  
+
+  
+    
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      displayMath: [['\\[', '\\]'], ['$$', '$$']],  
+      inlineMath: [['\\(', '\\)']]                  
+    }
+  };
+</script>
+
+
+  
+</div>
+
+</body>
+</html>

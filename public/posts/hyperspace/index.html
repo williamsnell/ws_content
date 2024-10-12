@@ -6,15 +6,12 @@
   
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Hyperspaces are unintuitive, strange, and fascinating places. Let&amp;rsquo;s explore them together, interactively." />
+<meta name="description" content="Hyperspaces are unintuitive, strange, and fascinating places. Let&rsquo;s explore them together, interactively." />
 <meta name="keywords" content="" />
 
   <meta name="robots" content="noodp" />
 
 <link rel="canonical" href="https://willsnell.com/posts/hyperspace/" />
-
-
-  
 
 
 
@@ -51,7 +48,7 @@
 <meta property="og:locale" content="en" />
 <meta property="og:type" content="article" />
 <meta property="og:title" content="Navigating Hyperspace">
-<meta property="og:description" content="Hyperspaces are unintuitive, strange, and fascinating places. Let&amp;rsquo;s explore them together, interactively." />
+<meta property="og:description" content="Hyperspaces are unintuitive, strange, and fascinating places. Let&rsquo;s explore them together, interactively." />
 <meta property="og:url" content="https://willsnell.com/posts/hyperspace/" />
 <meta property="og:site_name" content="willsnell" />
 
@@ -136,7 +133,7 @@
   <h1 class="post-title">
     <a href="https://willsnell.com/posts/hyperspace/">Navigating Hyperspace</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-08-06</time><span class="post-reading-time">24 min read (4972 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-08-06</time><span class="post-reading-time">24 min read (4953 words)</span></div>
 
   
   
@@ -292,8 +289,7 @@ arranged in a single column or row, like so:</p>
         -3.1 \\
     \end{bmatrix}
 \end{align}
-\]
-<p>An n-dimensional vector is \(n\) items long:</p>
+\]<p>An n-dimensional vector is \(n\) items long:</p>
 \[
 \begin{align}
     \vec{v}_{n} = \begin{bmatrix}
@@ -302,8 +298,7 @@ arranged in a single column or row, like so:</p>
         x_{n}
     \end{bmatrix}
 \end{align}
-\]
-<p>Vectors can be used to represent all sorts of things, but here we&rsquo;re
+\]<p>Vectors can be used to represent all sorts of things, but here we&rsquo;re
 going to use them to represent <em>cartesian coordinates</em>.</p>
 <h2 id="1-space">1-space<a href="#1-space" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>If we had only 1 spatial dimension to play with, we could represent every
@@ -314,8 +309,7 @@ possible position with a 1-dimensional vector:</p>
         x_{1} \\
     \end{bmatrix}
 \end{align}
-\]
-<p>If we were to fill our space with lots of random points, uniformly
+\]<p>If we were to fill our space with lots of random points, uniformly
 distributed from -1 to 1, it would look like this:</p>
 <div id="1d_space_chart" class="plotly"></div>
 <script>
@@ -344,8 +338,7 @@ define an exact point through something like:</p>
         0.24 \\
     \end{bmatrix}
 \end{align}
-\]
-<h2 id="3-space">3-space<a href="#3-space" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+\]<h2 id="3-space">3-space<a href="#3-space" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>Extending up to 3D is quite straightforward, where we
 now have 3-long vectors like this:</p>
 <div id="3_vec">
@@ -382,8 +375,7 @@ inside its vector space:</p>
         0.12  \\
     \end{bmatrix}
 \end{align}
-\]
-<p>We could <em>try</em> using time as an extra dimension,
+\]<p>We could <em>try</em> using time as an extra dimension,
 but we&rsquo;ve already run out of spatial dimensions.</p>
 <p>Of course, we want to go far beyond a mere <em>four</em> dimensions.
 Even if we used time, how would we visualize something like this?</p>
@@ -396,8 +388,7 @@ Even if we used time, how would we visualize something like this?</p>
         x_{1000}   \\
     \end{bmatrix}
 \end{align}
-\]
-<h2 id="projecting">Projecting<a href="#projecting" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+\]<h2 id="projecting">Projecting<a href="#projecting" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>To glimpse higher dimensions, we&rsquo;re
 necessarily going to need to make compromises.
 With <em>up to</em> 3 dimensions to play with, any given
@@ -415,8 +406,7 @@ in three dimensions, and visualizing it with two.</p>
         -0.32  \\
     \end{bmatrix}
 \end{align}
-\]
-<p>We can display the first 2 elements, i.e.:</p>
+\]<p>We can display the first 2 elements, i.e.:</p>
 \[
 \begin{align}
     \vec{c}_2 = \begin{bmatrix}
@@ -424,14 +414,12 @@ in three dimensions, and visualizing it with two.</p>
         -0.85 \\
     \end{bmatrix}
 \end{align}
-\]
-<p>Where \(\vec{c}_2\) represents a <strong>cartesian projection</strong>
+\]<p>Where \(\vec{c}_2\) represents a <strong>cartesian projection</strong>
 down to 2 dimensions.</p>
 <p>We can write this as an equation:</p>
 \[
     \vec{v}_3 \mapsto \vec{c}_2
-\]
-<p>Where the arrow \(\mapsto\) means
+\]<p>Where the arrow \(\mapsto\) means
 &ldquo;maps to&rdquo;.</p>
 <p>Visualized, it looks like so:</p>
 <div id="3d_into_2d" style="width: 100%;"></div>
@@ -452,8 +440,7 @@ and the second element \(x_{2}\):</p>
         -0.85 \\
     \end{bmatrix}
 \end{align}
-\]
-<p>What does our 2D projection tell us about the 3D space?
+\]<p>What does our 2D projection tell us about the 3D space?
 Well, we effectively get the same view as if we rotated
 our 3D view until we were just looking at one face.</p>
 <p>If we&rsquo;re plotting, say, \(x_{1}\) and \(x_{2}\),
@@ -484,8 +471,7 @@ on two distances, which we typically call x and y.
         y \\
     \end{bmatrix}
 \end{align}
-\]
-<p>In higher dimensions, we can add more directions, provided they are
+\]<p>In higher dimensions, we can add more directions, provided they are
 perpendicular to all the other directions. Hence, for 3d, we might
 use (x, y, z).</p>
 <p>In a spherical coordinate system, however, a point in space is defined
@@ -504,8 +490,7 @@ one angle, \(\theta_1\).</p>
         \theta_{1} \\
     \end{bmatrix}
 \end{align}
-\]
-<p>Notice that <strong>both \(\vec{v}_2\) and \(\vec{s}_2\)</strong> refer to
+\]<p>Notice that <strong>both \(\vec{v}_2\) and \(\vec{s}_2\)</strong> refer to
 the exact same point in space. The actual numbers inside the vectors,
 and the coordinate <strong>system</strong> used are very different, but the point
 in space is the same.</p>
@@ -527,8 +512,7 @@ another angle \(\theta_2\).</p>
         1.32  \\
     \end{bmatrix}_{[r, \theta_1, \theta_2]}
 \end{align}
-\]
-<h3 id="why-bother-with-spherical-coordinates">Why bother with spherical coordinates?<a href="#why-bother-with-spherical-coordinates" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+\]<h3 id="why-bother-with-spherical-coordinates">Why bother with spherical coordinates?<a href="#why-bother-with-spherical-coordinates" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
 <p>How does this help us? After all, you still
 need an n-length vector to represent a point in n-space.</p>
 <p>What&rsquo;s interesting, however, is when you start looking at
@@ -714,16 +698,14 @@ If \(n = 1000\) dimensions, the difference between a sphere of radius
 0.999 and radius 1.000 is</p>
 \[
 1.000^{1000} - 0.99^{1000} \approx 0.9999
-\]
-<p>In other words, &gt;99% of all of our volume is contained in an outer shell, with
+\]<p>In other words, &gt;99% of all of our volume is contained in an outer shell, with
 thickness of 1% the radius of our space.
 The reason this collosal growth of volume with radius is not intuitive, is because
 in 3D, the same calculation would give around 3% of the volume in the outermost
 shell of our sphere:</p>
 \[
 1.000^3 - 0.99^3 \approx 0.03 
-\]
-<p>Hence, even though our probability density function is constant in space,
+\]<p>Hence, even though our probability density function is constant in space,
 when we go to higher dimensions, <strong>the amount of space near the origin is astronomically
 low, and the amount at the outer perimeter is astronomically high.</strong></p>
 <p>Because so much space is so far out, our points will inevitably &ldquo;cluster&rdquo;
@@ -844,8 +826,7 @@ In it, a rotation between two <a href="https://www.youtube.com/watch?v=zjMuIxRvy
 \(q_1\) and \(q_2\), is given by the formula:</p>
 \[
     \text{Slerp}(q_1, q_2; u) = \frac{\sin( (1 - u)\omega)}{\sin \omega} q_1 + \frac{\sin u\omega}{\sin \omega} q_2
-\]
-<p>Where \(u\) is the <code>fraction</code> parameter between 0 and 1, and \(q_1 \cdot q_2 = \cos \omega\).</p>
+\]<p>Where \(u\) is the <code>fraction</code> parameter between 0 and 1, and \(q_1 \cdot q_2 = \cos \omega\).</p>
 <p>It turns out that this equation generalizes to n-dimensional vectors. Hence, we have part 1): a function to
 rotate from one vector to another. I&rsquo;m unclear how &ldquo;optimal&rdquo; this rotation is, since there are many ways to
 rotate between two vectors in hyperspace. However, rotation - or &ldquo;distance preserving linear maps&rdquo; - are
@@ -853,13 +834,11 @@ very complicated and dimension-specific, so sticking with a general formula that
 <p>If we recall the definition of the dot product of two vectors:</p>
 \[
     a \cdot b = \vert \vert a \vert \vert  \space  \vert \vert b \vert \vert \cos \omega
-\]
-<p>Where \(\omega\) is the angle between the two vectors. We need \(\omega\) for our
+\]<p>Where \(\omega\) is the angle between the two vectors. We need \(\omega\) for our
 slerp formula. So, we can rewrite the formula as:</p>
 \[
     \omega = \arccos( \frac{a}{\vert\vert a \vert \vert} \cdot \frac{b}{\vert \vert b \vert \vert} )
-\]
-<p>Another way of thinking about \(\frac{a}{\vert \vert a \vert \vert}\) is that is this is \(\hat{a}\)
+\]<p>Another way of thinking about \(\frac{a}{\vert \vert a \vert \vert}\) is that is this is \(\hat{a}\)
 (pronounced a-hat) - the unit (length 1) vector which represents only the direction components of a.</p>
 <p>This is indeed what the python slerp function does:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>omega <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arccos(np<span style="color:#f92672">.</span>clip(np<span style="color:#f92672">.</span>dot(start_vec<span style="color:#f92672">/</span>np<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>norm(start_vec), stop_vec<span style="color:#f92672">/</span>np<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>norm(stop_vec)), <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>))
@@ -970,8 +949,7 @@ an (almost) exact opposite of the first - that is, the vector \(\vec{v}^2\)
 used to generate the second image was calculated as:</p>
 \[
     \vec{v}^2 = - \vec{v}^1 + \epsilon
-\]
-<p>Where \(\epsilon\) was a very small offset necessary to prevent <code>slerp</code> and <code>slerp2</code> from blowing
+\]<p>Where \(\epsilon\) was a very small offset necessary to prevent <code>slerp</code> and <code>slerp2</code> from blowing
 up with a \(\frac{1}{\sin(0)}\) term. \(\vec{v}^1\) was a random vector
 from the correct distribution.</p>
 <p>This means our <code>lerp</code> from the first portrait to the second is a straight
@@ -1075,6 +1053,13 @@ not matter, and certainly depends on the actual system being studied.</p>
         <hr />
     </div>
     <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="https://willsnell.com/posts/math_composition/">
+                <span class="button__icon">←</span>
+                <span class="button__text">Why Is Measuring Composition So Difficult?</span>
+            </a>
+        </span>
         
         
         <span class="button next">
