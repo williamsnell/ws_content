@@ -56,7 +56,7 @@ we need to curate the data appropriately. Direct inspection of weights bypasses 
 numbers that make up the model are unchanging (once trained) and easily accessible.&lt;/p&gt;
 &lt;p&gt;If we can treat attention head information movement as linear, we gain access to a host of linear
 algebra tools to analyse the system. The promise of this approach is a large and reasonably comprehensive circuit diagram,
-purely by inspecting the values of the models various weight matrices.&lt;/p&gt;
+purely by inspecting the values of the models&amp;rsquo; various weight matrices.&lt;/p&gt;
 &lt;p&gt;I am not the first to try and measure composition this way. In
 &lt;a href=&#34;https://transformer-circuits.pub/2021/framework/index.html&#34;&gt;A Mathematical Framework&lt;/a&gt;,
 the authors use the Frobenius norm to measure how much two heads compose with one another.&lt;/p&gt;

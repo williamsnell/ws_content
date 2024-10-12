@@ -44,7 +44,7 @@ numbers that make up the model are unchanging (once trained) and easily accessib
 
 If we can treat attention head information movement as linear, we gain access to a host of linear
 algebra tools to analyse the system. The promise of this approach is a large and reasonably comprehensive circuit diagram,
-purely by inspecting the values of the models various weight matrices.
+purely by inspecting the values of the models' various weight matrices.
 
 I am not the first to try and measure composition this way. In 
 [A Mathematical Framework](https://transformer-circuits.pub/2021/framework/index.html),
