@@ -102,15 +102,15 @@ none of the current methods for analysing composition meet axioms 3 and 4.
 pairs of heads should be preserved when the model is changed in a way that does not affect information flow.
 
 
-If \(C(A, B) > C(A, C)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
+If \(C(A, B) > C(A, D)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
 transformation which leaves the information flow through the model unchanged. That is, 
 \[
 \begin{align}
-C(A^*, B^*) > C(A^*, C^*) &\iff C(A, B) > C(A, C) \\
+C(A^*, B^*) > C(A^*, D^*) &\iff C(A, B) > C(A, D) \\
 \\
     \text{Where } A^* &= T\:A \\
-    B^* &= T^{-1}\:A \\
-    C^* &= T^{-1}\:A \\
+    B^* &= T^{-1}\:B \\
+    D^* &= T^{-1}\:D \\
 \end{align}
 \]
 
@@ -410,7 +410,7 @@ such that any score relying on these two metrics could be altered without meanin
 with one another.
 
 In the formalism of axiom 4, it's hard to prove that two very similar (but not strictly identical) models will always
-preserve \(C(A, B) > C(A, C) \therefore C(A^*, B^*) > C(A^*, C^*)\).
+preserve \(C(A, B) > C(A, D) \therefore C(A^*, B^*) > C(A^*, D^*)\).
 
 Finally, there's the (reasonably likely) case where input normalization isn't important, per se, but its effects
 are baked into the pretrained transformers we'd like to analyse. [Heimersheim](https://arxiv.org/pdf/2409.13710)

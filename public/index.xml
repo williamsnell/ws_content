@@ -93,16 +93,16 @@ none of the current methods for analysing composition meet axioms 3 and 4.&lt;/p
 &lt;h4 id=&#34;proposed-axiom-4&#34;&gt;(Proposed) Axiom 4:&lt;/h4&gt;
 &lt;p&gt;\(C\) should measure the underlying information flow, and thus the relative ordering of composition scores between
 pairs of heads should be preserved when the model is changed in a way that does not affect information flow.&lt;/p&gt;
-&lt;p&gt;If \(C(A, B) &gt; C(A, C)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
+&lt;p&gt;If \(C(A, B) &gt; C(A, D)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
 transformation which leaves the information flow through the model unchanged. That is,
 &lt;/p&gt;
 \[
 \begin{align}
-C(A^*, B^*) &gt; C(A^*, C^*) &amp;\iff C(A, B) &gt; C(A, C) \\
+C(A^*, B^*) &gt; C(A^*, D^*) &amp;\iff C(A, B) &gt; C(A, D) \\
 \\
     \text{Where } A^* &amp;= T\:A \\
-    B^* &amp;= T^{-1}\:A \\
-    C^* &amp;= T^{-1}\:A \\
+    B^* &amp;= T^{-1}\:B \\
+    D^* &amp;= T^{-1}\:D \\
 \end{align}
 \]&lt;p&gt;Where \(T\) is an invertible matrix which exploits a symmetry of the model to leave information flow unchanged.&lt;/p&gt;
 &lt;p&gt;A concrete example of \(T\) which will effectively always work is&lt;/p&gt;
@@ -330,7 +330,7 @@ there still appears room for inner-products between vectors, or singular values 
 such that any score relying on these two metrics could be altered without meaningfully altering how the involved heads communicate
 with one another.&lt;/p&gt;
 &lt;p&gt;In the formalism of axiom 4, it&amp;rsquo;s hard to prove that two very similar (but not strictly identical) models will always
-preserve \(C(A, B) &gt; C(A, C) \therefore C(A^*, B^*) &gt; C(A^*, C^*)\).&lt;/p&gt;
+preserve \(C(A, B) &gt; C(A, D) \therefore C(A^*, B^*) &gt; C(A^*, D^*)\).&lt;/p&gt;
 &lt;p&gt;Finally, there&amp;rsquo;s the (reasonably likely) case where input normalization isn&amp;rsquo;t important, per se, but its effects
 are baked into the pretrained transformers we&amp;rsquo;d like to analyse. &lt;a href=&#34;https://arxiv.org/pdf/2409.13710&#34;&gt;Heimersheim&lt;/a&gt;
 shows that layer norm cannot just be turned off - further finetuning is required. So if we apply our linear

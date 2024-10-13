@@ -224,16 +224,16 @@ none of the current methods for analysing composition meet axioms 3 and 4.</p>
 <h4 id="proposed-axiom-4">(Proposed) Axiom 4:<a href="#proposed-axiom-4" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
 <p>\(C\) should measure the underlying information flow, and thus the relative ordering of composition scores between
 pairs of heads should be preserved when the model is changed in a way that does not affect information flow.</p>
-<p>If \(C(A, B) > C(A, C)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
+<p>If \(C(A, B) > C(A, D)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
 transformation which leaves the information flow through the model unchanged. That is,
 </p>
 \[
 \begin{align}
-C(A^*, B^*) > C(A^*, C^*) &\iff C(A, B) > C(A, C) \\
+C(A^*, B^*) > C(A^*, D^*) &\iff C(A, B) > C(A, D) \\
 \\
     \text{Where } A^* &= T\:A \\
-    B^* &= T^{-1}\:A \\
-    C^* &= T^{-1}\:A \\
+    B^* &= T^{-1}\:B \\
+    D^* &= T^{-1}\:D \\
 \end{align}
 \]<p>Where \(T\) is an invertible matrix which exploits a symmetry of the model to leave information flow unchanged.</p>
 <p>A concrete example of \(T\) which will effectively always work is</p>
@@ -461,7 +461,7 @@ there still appears room for inner-products between vectors, or singular values 
 such that any score relying on these two metrics could be altered without meaningfully altering how the involved heads communicate
 with one another.</p>
 <p>In the formalism of axiom 4, it&rsquo;s hard to prove that two very similar (but not strictly identical) models will always
-preserve \(C(A, B) > C(A, C) \therefore C(A^*, B^*) > C(A^*, C^*)\).</p>
+preserve \(C(A, B) > C(A, D) \therefore C(A^*, B^*) > C(A^*, D^*)\).</p>
 <p>Finally, there&rsquo;s the (reasonably likely) case where input normalization isn&rsquo;t important, per se, but its effects
 are baked into the pretrained transformers we&rsquo;d like to analyse. <a href="https://arxiv.org/pdf/2409.13710">Heimersheim</a>
 shows that layer norm cannot just be turned off - further finetuning is required. So if we apply our linear
