@@ -155,7 +155,7 @@ vector we get when looking inside a transformer head is not
 particularly meaningful. We'll work through the OV-circuit 
 to show why this is the case.
 
-Denoting the residual stream read a head can read from as \(\vec{x}_0\), the residual stream the same
+Denoting the residual stream a given head can read from as \(\vec{x}_0\), the residual stream the same
 head writes to as \(\vec{x}_1\), and 
 the hidden layer inside the head itself as \(\vec{y}\), the OV circuit is implemented as:
 
