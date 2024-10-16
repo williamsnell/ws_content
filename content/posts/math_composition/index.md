@@ -225,7 +225,11 @@ Looking at the first few layers, for a single attention head:
 \]
 
 Where \(W_E\) is the embedding matrix, \(\mathbb{A}\) is the attention pattern calculated 
-between sequence positions, and \(\ell\) the log-probabilities.
+between sequence positions, and \(\ell\) the log-probabilities. 
+
+(For simplicity, this notation hides the fact that the attention mechanism moves information 
+between the residual streams of *different tokens*, and so we really have *many* residual
+streams. For the analysis we're doing here, this adds complexity but doesn't provide extra insight.)
 
 We can multiply anything which writes to the residual stream by an invertible matrix \(T\),
 and anything which reads from the residual stream

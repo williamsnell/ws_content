@@ -184,6 +184,9 @@ outwards, to the residual stream (\(\vec{x}\)) itself.&lt;/p&gt;
 \end{align}
 \]&lt;p&gt;Where \(W_E\) is the embedding matrix, \(\mathbb{A}\) is the attention pattern calculated
 between sequence positions, and \(\ell\) the log-probabilities.&lt;/p&gt;
+&lt;p&gt;(For simplicity, this notation hides the fact that the attention mechanism moves information
+between the residual streams of &lt;em&gt;different tokens&lt;/em&gt;, and so we really have &lt;em&gt;many&lt;/em&gt; residual
+streams. For the analysis we&amp;rsquo;re doing here, this adds complexity but doesn&amp;rsquo;t provide extra insight.)&lt;/p&gt;
 &lt;p&gt;We can multiply anything which writes to the residual stream by an invertible matrix \(T\),
 and anything which reads from the residual stream
 by its inverse \(T^{-1}\).
