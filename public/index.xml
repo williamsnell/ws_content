@@ -1074,7 +1074,7 @@ does. Rather, this is the actual code:&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sin((&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;fraction)&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;omega) &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; so &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; start_vec &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sin(fraction&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;omega) &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; so &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; stop_vec
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;There&amp;rsquo;s a subtle difference - the vectors used in slerp - above titled \(q_1\) and \(q_2\) are not
 normalized. And, rather than just calculating the angle, this line also does part 2), the vector
-magntiude scaling.&lt;/p&gt;
+magnitude scaling.&lt;/p&gt;
 &lt;p&gt;What this means is that &lt;code&gt;slerp&lt;/code&gt; is only performing a pure rotation
 when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,
 it&amp;rsquo;s effectively doing this:&lt;/p&gt;

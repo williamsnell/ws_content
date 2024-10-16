@@ -918,7 +918,7 @@ return np.sin((1.0-fraction)*omega) / so * start_vec + np.sin(fraction*omega) / 
 
 There's a subtle difference - the vectors used in slerp - above titled \(q_1\) and \(q_2\) are not 
 normalized. And, rather than just calculating the angle, this line also does part 2), the vector 
-magntiude scaling. 
+magnitude scaling. 
 
 What this means is that `slerp` is only performing a pure rotation
 when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,

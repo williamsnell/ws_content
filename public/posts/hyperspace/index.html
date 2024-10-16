@@ -855,7 +855,7 @@ does. Rather, this is the actual code:</p>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>sin((<span style="color:#ae81ff">1.0</span><span style="color:#f92672">-</span>fraction)<span style="color:#f92672">*</span>omega) <span style="color:#f92672">/</span> so <span style="color:#f92672">*</span> start_vec <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>sin(fraction<span style="color:#f92672">*</span>omega) <span style="color:#f92672">/</span> so <span style="color:#f92672">*</span> stop_vec
 </span></span></code></pre></div><p>There&rsquo;s a subtle difference - the vectors used in slerp - above titled \(q_1\) and \(q_2\) are not
 normalized. And, rather than just calculating the angle, this line also does part 2), the vector
-magntiude scaling.</p>
+magnitude scaling.</p>
 <p>What this means is that <code>slerp</code> is only performing a pure rotation
 when \(\vert \vert a \vert \vert \approx \vert \vert b \vert \vert\). In that case,
 it&rsquo;s effectively doing this:</p>
