@@ -263,7 +263,158 @@ It's worth pointing out that \(W_{OV}\) and \(W_Q^T\:W_K\) transform differently
 
 The composite matrix \(W_{Q}^TW_K\:W_{OV}\) therefore transforms by \(T^{-T}\:(.)\:T^{-1}\).
 
+#### A Concrete Example
 
+To make real the concepts presented above, let's examine the 
+V-composition scores between one upstream head and two downstream heads, denoted \(W_{OV}^{up}\),
+\(W_{OV}^{down, 1}\) and \(W_{OV}^{down, 2}\).
+
+We'll describe these matrices using their compact [Singular Value Decomposition](https://en.wikipedia.org/wiki/Singular_value_decomposition).
+That is, they are of the form
+
+\[W_{OV} = U \Sigma V^T\]
+
+Where \(U\) is an *m x r* rectangular matrix describing where in the residual stream the matrix reads from, \(V\) is an
+*n x r* matrix which describes where in the residual stream is written to, and \(\Sigma\) describes how the
+vectors that are read in are scaled, before being written out. *m* is the dimension of the residual stream,
+and *r* is the rank of the matrix.
+
+Let's imagine we have a 3-dimensional residual stream, and our \(W_{OV}\) matrices are rank 1 *(m=3, r=1)*.
+
+Lets imagine our matrices are:
+
+\[
+\begin{align}
+    W_{OV}^\text{up} = \begin{bmatrix}
+                    0 & 5 & 0 \\
+                    0 & 0 & 0 \\
+                    0 & 0 & 0 \\
+                  \end{bmatrix}
+                =
+                  \begin{bmatrix} 
+                        1 \\
+                        0 \\
+                        0 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        5 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        0 & 1 & 0 \\
+                  \end{bmatrix}
+\end{align}
+\]
+
+
+The *3 x 3* matrix in the middle is the expanded form, and the 3 matrices on the right are 
+\(U\), \(\Sigma\), and \(V^T\), respectively.
+
+\(U\) tells us this matrix reads exclusively from the first dimension of the residual stream,
+\(\Sigma\) tells us it multiplies what it reads by 5, and \(V\) tells us it writes the result 
+to the second dimension of the residual stream.
+
+For our remaining two matrices, we'll just look at the SVD form:
+
+\[
+\begin{align}
+    W_{OV}^\text{down,1} = \begin{bmatrix} 
+                        0 \\
+                        \frac{1}{\sqrt{2}} \\
+                        \frac{1}{\sqrt{2}} \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        1 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        0 & 0 & 1 \\
+                  \end{bmatrix}
+\end{align}
+\]
+
+\[
+\begin{align}
+    W_{OV}^\text{down,2} = \begin{bmatrix} 
+                        \frac{1}{\sqrt{2}} \\
+                        \frac{1}{\sqrt{2}} \\
+                        0 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        1 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        0 & 0 & 1 \\
+                  \end{bmatrix}
+\end{align}
+\]
+
+Right now, we might expect the composition scores of our two downstream heads to be the same. Why?
+- The angle between their reading vectors and the vector \(W_{OV}^\text{up}\) writes to
+  are the same.
+- They both scale what they read by the same amount
+- They both write to the same dimension
+
+If we pick a composition measure such as proposed by [Turner & Strand](https://docs.google.com/presentation/d/1sDvhes-36GjUJxHtmya33alggx0gA0o0kOnC8NK6rZE/edit#slide=id.g132679aefe9_0_596),
+we should see that we do, indeed, get identical scores:
+
+\[
+    C(A, B) = \frac{\vert \vert BA \vert \vert_F }{\vert \vert \sigma^B \odot \sigma^A \vert \vert_2}
+\]
+
+Where \(\vert \vert . \vert \vert_F\) is the Frobenius norm, \(\sigma^A\) and \(\sigma^B\) are the 
+singular values of A and B, and \(\odot\) is the elementwise product.
+
+\[
+\begin{align}
+C(W_{OV}^\text{down,1}, W_{OV}^\text{up}) &\approx 0.707 \\
+C(W_{OV}^\text{down,2}, W_{OV}^\text{up}) &\approx 0.707 \\
+\end{align}
+\]
+
+However, we can manipulate these composition scores by
+warping the residual stream. Let's choose a transformation matrix
+
+\[ T = \begin{bmatrix}
+        1 & 0 & 0 \\
+        0 & 1 & 0 \\
+        0 & 0 & 10 \\
+        \end{bmatrix}
+\]
+
+Likewise,
+
+\[ T^{-1} = \begin{bmatrix}
+        1 & 0 & 0 \\
+        0 & 1 & 0 \\
+        0 & 0 & 0.1 \\
+        \end{bmatrix}
+\]
+
+That is, we increase the magnitude of direction 3 by 10x, and leave directions 1 and 2 unchanged.
+By our transformation rules from above, \(W_{OV} \rightarrow T W_{OV} T^{-1} \).
+
+Note: we have **not** modified anything about the information flow (as explained in the previous section).
+However, our new scores are:
+
+\[
+\begin{align}
+C(W_{OV}^\text{down,1}, W_{OV}^\text{up}) &\approx 0.0995 \\
+C(W_{OV}^\text{down,2}, W_{OV}^\text{up}) &\approx 0.707 \\
+\end{align}
+\]
+
+If we wanted to make \(C(W_{OV}^\text{down,1}, W_{OV}^\text{up})\) higher than
+\(C(W_{OV}^\text{down,2}, W_{OV}^\text{up})\), we could scale **down** direction 3 
+by 10x (i.e. swap the definition of \(T\) and \(T^{-1}\)) and we'd get the opposite 
+effect.
+
+In other words, we can swap the order of our two composition scores at will. We can also
+make the scores for a particular set of heads very close to 0, or very close to 1. There 
+are some caveats: 
+- We need the downstream matrices to read from slightly different directions
+to one another, lest we be unable to separate them
+- We need the composition score to not start at 0 or 1
+
+For real matrices in real models, these conditions are effectively always met.
 
 #### Why does this matter?
 
@@ -416,10 +567,12 @@ with one another.
 In the formalism of axiom 4, it's hard to prove that two very similar (but not strictly identical) models will always
 preserve \(C(A, B) > C(A, D) \therefore C(A^*, B^*) > C(A^*, D^*)\).
 
-Finally, there's the (reasonably likely) case where input normalization isn't important, per se, but its effects
-are baked into the pretrained transformers we'd like to analyse. [Heimersheim](https://arxiv.org/pdf/2409.13710)
-shows that layer norm cannot just be turned off - further finetuning is required. So if we apply our linear
-metrics to an unaltered model with layer norm, it's unclear if our linear metrics are meaningful.
+Finally, there's the (reasonably likely) case where the non-linearity offered by input normalization 
+is used by the model to do something useful, but which is orthogonal to interpretability. Said another way:
+a model can transmit (effectively) the same information with a range of transformations \(T\),
+but might learn a \(T\) to exploit non-linearities in the model for some other reason. If our composition scores
+are sensitive to this \(T\), we can't assume we are measuring composition - and only composition - when we use linear algebra
+to compute \(C(A, B)\).
 
 # What's next?
 

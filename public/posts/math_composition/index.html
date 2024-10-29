@@ -343,6 +343,125 @@ analysis must respect that.</p>
 <p>It&rsquo;s worth pointing out that \(W_{OV}\) and \(W_Q^T\:W_K\) transform differently.
 \(W_{OV}\) transforms by \(T (.) T^{-1}\), while \(W_Q^T\:W_K\) transforms by \(T^{-T}\:(.)\:T^{-1}\).</p>
 <p>The composite matrix \(W_{Q}^TW_K\:W_{OV}\) therefore transforms by \(T^{-T}\:(.)\:T^{-1}\).</p>
+<h4 id="a-concrete-example">A Concrete Example<a href="#a-concrete-example" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>To make real the concepts presented above, let&rsquo;s examine the
+V-composition scores between one upstream head and two downstream heads, denoted \(W_{OV}^{up}\),
+\(W_{OV}^{down, 1}\) and \(W_{OV}^{down, 2}\).</p>
+<p>We&rsquo;ll describe these matrices using their compact <a href="https://en.wikipedia.org/wiki/Singular_value_decomposition">Singular Value Decomposition</a>.
+That is, they are of the form</p>
+\[W_{OV} = U \Sigma V^T\]<p>Where \(U\) is an <em>m x r</em> rectangular matrix describing where in the residual stream the matrix reads from, \(V\) is an
+<em>n x r</em> matrix which describes where in the residual stream is written to, and \(\Sigma\) describes how the
+vectors that are read in are scaled, before being written out. <em>m</em> is the dimension of the residual stream,
+and <em>r</em> is the rank of the matrix.</p>
+<p>Let&rsquo;s imagine we have a 3-dimensional residual stream, and our \(W_{OV}\) matrices are rank 1 <em>(m=3, r=1)</em>.</p>
+<p>Lets imagine our matrices are:</p>
+\[
+\begin{align}
+    W_{OV}^\text{up} = \begin{bmatrix}
+                    0 & 5 & 0 \\
+                    0 & 0 & 0 \\
+                    0 & 0 & 0 \\
+                  \end{bmatrix}
+                =
+                  \begin{bmatrix} 
+                        1 \\
+                        0 \\
+                        0 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        5 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        0 & 1 & 0 \\
+                  \end{bmatrix}
+\end{align}
+\]<p>The <em>3 x 3</em> matrix in the middle is the expanded form, and the 3 matrices on the right are
+\(U\), \(\Sigma\), and \(V^T\), respectively.</p>
+<p>\(U\) tells us this matrix reads exclusively from the first dimension of the residual stream,
+\(\Sigma\) tells us it multiplies what it reads by 5, and \(V\) tells us it writes the result
+to the second dimension of the residual stream.</p>
+<p>For our remaining two matrices, we&rsquo;ll just look at the SVD form:</p>
+\[
+\begin{align}
+    W_{OV}^\text{down,1} = \begin{bmatrix} 
+                        0 \\
+                        \frac{1}{\sqrt{2}} \\
+                        \frac{1}{\sqrt{2}} \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        1 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        0 & 0 & 1 \\
+                  \end{bmatrix}
+\end{align}
+\]\[
+\begin{align}
+    W_{OV}^\text{down,2} = \begin{bmatrix} 
+                        \frac{1}{\sqrt{2}} \\
+                        \frac{1}{\sqrt{2}} \\
+                        0 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        1 \\
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                        0 & 0 & 1 \\
+                  \end{bmatrix}
+\end{align}
+\]<p>Right now, we might expect the composition scores of our two downstream heads to be the same. Why?</p>
+<ul>
+<li>The angle between their reading vectors and the vector \(W_{OV}^\text{up}\) writes to
+are the same.</li>
+<li>They both scale what they read by the same amount</li>
+<li>They both write to the same dimension</li>
+</ul>
+<p>If we pick a composition measure such as proposed by <a href="https://docs.google.com/presentation/d/1sDvhes-36GjUJxHtmya33alggx0gA0o0kOnC8NK6rZE/edit#slide=id.g132679aefe9_0_596">Turner &amp; Strand</a>,
+we should see that we do, indeed, get identical scores:</p>
+\[
+    C(A, B) = \frac{\vert \vert BA \vert \vert_F }{\vert \vert \sigma^B \odot \sigma^A \vert \vert_2}
+\]<p>Where \(\vert \vert . \vert \vert_F\) is the Frobenius norm, \(\sigma^A\) and \(\sigma^B\) are the
+singular values of A and B, and \(\odot\) is the elementwise product.</p>
+\[
+\begin{align}
+C(W_{OV}^\text{down,1}, W_{OV}^\text{up}) &\approx 0.707 \\
+C(W_{OV}^\text{down,2}, W_{OV}^\text{up}) &\approx 0.707 \\
+\end{align}
+\]<p>However, we can manipulate these composition scores by
+warping the residual stream. Let&rsquo;s choose a transformation matrix</p>
+\[ T = \begin{bmatrix}
+        1 & 0 & 0 \\
+        0 & 1 & 0 \\
+        0 & 0 & 10 \\
+        \end{bmatrix}
+\]<p>Likewise,</p>
+\[ T^{-1} = \begin{bmatrix}
+        1 & 0 & 0 \\
+        0 & 1 & 0 \\
+        0 & 0 & 0.1 \\
+        \end{bmatrix}
+\]<p>That is, we increase the magnitude of direction 3 by 10x, and leave directions 1 and 2 unchanged.
+By our transformation rules from above, \(W_{OV} \rightarrow T W_{OV} T^{-1} \).</p>
+<p>Note: we have <strong>not</strong> modified anything about the information flow (as explained in the previous section).
+However, our new scores are:</p>
+\[
+\begin{align}
+C(W_{OV}^\text{down,1}, W_{OV}^\text{up}) &\approx 0.0995 \\
+C(W_{OV}^\text{down,2}, W_{OV}^\text{up}) &\approx 0.707 \\
+\end{align}
+\]<p>If we wanted to make \(C(W_{OV}^\text{down,1}, W_{OV}^\text{up})\) higher than
+\(C(W_{OV}^\text{down,2}, W_{OV}^\text{up})\), we could scale <strong>down</strong> direction 3
+by 10x (i.e. swap the definition of \(T\) and \(T^{-1}\)) and we&rsquo;d get the opposite
+effect.</p>
+<p>In other words, we can swap the order of our two composition scores at will. We can also
+make the scores for a particular set of heads very close to 0, or very close to 1. There
+are some caveats:</p>
+<ul>
+<li>We need the downstream matrices to read from slightly different directions
+to one another, lest we be unable to separate them</li>
+<li>We need the composition score to not start at 0 or 1</li>
+</ul>
+<p>For real matrices in real models, these conditions are effectively always met.</p>
 <h4 id="why-does-this-matter">Why does this matter?<a href="#why-does-this-matter" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
 <p>\(\text{GL}_N(\mathbb{R})\) is a very extensive group. Not only does it contain the group
 of all rotations and reflections \(\text{O}(n)\), but it allows us to arbitrarily scale
@@ -465,10 +584,12 @@ such that any score relying on these two metrics could be altered without meanin
 with one another.</p>
 <p>In the formalism of axiom 4, it&rsquo;s hard to prove that two very similar (but not strictly identical) models will always
 preserve \(C(A, B) > C(A, D) \therefore C(A^*, B^*) > C(A^*, D^*)\).</p>
-<p>Finally, there&rsquo;s the (reasonably likely) case where input normalization isn&rsquo;t important, per se, but its effects
-are baked into the pretrained transformers we&rsquo;d like to analyse. <a href="https://arxiv.org/pdf/2409.13710">Heimersheim</a>
-shows that layer norm cannot just be turned off - further finetuning is required. So if we apply our linear
-metrics to an unaltered model with layer norm, it&rsquo;s unclear if our linear metrics are meaningful.</p>
+<p>Finally, there&rsquo;s the (reasonably likely) case where the non-linearity offered by input normalization
+is used by the model to do something useful, but which is orthogonal to interpretability. Said another way:
+a model can transmit (effectively) the same information with a range of transformations \(T\),
+but might learn a \(T\) to exploit non-linearities in the model for some other reason. If our composition scores
+are sensitive to this \(T\), we can&rsquo;t assume we are measuring composition - and only composition - when we use linear algebra
+to compute \(C(A, B)\).</p>
 <h1 id="whats-next">What&rsquo;s next?<a href="#whats-next" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <p>I&rsquo;m fairly convinced at this point that trying to measure composition directly in the residual stream, using
 linear algebra tools, is not as straightforward as hoped.
