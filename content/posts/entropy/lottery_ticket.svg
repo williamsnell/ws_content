@@ -1,0 +1,51 @@
+<svg width="100%" height="500" xmlns="http://www.w3.org/2000/svg">
+<clipPath id="ticket">
+<path d="M 10 80 q 10 -10 20 0 
+t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 
+t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0
+v 400
+q -10 -10 -20 0 
+t -20 0 t -20 0 t -20 0 t -20 0 t -20 0 t -20 0 t -20 0 
+t -20 0 t -20 0 t -20 0 t -20 0 t -20 0 t -20 0 t -20 0
+v -400" stroke="#F0F0F4" fill="#ededf0"/>
+</clipPath>
+
+<rect x="0" y="0" width="400" height="800" fill="#ededf0" clip-path="url(#ticket)"/>
+<rect x="20" y="10" width="40" height="800" fill="#FF6266" clip-path="url(#ticket)"/>
+
+<path d="M 53 0 v 500" stroke="none" fill="transparent" id="stripe"/>
+<text fill="#ededf0" clip-path="url(#ticket)">
+<textPath xmlns:xlink="http://www.w3.org/1999/xlink" href="#stripe"
+word-spacing="2rem">
+LOTTERY LOTTERY LOTTERY LOTTERY LOTTERY
+</textPath>
+</text>
+<image x="80" y="150" width="200" height="55" href="barcode2.svg"/>
+<text class="lottery_big" x="90" y="110" fill="black">LOTTERY</text>
+<text class="pick_one" x="78" y="214">Pick One:</text>
+
+<line x1="75" y1="230" x2="280" y2="230" stroke="black" stroke-dasharray="0 3 0"/>
+<line x1="75" y1="420" x2="280" y2="420" stroke="black" stroke-dasharray="0 3 0"/>
+<style>
+text{
+    dominant-baseline: hanging;
+font: 23px Verdana, Helvetica, Arial, sans-serif;
+      font-weight: bold;
+}
+.lottery_big{
+    dominant-baseline: hanging;
+font: 36px Verdana, Helvetica, Arial, sans-serif;
+      font-weight: bold;
+}
+.lottery_numbers{
+font: 18px Verdana, Helvetica, Arial, sans-serif;
+}
+.pick_one{
+font: 15px Verdana, Helvetica, Arial, sans-serif;
+font-style: italic;
+}
+
+
+</style>
+</svg>
+

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="./dseg.css">
+    </head>
+<body style="background: #222129">
+<object id="ticket" type="image/svg+xml" data="lottery_ticket.svg"></object>
+<object id="machine" type="image/svg+xml" data="lottery_machine.svg"></object>
+<script>
+
+
+let screen;
+let button;
+
+let machine = document.getElementById("machine");
+
+machine.addEventListener("load", () => {
+    screen = machine.contentDocument.getElementById("screen-text");
+    button = machine.contentDocument.getElementById("button");
+    button.addEventListener("onClick", requestLotteryResult);
+});
+
+function requestLotteryResult(
+
+
+
+
+let text_buffer = "PRESS!BUTTON!TO!PLAY";
+
+let TIME_PER_CHARACTER = 300; // ms
+
+
+function printTime(timestamp) {
+    if (screen) {
+        screen.textContent = Math.floor(timestamp / 1000);
+    }
+
+    requestAnimationFrame(printTime);
+}
+    
+requestAnimationFrame(printTime);
+
+</script>
+</body>
