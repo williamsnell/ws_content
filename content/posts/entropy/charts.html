@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<head>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="config.js" charset="utf-8"></script>
+</head>
+<body>
+<div id="myDiv"></div>
+<button id="-">-</button>
+<button id="+">+</button>
+<script>
+function normal_distribution(x, mu, std) {
+    return Math.exp(-((x - mu)**2) / (2 * std**2)) / Math.sqrt(2 * Math.PI * std**2)
+}
+
+function linspace(start, stop, num) {
+    let step = (stop - start) / (num - 1);
+    out = []
+    for (let i = 0; i < num; i++) {
+        out.push(start + i * step);
+    }
+    return out;
+}
+
+let x_min = -7;
+let x_max = 7;
+const x = linspace(x_min, x_max, 1000);
+
+DEFAULT_2D_LAYOUT.xaxis.range = [x_min, x_max];
+
+var trace2 = {
+    x: x,
+    y: x.map((x) => normal_distribution(x, 0, 1)),
+    mode: 'lines',
+    type: 'scatter',
+    marker: DEFAULT_MARKERS,
+};
+
+Plotly.newPlot('myDiv', [trace2], DEFAULT_2D_LAYOUT, DEFAULT_CONFIG);
+
+let n_bars = 5;
+
+function draw_bars(n_bars) {
+    const x_discrete = linspace(x_min, x_max, n_bars);
+    const dx = x_discrete[1] - x_discrete[0];
+
+    var trace1 = {
+        x: x_discrete.map((x) => x + dx/2),
+        y: x_discrete.map((x) => normal_distribution(x, 0, 1)),
+        width: dx,
+        type: 'bar',
+        marker: {
+            color: accent_color,
+            opacity: 0.5,
+        },
+
+    };
+
+    Plotly.react('myDiv', [trace1, trace2], DEFAULT_2D_LAYOUT, DEFAULT_CONFIG);
+};
+
+draw_bars(n_bars);
+
+document.getElementById("-").addEventListener("click", (e) => {
+    n_bars = Math.max(5, Math.ceil(n_bars / 1.5));
+    draw_bars(n_bars);
+});
+
+document.getElementById("+").addEventListener("click", (e) => {
+    n_bars = Math.min(2**9, Math.ceil(n_bars * 1.5));
+    draw_bars(n_bars);
+});
+    
+</script>
+</body>

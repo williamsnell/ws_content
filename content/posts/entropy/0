@@ -12,9 +12,7 @@ hideComments = false
 color = "" #color from the theme settings
 +++
 <script src="./config.js"></script>
-<script src="./charts.js"></script>
 <script src="./observer.js"></script>
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
@@ -422,179 +420,28 @@ the entropy is:
         H(X) = -\sum_{(a_i, a_i+\Delta x) \in X} \int_{a_i}^{a_i + \Delta x} f(x)\:dx\;\log_2 \int_{a_i}^{a_i + \Delta x} f(x)\:dx
 \]
 
-Provide our \(\Delta x\) is small enough, we can use the [Riemann sum](https://en.wikipedia.org/wiki/Riemann_sum) to 
-approximate the integral of the pdf for each function. If you haven't seen this before, you might've seen 
-the [trapezoidal rule](https://en.wikipedia.org/wiki/Trapezoidal_rule#Periodic_and_peak_functions),
-which is quite similar. Essentially, we approximate the area under the curve using a bunch of rectangles or 
-trapezoids. For the Riemann sum, we take some point \(x_i^*\) in our interval \((a_i, a_i + \Delta x)\) and
-calculate the area of a rectangle of width \(\Delta x\) and height \(f(x_i^*) \). For simplicity, let's 
-set \(x_i^*\) to \(a_i\):
- 
+Provide our \(\Delta x\) is small enough, we can use the trapezoidal rule to 
+approximate the integral of the pdf for each function:
+
 \[
-        \int_{a_i}^{a_i + \Delta x} f(x)\:dx \approx \Delta x \cdot f(a_i)
+        \int_{a_i}^{a_i + \Delta x} f(x)\:dx \approx \frac{f(a_i) + f(a_i + \Delta x)}{2} \Delta x
 \]
-
-<div id="integral_chart" style="display: flex;"></div>
-<div id="button-bar" style="display: flex;">
-<button id="integral_chart -">-</button>
-<button id="integral_chart +">+</button>
-</div>
-<script>integral_chart("integral_chart");</script>
-
-
-In fact, under cert
 
 Substituting in to our entropy formula,
 
 \[
-        H(X) = -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \Delta x\
-f(a_i)\log_2 \left( \Delta x \cdot f(a_i) \right)
-\]
-
-We can do some rearranging in our log, including exploiting the fact that \(\log(a\cdot b) = \log(a) + \log(b)\).
-
-\[
-\begin{align}
-        H(X) &= -\lim_{\Delta x \rightarrow 0}\sum_{a_i \in X} \Delta x \
-f(a_i) \left( \log_2 \Delta x + \log_2 f(a_i) \right) \\
-\
-        H(X) &= -\left(
-\lim_{\Delta x \rightarrow 0} \log_2 \Delta x \sum_{a_i \in X} \Delta x \
-f(a_i)  \right) - \left( \lim_{\Delta x \rightarrow 0} \sum_{a_i \in X} \Delta x\
-f(a_i) \log_2 f(a_i)
+        H(X) = -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \frac{\Delta x}{2} \
+(f(a_i) + f(a_i + \Delta x))\log_2 \left( \frac{\Delta x}{2} (f(a_i) + f(a_i + \Delta x))
 \right)
-\end{align}
 \]
 
-As \(\Delta x \rightarrow 0\), the width of our rectangles get smaller, but we also sum over more and more points.
-If we assume some [conditions](https://en.wikipedia.org/wiki/Riemann_integral#Integrability) 
-(e.g. our probability density function is smooth everywhere,) our approximation above becomes exact:
+We can do some rearranging in our log, by exploiting the fact that \(\log(a\cdot b) = \log(a) + \log(b)\).
 
 \[
-        \lim_{\Delta x \rightarrow 0} \Delta x \cdot f(a_i) = \int_{a_i}^{a_i + \Delta x} f(x)\:dx
+        H(X) = -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \frac{\Delta x}{2}\
+        (f(a_i) + f(a_i + \Delta x))\log_2 \left( \frac{\Delta x}{2} (f(a_i) + f(a_i + \Delta x))
+\right)
 \]
-
-Since the integral of our probability density function across the domain of possible events \(X\) must equal 1,
-we have 
-
-\[
-        \lim_{\Delta x \rightarrow 0} \Delta x \cdot f(a_i) = \int_{a_i}^{a_i + \Delta x} f(x)\:dx = 1
-\]
-
-Also, summing all the integrals for each infinitesimal interval \((a_i, a_i + \Delta x) \) becomes 
-equivalent to one big integral across all possible values - in this case, \((-\infty, \infty)\). 
-So, the entropy is:
-
-\[
-    H(X) = -\log_2{\Delta x} -\int_{-\infty}^\infty f(x) \log_2 f(x)\:dx
-\]
-
-The term on the right looks reasonable - if we swapped our \(f\)'s for \(p\)'s and our \(\int\) for a \(\sum\)
-we'd have the discrete entropy we defined at the start. The issue is that \(\log_2{\Delta x}\) term. For truly 
-continuous data, \(\Delta x \rightarrow 0\) and so \(\log_2{\Delta x} \rightarrow \infty \).
-
-We can demonstrate this effect numerically, too. Let's sample lots of random points from a continuous distribution.
-Then, we can divide space into a number of bins. The likelihood of a sample falling into each discrete bin is 
-approximated as 
-
-\[P(\text{bin}) \approx \frac{n_\text{bin}}{n_\text{total}}\]
-
-*Where \(n_\text{bin}\) is the number of points in a given bin.*
-
-As our bins get smaller and smaller, the likelihood of a sample falling into a given bin becomes 
-increasingly unlikely. Consequently, the information content of each bin becomes larger and larger. In the limit,
-where we are talking about truly continuous numbers, each bin is infinitely unlikely (but still possible), 
-and therefore carries infinite information. 
-
-
-
-!!!!! Plot of applying the histogram method !!!!!!
-
-How to proceed? We could close our eyes and ignore the \(\log_2{0}\) term. This gives us the 
-[Differential Entropy](https://en.wikipedia.org/wiki/Differential_entropy) \(h(X)\), which has many unfortunate
-properties that make it much less useful than discrete entropy \(H(X)\) with a capital \(H\):
-
-1. \(H(X) = 0\) implied there was only ever one message, and so we couldn't send any information. 
-\(h(X) = 0\) does not have any special meaning. This is because:
-2. Differential entropy can be negative. Finally,
-3. If I have a random continuous distribution \(X\) and I pass it through an arbitrary invertible 
-map *(read: a function)*, there's no guarantee it has the same entropy when it comes out. For example,
-if I define \[Y = 10 X\] Measuring its differential entropy tells me that \[h(Y) = h(X) \cdot \log_2{10}\]
-Despite producing exactly the same samples (just scaled up in magnitude by a factor of 10), the differential
-entropy has apparently increased by \(\approx 3.32\) times.
-
-What's going on here? It might be clearer if we think of the volume of some shape that could fit all the samples
-of \(X\) inside it. That box would have a volume of \(V \approx 2^{h(X)}\). In other words, differential entropy 
-is the (log) volume of the distribution. This explains why 
-scaling up \(X\) by a factor of 10 increased the entropy. It also explains why differential entropy can
-be 0, or negative: \(2^0 = 1\) is a valid volume, as is \(2^{-5.23}\). 
-
-While this explanation is good for building intuition, it doesn't help us much practically. We want to follow
-signals through functions, like \(f = \sin{X}\).
-
-Fortunately, there's still hope. While outright ignoring the \(\log_2{0}\) term is fraught, we can cancel
-it out in more legitimate ways. 
-
-For example, if we had two different distributions over the same space, \(p(x)\) and \(q(x)\), we could 
-take the *difference* in information between the two distributions, and find the expected value.
-
-\[
-    \mathbb{E}\left[ \log_2 p(x) - \log_2 q(x) \right]
-\]
-
-Remember when we defined entropy, the expected value ended up just being the sum of \(p(x)\) times the information? 
-To calculate the expected value here, we do a similar trick. We could use either \(p(x)\) or \(q(x)\),
-since both sum to 1. It doesn't really matter which we pick, since we can just rename \(p(x)\) and \(q(x)\) if 
-we want to swap them. Using \(p(x)\), our new measure is:
-
-\[
-\begin{align}
-    D_{KL}(P || Q) &= \sum_{x \in X} p(x) \left( \log_2 p(x) - \log_2 q(x) \right) \\
-                   &=  \sum_{x \in X} p(x) \log_2\left(\frac{p(x)}{q(x)}\right)
-\end{align}
-\]
-
-This is the [Kullback-Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence),
-and it has many nice properties.
-
-One such property is that it doesn't blow up to infinity as we make our discretization finer. To see why,
-let's try converting it from discrete form to continuous, like we did with the entropy above:
-
-\[
-\begin{align}
-        D_{KL}(P || Q) &= -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \Delta x\
-p(a_i)\log_2 \left(\frac{\Delta x\:p(a_i)}{\Delta x\:q(a_i)} \right) \\
-                       &= -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \Delta x\
-p(a_i)\log_2 \left(\frac{p(a_i)}{q(a_i)} \right)\\
-\end{align}
-\]
-
-We don't have to take this derivation all the way to see that the problematic \(\log{\Delta x}\) term has
-disappeared - by looking at the *difference* between two distributions, we've cancelled out the infinity.
-
-In the histogram plot, notice that as the bins get finer and finer:
-
-1. The entropies \(H(X)\) and \(H(Y)\) get larger and larger
-2. The KL-Divergence \(D_{KL}(X||Y)\) rapidly converges to a constant value.
-
-The KL-divergence is the basis of most of the useful metrics that use continuous entropy. For it to work,
-the *support* of \(p(x)\) must be enclosed by the support of \(q(x)\). In other words, for every \(x\) such
-that \(q(x) = 0\), \(p(x)\) must also be 0. Otherwise, we'd have \[p(x) \log_2 \frac{p(x)}{0} \] Which ends up
-being infinite. \(p(x)\) by itself being 0 is fine, though, because we can define \[0 \log 0 = 0\]
-
-Estimating the KL-divergence from discrete samples also requires some care. In places where \(q(x) \approx 0\)
-the KL-divergence can technically be valid, but might still not be computable, because we are very unlikely to
-sample any points from \(q\) in this region. If we naively use a histogram method, we're quite likely to sample
-\(p(x)\) in places where we have no \(q(x)\), and vice versa.
-
-Take the mutual information, defined as:
-
-\[
-        I(X;Y) \equiv H(X) - H(X | Y)
-\]
- 
-
-
 
 
 

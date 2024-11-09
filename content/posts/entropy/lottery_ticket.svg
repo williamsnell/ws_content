@@ -16,8 +16,8 @@ v -400" stroke="#F0F0F4" fill="#ededf0"/>
 <path d="M 53 0 v 500" stroke="none" fill="transparent" id="stripe"/>
 <text fill="#ededf0" clip-path="url(#ticket)">
 <textPath xmlns:xlink="http://www.w3.org/1999/xlink" href="#stripe"
-word-spacing="2rem">
-LOTTERY LOTTERY LOTTERY LOTTERY LOTTERY
+word-spacing="1rem">
+LOTTERY • LOTTERY • LOTTERY • LOTTERY • LOTTERY
 </textPath>
 </text>
 <image x="80" y="150" width="200" height="55" href="barcode2.svg"/>
