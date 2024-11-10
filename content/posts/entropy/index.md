@@ -27,9 +27,9 @@ So let's dive right in... by playing the lottery!
 
 Each round, you get to pick one number on the ticket below:
 
-<div style="width: 100%; margin: auto;  margin-top: -80px; margin-bottom: -200px;">
+<div style="width: 100%; margin: auto; margin-bottom: -200px;">
     <object id="ticket" type="image/svg+xml" data="lottery_ticket.svg" height="500px"></object>
-    <div id="ticket numbers" style="position: relative; top: -275px; left: 86px; 
+    <div id="ticket numbers" style="position: relative; top: -340px; left: 86px; 
         width: 202px; height: 182px; display: flex; flex-wrap: wrap;"></div>
 </div>
 
@@ -440,6 +440,8 @@ set \(x_i^*\) to \(a_i\):
 <button id="integral_chart +">+</button>
 </div>
 <script>integral_chart("integral_chart");</script>
+
+!!!!! Area under curve = ..., True area = 1.0 !!!!!!!
 
 
 In fact, under cert

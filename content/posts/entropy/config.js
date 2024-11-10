@@ -51,7 +51,7 @@ const DEFAULT_2D_LAYOUT = {
     zeroline: false,
     tickmode: "array",
     tickvals: [], 
-    range: [0, 0.45],
+    range: [-0.05, 0.45],
   },
 };
 

@@ -18,6 +18,7 @@ function integral_chart(id) {
     const x = linspace(x_min, x_max, 1000);
 
     DEFAULT_2D_LAYOUT.xaxis.range = [x_min, x_max];
+
     let auto_sizing = {
         width: Math.min(elem.offsetWidth, 600).toFixed(0),
         height: Math.min(elem.offsetWidth, 600).toFixed(0),
@@ -38,6 +39,8 @@ function integral_chart(id) {
     function draw_bars(n_bars) {
         const x_discrete = linspace(x_min, x_max, n_bars);
         const dx = x_discrete[1] - x_discrete[0];
+
+        const midpoint = parseInt(n_bars/2);
 
         let x_bar = x_discrete.map((x) => x + dx/2);
         let y = x_discrete.map((x) => normal_distribution(x, 0, 1));
@@ -71,11 +74,43 @@ function integral_chart(id) {
             },
 
         };
-        Plotly.react(id, [trace2, bar, scatter], DEFAULT_2D_LAYOUT, DEFAULT_CONFIG);
+
+        if (dx > 0.25) {
+            var arrow = {
+                x: [x_discrete[midpoint - 1], x_discrete[midpoint]],
+                y: [0, 0],
+                type: 'scatter',
+                mode: 'lines+markers',
+                marker: {
+                    size: 8,
+                    color: theme_text_color,
+                    symbol: "line-ew",
+                }
+            };
+            
+            // Annotate Delta x
+            DEFAULT_2D_LAYOUT.annotations = [
+                {
+                    x: 0.5 * (x_discrete[midpoint] + x_discrete[midpoint - 1]),
+                    y: -0.02,
+                    text: 'Δx',
+                    showarrow: false,
+                    font: DEFAULT_AXIS_FONT,
+                    arrowhead: 1,
+                    arrowcolor: theme_text_color,
+                }
+            ];
+        } else {
+            arrow = {};
+            DEFAULT_2D_LAYOUT.annotations = [];
+        }
+
+        Plotly.react(id, [trace2, bar, scatter, arrow], DEFAULT_2D_LAYOUT, DEFAULT_CONFIG);
         console.log(y.reduce((partial_sum, yp) => partial_sum - dx * yp * Math.log2(dx * yp), 0));
         console.log(y.reduce((partial_sum, yp) => partial_sum - dx * yp, 0));
         // probability of landing in the median bin
-        console.log(y[parseInt(n_bars / 2)] * dx);
+        let y_mid = y[parseInt(n_bars / 2)];
+        console.log(y_mid * dx * Math.log2(dx * y_mid));
     };
 
     Plotly.newPlot(id, [trace2], {...auto_sizing, ...DEFAULT_2D_LAYOUT}, DEFAULT_CONFIG);
