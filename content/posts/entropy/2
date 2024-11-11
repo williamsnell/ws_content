@@ -384,7 +384,7 @@ Entropy as defined earlier is quite restrictive:
 
 ##### A Refresher on Continuous Probability Distributions
 While some probability distributions are discrete - the outcomes of
-rolling dice, our lottere example from before, etc. - a lot of situations call for 
+rolling dice, or our lottery example before - a lot of situations call for 
 continuous probability distributions. 
 
 As an example, let's look at the normal distribution.
@@ -394,7 +394,7 @@ very much like to characterise its entropy.
 <div id="normal distribution chart"></div>
 <script>normal_chart("normal distribution chart");</script>
 
-The plot above is the *probability density function*, which we label \(p(x)\).
+Remember, the plot above is the *probability density*, which we label \(p(x)\).
 Points are more likely to be sampled from regions of high \(p(x)\) than from low
 \(p(x)\). If we sampled 100 points from this distribution, we'd get a
 distribution that looks like this:
@@ -403,13 +403,15 @@ distribution that looks like this:
 <script>normal_sample_chart("normal samples chart");</script>
 
 We use the lowercase \(p(x)\) to denote probability *density*, which is 
-different to the probability for discrete events, \(P(X)\). With a probability
+different to probability for discrete events, \(P(X)\). With a probability
 density (and continuous numbers), the likelihood of sampling 
 at any exact value of \(x\) is zero. Instead, we integrate
 across some range to get the likelihood of a sample falling in that *range*.
 
 For example, with our normal distribution, the likelihood of a point being greater than the mean (\(\mu\))
-is 50%. Formally (for a normal distribution),
+is 50%.
+
+Formally (for a normal distribution),
 
 \[
     \int_\mu^\infty p(x) dx = 0.5
@@ -482,7 +484,7 @@ You should see that as we increase the number of bins, the area under the curve,
 rapidly converges to its true value of \(\approx 1\). This is just our earlier statement, that all of our
 points must fall between \((-\infty, \infty)\). 
 
-You might also notice that the entropy \(H(X)\) keeps increasing as the bins get narrower. Worryingly, i
+You might also notice that the entropy \(H(X)\) keeps increasing as bins get smaller. Worryingly, 
 this value never converges - it just keeps increasing. If we take the limit of \(\Delta x \rightarrow 0\),
 we'll have **infinite** entropy.
 
@@ -490,8 +492,8 @@ we'll have **infinite** entropy.
 
 <div id="integral_chart" style="display: flex;"></div>
 <div id="button-bar" style="display: flex;">
-<button id="integral_chart -">Fewer Bins</button>
-<button id="integral_chart +">More Bins</button>
+<button id="integral_chart -">-</button>
+<button id="integral_chart +">+</button>
 <div id="integral_chart text" style="margin-left: 100px;"></div>
 </div>
 <script>integral_chart("integral_chart");</script>
@@ -500,194 +502,8 @@ we'll have **infinite** entropy.
 
 This result isn't an issue with any of our assumptions. Instead, we can tease what's going on directly out of the maths.
 
-Let's go back to our continous entropy formula:
-
-\[
-\begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
-\end{align}
-\]
-
-Looking at the last term, and remembering that \(\log(a \cdot b) = \log(a) + \log(b)\), we can
-write it as:
-
-\[
-\begin{align}
-    \log_2 p(x_i) \Delta x = \log_2 p(x_i) + \log_2 \Delta x \\
-\end{align}
-\]
-
-Substituting this into the entropy formula,
-
-\[
-\begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} - \sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \\
-         &= -\lim_{\Delta x \rightarrow 0} \left(\
-            \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \sum_{i=0}^N p(x_i) \Delta x \log_2 \Delta x \right) 
-\end{align}
-\]
-
-In the last line, we split the sum into two sums.
-Because \(\log_2 \Delta x\) is a constant, we can bring it out to the front of the second sum, giving us:
-
-\[
-\begin{align}
-    H(X) &= -\lim_{\Delta x \rightarrow 0} \left(\
-            \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \log_2 \Delta x \sum_{i=0}^N p(x_i) \Delta x \right) 
-\end{align}
-\]
-
-But wait! Remembering our Riemann sum approximation, and remembering that the integral of the probability 
-density function from \((-\infty, \infty)\) must equal 1,
-we have:
-\[
-\begin{align}
-        p(x) \Delta x &\approx \int_x^{x + \Delta x} p(x) dx \\
-    \lim_{\Delta x \rightarrow 0} \sum_{i=0}^N  p(x_i) \Delta x &= 1 \\
-\end{align}
-\]
-
-Substituting this term into the entropy formula, we simplify the second term and rearrange the first:
-
-\[
-\begin{align}
-   H(X) &= -\lim_{\Delta x \rightarrow 0} \left(\
-            \sum_{i=0}^N p(x_i) \log_2 p(x_i) \Delta x + \log_2 \Delta x \cdot 1 \right) 
-\end{align}
-\]
-
-Finally, we can convert our Riemann sum *back* to an integral, to give us the formula:
-
-> \[
-    H(X) = \left(-\int_{-\infty}^{\infty} p(x) \log_2 p(x)\:dx\right)\
-    - \lim_{\Delta x \rightarrow 0} \log_2 \Delta x \
-    \]
-
-The first term looks pretty sensible - this is the formula for \(H(X)\) that we started
-with at the top of this section, but with \(\sum\) swapped for \(\int\), and \(P\) swapped 
-for \(p\). 
-   
-However, the \(\log_2 \Delta x\) term is **bad news** - it blows up to infinity
-as \(\Delta x\) approaches 0. In other words, the more slices we use to divide our continous distribution, the 
-higher the entropy. This should perhaps not be surprising since, as we said earlier, the probability of getting
-any particular number from a continuous distribution is infinitely unlikely, and hence carries infinite information. 
-As our bins approach 0 width, this is exactly the situation we get.
-
-##### A Bad Solution: Differential Entropy
-
-What if we just closed our eyes and ignored the \(\log_2 \Delta x\) term? Since it's the part that blows up to infinity, we can 
-salvage the rest of the equation and define the *[Differential Entropy](https://en.wikipedia.org/wiki/Differential_entropy)*, 
-\(h(X)\), as:
-
-\[
-\begin{align}
-        h(X) &= H(X) + \lim_{\Delta x \rightarrow 0} \log_2 \Delta x \\
-             &= -\int_{-\infty}^{\infty} p(x) \log_2 p(x)\:dx \\
-\end{align}
-\]
-
-The measure we're left with, \(h(X)\), is a lot less useful than the discrete \(H(X)\) we know 
-and love:
-
-1. \(H(X) = 0\) implied no information was transmitted, because we always sent the same message with
-100% certainty. \(h(X) = 0\), however, does not have any special meaning. This is because:
-2. Differential entropy can be negative. Negative!
-3. \(h(X)\) is sensitive to scale (and therefore units). If we measured 100 people's heights,
-    \[h_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
-    \[h_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\] 
-    The differential entropy of h would be *larger* than the differential entropy of h2.
-
-One useful property differential entropy does have is *translational invariance*:
-\[
-        h(X + c) = h(X)
-\]
-
-So, with our normal distribution, we can shift the mean wherever we like and keep the same differential
-entropy.
-
-This seemingly arbitrary collection of properties has a simple explanation: differential entropy is 
-basically a measure of (log of) **volume**. Without being rigorous, we can suggest that:
-
-\[
-    V \approx 2^{h(X)}        
-\]
-
-Where \(V\) is the volume of a hypercube that fits most of the probability mass of our distribution. For a more
-rigorous explanation, see [here](https://stats.stackexchange.com/a/616892).
-
-This intuitive explanation clarifies all of the above properties. 1. and 2. occur because 
-volumes can be smaller than 1 (\(2^{-3} = 0.125\), for example.) 3. occurs because when we change units,
-the box containing our numbers grows or shrinks (even if the actual underlying data is the same.) 
-
-##### A Good Solution: Divergence
-
-Differential Entropy, then, isn't the whole answer. To motivate the actual solution, we'll start by
-looking at the entropy formula we tried to discretize earlier:
-
-\[
-\begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
-\end{align}
-\]
-
-The trouble really stems from the last term: 
-
-\[
-    \log_2 p(x_i) \Delta x
-\]
-
-We want to introduce some term that knocks out this \(\Delta x\). To do so, 
-we need to introduce a second distribution. We'll label the *probability density function*
-of this distribution \(q(x)\).
-
-What if instead of measuring the information content of each slice, we measured the *difference*
-in information content between \(p(x)\) and \(q(x)\). That is, instead of 
-
-\[\log_2 p(x_i) \Delta x\]
-
-We measure 
-
-\[
-\begin{align}
-\log_2 p(x_i) \Delta x - \log_2 q(x_i) \Delta x &= \log_2 \frac{q(x_i) \Delta x}{p(x_i) \Delta x} \\
-                                                &= \log_2 \frac{q(x_i)}{p(x_i)} \\
-\end{align}
-\]
-
-In other words, we're now calculating 
-
-\[
-D_{KL}(p || q) = - \lim_{\Delta x \rightarrow 0} \sum_{i = 0}^{N} p(x_i) \Delta x\:\
-\log_2 \frac{q(x_i)}{p(x_i)} \\
-\]
-
-This nicely cancels out the \(\Delta x\) term. But does it work?
 
 
-
-<div id="divergence_chart" style="display: flex;"></div>
-<div id="divergence_chart history" style="display: flex;"></div>
-<div id="button-bar" style="display: flex;">
-<button id="divergence_chart -">Fewer Bins</button>
-<button id="divergence_chart +">More Bins</button>
-<div id="divergence_chart text" style="margin-left: 100px; display: none;"></div>
-</div>
-<script>integral_chart("divergence_chart", "divergence_chart history");</script>
-
-
-Yes! Just as \(P(X) = \int_{-\infty}^{\infty} p(x) dx\) rapidly converges to 1, \(D_{KL}\)
-converges to a constant value, even as \(H(X)\) continues to increase.
-
-
-##### So what *is* the KL-Divergence?
-
-
-
-
-## Mutual Information
 
 
 ## Key Concept 2: Entropy for Continuous Numbers

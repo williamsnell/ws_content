@@ -12,7 +12,7 @@ const colors = ["#23B0FF", "#FF6266", "#FFA86A", "#EE72F1", "#23B0FF"];
 
 const DEFAULT_AXIS_FONT = {
   family: "Arial, Helvetica, sans-serif",
-  size: 12,
+  size: 16,
   color: theme_text_color,
 };
 
