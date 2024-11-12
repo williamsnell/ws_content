@@ -337,8 +337,8 @@ function integral_chart(id, divergence=null) {
 
             Plotly.newPlot(divergence, traces, {...auto_sizing2, ...layout2}, DEFAULT_CONFIG);
         }
-        if (window.MathJax) {
-            window.MathJax.typeset();
+        if (MathJax) {
+            MathJax.typeset();
         };
 
         if (n_bars <= min_bars) { minus.style.opacity = 0.2; } else { minus.style.opacity = 1;}
