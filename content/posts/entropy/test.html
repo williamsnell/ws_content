@@ -3,7 +3,8 @@
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
 </head>
 <body>
-<div id="plot"></div>
+<div id="plot" style="width: 1000px; height: 600px;"></div>
+<div id="benchmark"></div>
 <script>
 // generate points
 class Node {
@@ -24,7 +25,8 @@ class KDTree {
             return new Node(points[0], null, null);
         }
         // sort a subset of the points
-        const n_subset = Math.min(points.length, Math.min(100, Math.max(10, parseInt(points.length / 10))));
+        const n_subset = Math.min(points.length, Math.min(200, Math.max(10, parseInt(points.length / 10))));
+        //const n_subset = points.length;
         // assume the area is homogeneous, so we can
         // just pick the first n_subset points.
         let subset = points.slice(0, Math.min(points.length, n_subset)).map((x, i) => x.concat([i]));
@@ -52,11 +54,14 @@ class KDTree {
         return new Node(median, less_than, greater_than);
     }
 
-    knn(point, k) {
+    knn(point, k, return_dist=false) {
         let closest_points = []; // [[distance, *point]]
         let n_dimensions = this.n_dimensions;
 
-        function distance(x, y, norm=2) {
+        function distance(x, y, norm=Math.inf) {
+            if (norm == Math.inf) {
+                return Math.max(...x.map((x, i) => Math.abs(x - y[i])));
+            }
             return x.reduce((partial_sum, x, i) => partial_sum + (x-y[i])**norm, 0);
         }
 
@@ -65,9 +70,11 @@ class KDTree {
         function find_closest(node, dim=0) {
             let match = node.val;
 
-            if (node.greater_than && (point[dim] > node.val[dim])) {
+            let gt = point[dim] > node.val[dim];
+
+            if (node.greater_than && gt) {
                 find_closest(node.greater_than, (dim + 1) % n_dimensions);
-            } else if (node.less_than && (point[dim] <= node.val[dim])) {
+            } else if (node.less_than && !gt) {
                 find_closest(node.less_than, (dim + 1) % n_dimensions);
             }
 
@@ -87,9 +94,9 @@ class KDTree {
             // neighbor.
             if (closest_points[0][0] > distance([point[dim]], [node.val[dim]])) {
                 // If so, traverse the opposite tree to last time.
-                    if (node.greater_than && !(point[dim] > node.val[dim])) {
+                    if (node.greater_than && !gt) {
                     find_closest(node.greater_than, (dim + 1) % n_dimensions);
-                } else if (node.less_than && !(point[dim] <= node.val[dim])) {
+                } else if (node.less_than && gt) {
                     find_closest(node.less_than, (dim + 1) % n_dimensions);
                 }
             }
@@ -98,19 +105,75 @@ class KDTree {
         }
 
         find_closest(this.tree);
+        if (return_dist) {
+            return [closest_points.map((x) => x.slice(1)), closest_points.map((x) => x[0])];
+        }
         return closest_points.map((x) => x.slice(1));
     }
 }
+let tree;
 
-const n_points = 10_000;
-const x = Array(n_points).fill(0).map((x) => Math.random() * 40);
-const y = Array(n_points).fill(0).map((x) => (Math.random()  - 0.5) * 50);
-const z = Array(n_points).fill(0).map((x) => (Math.random() - 0.5) * 20);
-const points = x.map((x, i) => [x, y[i], z[i]]);
+let n_points = 10_000;
+let x = Array(n_points).fill(0).map((x) => Math.random() * 80);
+let y = Array(n_points).fill(0).map((x) => (Math.random()  - 0.5) * 50);
+let z = x.map((x, i) => Math.sin(x / 20) * 20 + y[i] + Math.random() * 10);
+let points = x.map((x, i) => [x, y[i], z[i]]);
 
-let tree = new KDTree(points);
+const n_repeats = 1;
 
-let neighbors = tree.knn(points[0], 4);
+let start_build_tree = Date.now();
+for (let i = 0; i < n_repeats; i++) {
+    tree = new KDTree(points);
+}
+
+let build_time = (Date.now() - start_build_tree) / n_repeats;
+
+let [neighbors, dists] = tree.knn(points[0], 7, true);
+
+let start_knn_search = Date.now();
+for (let i = 0; i < n_repeats; i++) {
+    points.map((x) => tree.knn(x, 3));
+}
+
+let search_time = (Date.now() - start_knn_search) / n_repeats;
+
+
+// calculate the surface of a sphere for the nearest neighbors
+function calc_sphere(cx, cy, cz, radius, n=30) {
+    let x = [];
+    let y = [];
+    let z = [];
+    // Create a hemisphere
+    for (let i = 0; i < 2 * Math.PI; i += 2 * Math.PI / n) {
+        for (let j = 0; j < Math.PI; j += 2 * Math.PI / n) {
+            let cj = Math.cos(j);
+            x.push(cx + radius * Math.sin(i) * cj);
+            y.push(cy + radius * Math.cos(i) * cj);
+            z.push(cz + radius * Math.sin(j));
+        }
+    }
+
+    // Return the two hemispheres
+    return [[x, y, z], [x, y, z.map((z) => 2 * cz -z)]];
+}
+
+function cube(cx, cy, cz, edge_length) {
+    let l = edge_length;
+    return {
+        x: [cx - l, cx - l,  cx + l, cx + l, cx - l, cx - l, cx + l, cx + l],
+        y: [cy - l, cy + l, cy + l, cy - l, cy - l, cy + l, cy + l, cy - l],
+        z: [cz - l, cz - l, cz - l, cz - l, cz + l, cz + l, cz + l, cz + l],
+        i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+        j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+        k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+    }
+}
+
+// let [[sx, sy, sz], [sx2, sy2, sz2]] = calc_sphere(points[0][0], points[0][1], points[0][2], dists[0]**0.5);
+let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
+surf.opacity = 0.1;
+surf.color = "blue";
+surf.type = "mesh3d";
 
 Plotly.newPlot('plot', [
     {
@@ -145,17 +208,22 @@ Plotly.newPlot('plot', [
             color: "red"
         },
         type: 'scatter3d',
-    }    
+    },
+    surf
 ],
     {
         width: 1200,
         height: 600,
+        margin: {t: 0, l: 0, r: 0, b: 0},
         xaxis: {
             scaleanchor: 'y'
         }
     }
 );
-
+document.getElementById('benchmark').textContent = `
+Build: ${build_time}ms
+KNN-search: ${search_time}ms
+`;
 
 </script>
 
