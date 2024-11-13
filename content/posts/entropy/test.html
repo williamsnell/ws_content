@@ -5,7 +5,8 @@
 <body>
 <div id="plot" style="width: 1000px; height: 600px;"></div>
 <div id="benchmark"></div>
-<script>
+<script type="module">
+import digamma from 'https://cdn.jsdelivr.net/gh/stdlib-js/math-base-special-digamma@esm/index.mjs';
 // generate points
 class Node {
     constructor(val, less_than, greater_than) {
@@ -80,7 +81,7 @@ class KDTree {
 
             // At this point, we've greedily explored on the 
             // "best" side of the tree.
-            let dist = distance(point, match);
+                let dist = distance(point, match);
 
             if (closest_points.length < k) {
                 closest_points.push([dist].concat(match));
@@ -88,18 +89,18 @@ class KDTree {
                 closest_points[0] = [dist].concat(match);
             }
             closest_points.sort((a, b) => b[0] - a[0]);
-            
+
             // Check if the distance to the splitting plane
             // is less than the distance to the furthest
             // neighbor.
-            if (closest_points[0][0] > distance([point[dim]], [node.val[dim]])) {
-                // If so, traverse the opposite tree to last time.
-                    if (node.greater_than && !gt) {
-                    find_closest(node.greater_than, (dim + 1) % n_dimensions);
-                } else if (node.less_than && gt) {
-                    find_closest(node.less_than, (dim + 1) % n_dimensions);
+                if (closest_points[0][0] > distance([point[dim]], [node.val[dim]])) {
+                    // If so, traverse the opposite tree to last time.
+                        if (node.greater_than && !gt) {
+                            find_closest(node.greater_than, (dim + 1) % n_dimensions);
+                        } else if (node.less_than && gt) {
+                            find_closest(node.less_than, (dim + 1) % n_dimensions);
+                        }
                 }
-            }
 
             return node.val;
         }
@@ -110,13 +111,87 @@ class KDTree {
         }
         return closest_points.map((x) => x.slice(1));
     }
+
+    /* Count the number of points bounded
+    * by some range.
+    *  bounds is an array of [d_min, d_max].
+    *      e.g. for 3D, [[x_min, x_max], [y_min, y_max], [z_min, z_max]]
+    */ 
+    find_bounded(bounds) {
+        let points = [];
+        let n_dims = this.n_dimensions;
+
+        function recursively_bound(node, depth=0) {
+            let dim = depth % n_dims;
+
+            let splitting_plane = node.val[dim];
+            let [left_bound, right_bound] = bounds[dim];
+
+            let lt = left_bound <= splitting_plane;
+            let gt = right_bound > splitting_plane;
+
+            if (lt && gt) {
+                // Check if the current point is bounded
+                // on all sides
+                let bounded = true;
+                for (let i = 0; i < bounds.length; i++) {
+                    if (bounds[i][0] > node.val[i] || bounds[i][1] <= node.val[i]) {
+                        bounded = false;
+                        break;
+                    }
+                }
+                if (bounded) { points.push(node.val) };
+
+                // Continue refining on both sides.
+                node.less_than ? recursively_bound(node.less_than, depth+1) : null;
+                node.greater_than ? recursively_bound(node.greater_than, depth+1) : null;
+            } else if (lt) {
+                // bounding box is entirely on the 
+                // less-than side of the tree
+                node.less_than ? recursively_bound(node.less_than, depth + 1) : null;
+            } else if (gt) {
+                // bounding box is entirely on the greater-than
+                // side of the tree.
+               node.greater_than ? recursively_bound(node.greater_than, depth + 1) : null; 
+            }
+        }
+        recursively_bound(this.tree);
+        return points;
+    }
 }
+
+// As per https://arxiv.org/pdf/cond-mat/0305641 
+function mutual_information(x_points, y_points, k=1) {
+    let xy_tree = new KDTree(x_points.map((x, i) => [...x, ...y_points[i]]));
+    let x_tree = new KDTree(x_points);
+    let y_tree = new KDTree(y_points);
+
+    return (digamma(k) - 1 / n_points * points.reduce(
+        (partial_sum, x, i) => {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = xy_tree.knn(x, k + 1, true);
+            console.log(dists[0]);
+            // We add an offset because we don't want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - 1e-15;
+
+            // n_x, n_y = (length - 1) because we will always find the search point, and 
+            // need to ignore it.
+            let x_bounds = x_points[0].map((_, i) => [x[i] - bound_length, x[i] + bound_length]);
+            let y_bounds = y_points[0].map((_, i) => [x[x_bounds.length + i] - bound_length, x[x_bounds.length + i] + bound_length]);
+            let n_x = x_tree.find_bounded(x_bounds).length - 1;
+            let n_y = y_tree.find_bounded(y_bounds).length - 1;
+            return partial_sum + (digamma(n_x + 1) + digamma(n_y + 1));
+        }, 0) + digamma(n_points))
+}
+//////// Benchmarks /////////////////
 let tree;
 
-let n_points = 10_000;
+let n_points = 2_000;
 let x = Array(n_points).fill(0).map((x) => Math.random() * 80);
 let y = Array(n_points).fill(0).map((x) => (Math.random()  - 0.5) * 50);
-let z = x.map((x, i) => Math.sin(x / 20) * 20 + y[i] + Math.random() * 10);
+// let z = Array(n_points).fill(0).map((x) => Math.random());
+let z = x.map((x, i) => (Math.sin(x) * 20 + y[i] + Math.random() * 1));
 let points = x.map((x, i) => [x, y[i], z[i]]);
 
 const n_repeats = 1;
@@ -126,17 +201,52 @@ for (let i = 0; i < n_repeats; i++) {
     tree = new KDTree(points);
 }
 
+let xy_tree = new KDTree(x.map((x, i) => [x, y[i]]));
+let z_tree = new KDTree(z.map((z) => [z]));
+
 let build_time = (Date.now() - start_build_tree) / n_repeats;
 
-let [neighbors, dists] = tree.knn(points[0], 7, true);
+let [neighbors, dists] = tree.knn(points[0], 4, true);
+
+let k = 2;
 
 let start_knn_search = Date.now();
 for (let i = 0; i < n_repeats; i++) {
-    points.map((x) => tree.knn(x, 3));
+    points.map((x) => tree.knn(x, k + 1));
 }
 
 let search_time = (Date.now() - start_knn_search) / n_repeats;
 
+
+// Test find_bounded //
+//
+//let b_points = [[1., 2., 3.], [4.,5.,6.], [7.,8.,9.], [10., 11., 12.]];
+//let bounds = [[0.99, 7.01], [2.01, 11.01], [6.01, 9.01]];
+//
+//let bounds_tree = new KDTree(b_points);
+//
+//let true_bounded = [[7, 8, 9]];
+//console.assert(bounds_tree.find_bounded(bounds).map((x, i) => x.map((xx, ii) => true_bounded[i][ii] == xx)));
+
+let bound_length = dists[0] + 1e-16;
+let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
+                                   [points[0][1] - bound_length, points[0][1] + bound_length], 
+                                   [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
+
+let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+
+console.log(`n_x = ${bounded_x_points.length}, n_z = ${bounded_z_points.length}`);
+
+let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
+
+// Estimate the mutual information
+console.log(mutual_information(x.map((x) => [x]), y.map((x) => [y])));
+
+
+///////////////////////// Plots for verification ////////////////////
 
 // calculate the surface of a sphere for the nearest neighbors
 function calc_sphere(cx, cy, cz, radius, n=30) {
@@ -174,52 +284,78 @@ let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
 surf.opacity = 0.1;
 surf.color = "blue";
 surf.type = "mesh3d";
-
-Plotly.newPlot('plot', [
-    {
-        x: x, 
-        y: y, 
-        z: z,
-        mode: 'markers',
-        marker: {
-            size: 0.5,
-            color: "black",
-        },
-        type: 'scatter3d',
-    },
-    {
-        x: neighbors.map((x) => x[0]),
-        y: neighbors.map((x) => x[1]),
-        z: neighbors.map((x) => x[2]),
-        mode: 'markers',
-        marker: {
-            size: 1,
-            color: "orange"
-        },
-        type: 'scatter3d',
-    },
-    {
-        x: [points[0][0]],
-        y: [points[0][1]],
-        z: [points[0][2]],
-        mode: 'markers',
-        marker: {
-            size: 2,
-            color: "red"
-        },
-        type: 'scatter3d',
-    },
-    surf
-],
-    {
-        width: 1200,
-        height: 600,
-        margin: {t: 0, l: 0, r: 0, b: 0},
-        xaxis: {
-            scaleanchor: 'y'
-        }
-    }
-);
+//
+//Plotly.newPlot('plot', [
+//    {
+//        x: x, 
+//        y: y, 
+//        z: z,
+//        mode: 'markers',
+//        marker: {
+//            size: 0.5,
+//            color: "black",
+//        },
+//        type: 'scatter3d',
+//    },
+//    {
+//        x: [points[0][0]],
+//        y: [points[0][1]],
+//        z: [points[0][2]],
+//        mode: 'markers',
+//        marker: {
+//            size: 2,
+//            color: "red"
+//        },
+//        type: 'scatter3d',
+//    },
+//    surf,
+//    {
+//        x: bounded_x_points.map((x) => x[0]),
+//        y: bounded_x_points.map((x) => x[1]),
+//        z: bounded_x_points.map((x) => x[2]),
+//        mode: 'markers',
+//        marker: {
+//            size: 2,
+//            color: "green"
+//        },
+//        type: 'scatter3d',
+//    },
+//    {
+//        x: bounded_z_points.map((x) => x[0]),
+//        y: bounded_z_points.map((x) => x[1]),
+//        z: bounded_z_points.map((x) => x[2]),
+//        mode: 'markers',
+//        marker: {
+//            size: 2,
+//            color: "orange"
+//        },
+//        type: 'scatter3d',
+//    },
+//    {
+//        x: neighbors.map((x) => x[0]),
+//        y: neighbors.map((x) => x[1]),
+//        z: neighbors.map((x) => x[2]),
+//        mode: 'markers',
+//        marker: {
+//            size: 3,
+//            color: "red"
+//        },
+//        type: 'scatter3d',
+//    },
+//
+//],
+//    {
+//        width: 1200,
+//        height: 600,
+//        margin: {t: 0, l: 0, r: 0, b: 0},
+//        xaxis: {
+//            scaleanchor: 'y'
+//        },
+//        zaxis: {
+//            scaleanchor: 'z'
+//        }
+//    }
+//);
 document.getElementById('benchmark').textContent = `
 Build: ${build_time}ms
 KNN-search: ${search_time}ms
