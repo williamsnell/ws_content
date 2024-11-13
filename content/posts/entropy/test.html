@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
 </head>
 <body>
 <div id="plot" style="width: 1000px; height: 600px;"></div>
@@ -36,7 +36,7 @@ class KDTree {
         let median = points[midpoint];
         let median_elem = median[dim];
         // Remove the median so we don't count it twice.
-        points.splice(midpoint, 1);
+        points = points.slice(0, midpoint).concat(points.slice(midpoint + 1));
         
         let next_dim = (dim + 1) % n_dims;
 
@@ -93,14 +93,14 @@ class KDTree {
             // Check if the distance to the splitting plane
             // is less than the distance to the furthest
             // neighbor.
-                if (closest_points[0][0] > distance([point[dim]], [node.val[dim]])) {
-                    // If so, traverse the opposite tree to last time.
-                        if (node.greater_than && !gt) {
-                            find_closest(node.greater_than, (dim + 1) % n_dimensions);
-                        } else if (node.less_than && gt) {
-                            find_closest(node.less_than, (dim + 1) % n_dimensions);
-                        }
-                }
+            if (closest_points[0][0] > distance([point[dim]], [node.val[dim]]) || closest_points.length < k) {
+                // If so, traverse the opposite tree to last time.
+                    if (node.greater_than && !gt) {
+                        find_closest(node.greater_than, (dim + 1) % n_dimensions);
+                    } else if (node.less_than && gt) {
+                        find_closest(node.less_than, (dim + 1) % n_dimensions);
+                    }
+            }
 
             return node.val;
         }
@@ -160,20 +160,46 @@ class KDTree {
     }
 }
 
+// From https://stackoverflow.com/questions/27659675/get-next-smallest-nearest-number-to-a-decimal
+function get_epsilon(n) {
+  return Math.max( Number.MIN_VALUE, 2 ** Math.floor( Math.log2( n ) ) * Number.EPSILON ) 
+}
+
+function normalize(points) {
+    let out = Array(points.length).fill(0).map(() => new Array(points[0].length).fill(0));
+
+    for (let dim = 0; dim < points[0].length; dim++) {
+        let mean = points.reduce((partial_sum, x) => partial_sum + x[dim], 0) / points.length;
+        let centred = points.map((x) => x[dim] - mean);
+        let std = (centred.reduce((partial_sum, x) => partial_sum + x**2, 0) / points.length)**0.5;
+        for (let i = 0; i < points.length; i++) {
+            out[i][dim] =  centred[i] / std;
+        }
+    }
+
+    return out;
+}
+
+
 // As per https://arxiv.org/pdf/cond-mat/0305641 
-function mutual_information(x_points, y_points, k=1) {
-    let xy_tree = new KDTree(x_points.map((x, i) => [...x, ...y_points[i]]));
+function mutual_information(x_points, y_points, k=3) {
+    // normalize points
+    x_points = normalize(x_points);
+    y_points = normalize(y_points);
+
+    let xy_points = x_points.map((x, i) => [...x, ...y_points[i]]);
+    let xy_tree = new KDTree(xy_points);
+
     let x_tree = new KDTree(x_points);
     let y_tree = new KDTree(y_points);
 
-    return (digamma(k) - 1 / n_points * points.reduce(
-        (partial_sum, x, i) => {
+    let mean_psi_nx_ny = xy_points.reduce((partial_sum, x, i) => 
+    {
             // We find k + 1 neighbors because the first neighbor is the point itself.
             let [neighbors, dists] = xy_tree.knn(x, k + 1, true);
-            console.log(dists[0]);
             // We add an offset because we don't want a point on the wall of our hypercube
             // to be caught by our hyper rectangles.
-            let bound_length = dists[0] - 1e-15;
+            let bound_length = dists[0] - get_epsilon(dists[0]);
 
             // n_x, n_y = (length - 1) because we will always find the search point, and 
             // need to ignore it.
@@ -182,17 +208,21 @@ function mutual_information(x_points, y_points, k=1) {
             let n_x = x_tree.find_bounded(x_bounds).length - 1;
             let n_y = y_tree.find_bounded(y_bounds).length - 1;
             return partial_sum + (digamma(n_x + 1) + digamma(n_y + 1));
-        }, 0) + digamma(n_points))
+        },
+    0) / x_points.length;
+
+    return digamma(k) - mean_psi_nx_ny + digamma(x_points.length);
 }
 //////// Benchmarks /////////////////
 let tree;
 
-let n_points = 2_000;
+let n_points = 10_000;
 let x = Array(n_points).fill(0).map((x) => Math.random() * 80);
 let y = Array(n_points).fill(0).map((x) => (Math.random()  - 0.5) * 50);
 // let z = Array(n_points).fill(0).map((x) => Math.random());
-let z = x.map((x, i) => (Math.sin(x) * 20 + y[i] + Math.random() * 1));
+let z = x.map((x, i) => 0.05 * (Math.sin(x / 2) * Math.sin(y[i] / 2) * x * y[i] + Math.random() * 1));
 let points = x.map((x, i) => [x, y[i], z[i]]);
+points = normalize(points);
 
 const n_repeats = 1;
 
@@ -208,7 +238,7 @@ let build_time = (Date.now() - start_build_tree) / n_repeats;
 
 let [neighbors, dists] = tree.knn(points[0], 4, true);
 
-let k = 2;
+let k = 3;
 
 let start_knn_search = Date.now();
 for (let i = 0; i < n_repeats; i++) {
@@ -228,10 +258,14 @@ let search_time = (Date.now() - start_knn_search) / n_repeats;
 //let true_bounded = [[7, 8, 9]];
 //console.assert(bounds_tree.find_bounded(bounds).map((x, i) => x.map((xx, ii) => true_bounded[i][ii] == xx)));
 
-let bound_length = dists[0] + 1e-16;
+let bound_length = dists[0] + -get_epsilon(dists[0]);
 let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
-                                   [points[0][1] - bound_length, points[0][1] + bound_length], 
-                                   [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
+
+let bounded_y_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][1] - bound_length, points[0][1] + bound_length],
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
 
 let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
                                           [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
@@ -243,8 +277,10 @@ console.log(`n_x = ${bounded_x_points.length}, n_z = ${bounded_z_points.length}`
 let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
 
 // Estimate the mutual information
-console.log(mutual_information(x.map((x) => [x]), y.map((x) => [y])));
-
+console.log(mutual_information(x.map((x) => [x]), y.map((x) => [x])));
+console.log(mutual_information(x.map((x) => [x]), z.map((x) => [x])));
+console.log(mutual_information(x.map((x, i) => [x, y[i]]), z.map((x) => [x])));
+console.log(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]));
 
 ///////////////////////// Plots for verification ////////////////////
 
@@ -284,78 +320,67 @@ let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
 surf.opacity = 0.1;
 surf.color = "blue";
 surf.type = "mesh3d";
-//
-//Plotly.newPlot('plot', [
-//    {
-//        x: x, 
-//        y: y, 
-//        z: z,
-//        mode: 'markers',
-//        marker: {
-//            size: 0.5,
-//            color: "black",
-//        },
-//        type: 'scatter3d',
-//    },
-//    {
-//        x: [points[0][0]],
-//        y: [points[0][1]],
-//        z: [points[0][2]],
-//        mode: 'markers',
-//        marker: {
-//            size: 2,
-//            color: "red"
-//        },
-//        type: 'scatter3d',
-//    },
-//    surf,
-//    {
-//        x: bounded_x_points.map((x) => x[0]),
-//        y: bounded_x_points.map((x) => x[1]),
-//        z: bounded_x_points.map((x) => x[2]),
-//        mode: 'markers',
-//        marker: {
-//            size: 2,
-//            color: "green"
-//        },
-//        type: 'scatter3d',
-//    },
-//    {
-//        x: bounded_z_points.map((x) => x[0]),
-//        y: bounded_z_points.map((x) => x[1]),
-//        z: bounded_z_points.map((x) => x[2]),
-//        mode: 'markers',
-//        marker: {
-//            size: 2,
-//            color: "orange"
-//        },
-//        type: 'scatter3d',
-//    },
-//    {
-//        x: neighbors.map((x) => x[0]),
-//        y: neighbors.map((x) => x[1]),
-//        z: neighbors.map((x) => x[2]),
-//        mode: 'markers',
-//        marker: {
-//            size: 3,
-//            color: "red"
-//        },
-//        type: 'scatter3d',
-//    },
-//
-//],
-//    {
-//        width: 1200,
-//        height: 600,
-//        margin: {t: 0, l: 0, r: 0, b: 0},
-//        xaxis: {
-//            scaleanchor: 'y'
-//        },
-//        zaxis: {
-//            scaleanchor: 'z'
-//        }
-//    }
-//);
+
+Plotly.newPlot('plot', [
+    {
+        x: points.map((x) => x[0]), 
+        y: points.map((x) => x[1]), 
+        z: points.map((x) => x[2]),
+        mode: 'markers',
+        marker: {
+            size: 0.5,
+            color: "black",
+        },
+        type: 'scatter3d',
+    },
+    surf,
+    {
+        x: bounded_x_points.map((x) => x[0]),
+        y: bounded_x_points.map((x) => x[1]),
+        z: bounded_x_points.map((x) => x[2]),
+        mode: 'markers',
+        marker: {
+            size: 2,
+            color: "green"
+        },
+        type: 'scatter3d',
+    },
+    {
+        x: bounded_z_points.map((x) => x[0]),
+        y: bounded_z_points.map((x) => x[1]),
+        z: bounded_z_points.map((x) => x[2]),
+        mode: 'markers',
+        marker: {
+            size: 2,
+            color: "orange"
+        },
+        type: 'scatter3d',
+    },
+    {
+        x: neighbors.map((x) => x[0]),
+        y: neighbors.map((x) => x[1]),
+        z: neighbors.map((x) => x[2]),
+        mode: 'markers',
+        marker: {
+            size: 3,
+            color: "red"
+        },
+        type: 'scatter3d',
+    },
+
+],
+    {
+        width: 1200,
+        height: 600,
+        margin: {t: 0, l: 0, r: 0, b: 0},
+        xaxis: {
+            scaleanchor: 'y'
+        },
+        zaxis: {
+            scaleanchor: 'z'
+        }
+    }
+);
 document.getElementById('benchmark').textContent = `
 Build: ${build_time}ms
 KNN-search: ${search_time}ms
