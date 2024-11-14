@@ -43,20 +43,64 @@ export function get_mi_chart(id, signals, k=3) {
     }
     
     let select_hypercube = create_button("⛶");
-    let p_x_given_y_visible = false;
-    let p_y_given_x_visible = false;
-    let p_x_given_y = create_button("$$n_x$$", () => {
-        p_x_given_y_visible = !p_x_given_y_visible;
-        Plotly.restyle(elem.id, {visible: !p_x_given_y_visible}, [2, 3])
-        Plotly.relayout(elem.id, {'shapes[0].opacity': !(p_x_given_y_visible | p_y_given_x_visible) ? 0.2 : 0, 
-                                  'shapes[2].opacity': !p_x_given_y_visible ? 0.7 : 0});
-    });
-    let p_y_given_x = create_button("$$n_y$$", () => {
-        p_y_given_x_visible = !p_y_given_x_visible;
-        Plotly.restyle(elem.id, {visible: !p_y_given_x_visible}, [1, 3])
-        Plotly.relayout(elem.id, {'shapes[0].opacity': !(p_y_given_x_visible | p_x_given_y_visible) ? 0.2 : 0, 
-                                  'shapes[1].opacity': !p_y_given_x_visible ? 0.7 : 0});
-    });
+
+
+    let showing_nx = false;
+    let showing_ny = false;
+
+    let nx = create_button("$$n_x$$"); 
+    let ny = create_button("$$n_y$$");
+
+    function click_nx() {
+        if (!showing_nx) {
+            nx.style = `outline: 5px ${theme_text_color} solid;`;
+            ny.style = "";
+            showing_nx = true;
+            showing_ny = false;
+
+            Plotly.restyle(elem.id, {visible: false}, [0, 2, 3])
+            Plotly.restyle(elem.id, {visible: true}, [1])
+            Plotly.relayout(elem.id, {
+                'shapes[0].opacity': 0,
+                'shapes[1].opacity': 0.7,
+                'shapes[2].opacity': 0});
+        } else {
+            showing_nx = false;
+            showing_ny = false;
+            nx.style = "";
+            ny.style = "";
+            
+            Plotly.restyle(elem.id, {visible: true}, [0, 1, 2, 3]);
+            Plotly.relayout(elem.id, {'shapes[0].opacity': 0.2, 'shapes[1].opacity': 0.7, 'shapes[2].opacity': 0.7});
+        }
+    }
+
+    function click_ny() {
+        if (!showing_ny) {
+            showing_ny = true;
+            showing_nx = false;
+            ny.style = `outline: 5px ${theme_text_color} solid;`;
+            nx.style = "";
+
+            Plotly.restyle(elem.id, {visible: false}, [0, 1, 3])
+            Plotly.restyle(elem.id, {visible: true}, [2])
+            Plotly.relayout(elem.id, {
+                'shapes[0].opacity': 0,
+                'shapes[1].opacity': 0,
+                'shapes[2].opacity': 0.7});
+        } else {
+            showing_nx = false;
+            showing_ny = false;
+            ny.style = "";
+            nx.style = "";
+
+            Plotly.restyle(elem.id, {visible: true}, [0, 1, 2, 3]);
+            Plotly.relayout(elem.id, {'shapes[0].opacity': 0.2, 'shapes[1].opacity': 0.7, 'shapes[2].opacity': 0.7});
+        }    
+    }
+
+    nx.onclick = click_nx;
+    ny.onclick = click_ny;
 
     let next_point = create_button("Next Point");
 
@@ -215,10 +259,12 @@ export function get_mi_chart(id, signals, k=3) {
             let zoomed = false;
             select_hypercube.onclick = () => {
                 if (zoomed) {
+                    select_hypercube.style = "";
                     layout.xaxis.range = full_range.slice(0, 2);
                     layout.yaxis.range = full_range.slice(2, 4);
                     zoomed = !zoomed;
                 } else {
+                    select_hypercube.style = `outline: ${theme_text_color} 5px solid;`;
                     layout.xaxis.range = constrained_range.slice(0, 2);
                     layout.yaxis.range = constrained_range.slice(2, 4);
                     zoomed = !zoomed;
@@ -247,8 +293,11 @@ export function get_mi_chart(id, signals, k=3) {
             point_id += 1;
             draw_for_point(joint_samples[point_id]);
             Plotly.restyle(elem.id, {visible: true}, [0, 1, 2, 3])
-            p_x_given_y_visible = false;
-            p_y_given_x_visible = false;
+            showing_nx = false;
+            showing_ny = false;
+            nx.style = "";
+            ny.style = "";
+            select_hypercube.style = "";
         };
         
         // Make buttons for activating

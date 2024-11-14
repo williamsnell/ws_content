@@ -725,7 +725,7 @@ where we are trying to predict the alphabet used to generate the messages
 import {get_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random());
 let y = x.map((xi) => Math.sin(xi * 5) + Math.random() * 0.5);
-get_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 6);
+get_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 3);
 </script>
 
 
