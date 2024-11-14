@@ -199,6 +199,29 @@ export const DEFAULT_3D_LAYOUT = {
       b: 10,
       t: 10
   },
+  scene: {
+      xaxis: {
+        showgrid: false,
+        zeroline: false,
+        tickmode: "array",
+        tickvals: [], 
+        range: [-1, 1],
+      },
+      yaxis: {
+        showgrid: false,
+        zeroline: false,
+        tickmode: "array",
+        tickvals: [], 
+        range: [-1, 1],
+      },
+      zaxis: {
+        showgrid: false,
+        zeroline: false,
+        tickmode: "array",
+        tickvals: [], 
+        range: [-1, 1],
+      },
+  }
 };
 
 export const MAX_SIDEBYSIDE_WIDTH = 600;

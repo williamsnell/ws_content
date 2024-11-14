@@ -722,12 +722,22 @@ where we are trying to predict the alphabet used to generate the messages
 
 <div id="plot"></div>
 <script type="module">
-import {get_mi_chart} from "./mi_charts.js";
+import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random());
 let y = x.map((xi) => Math.sin(xi * 5) + Math.random() * 0.5);
-get_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 3);
+get_2d_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 3);
 </script>
 
+
+
+<div id="3d-plot"></div>
+<script type="module">
+import {get_3d_mi_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random());
+let y = Array(10_000).fill(0).map((_) => Math.random());
+let z = x.map((xi, i) => Math.sin(xi * 5) + Math.cos(y[i] * 5) + Math.random() * 0.5);
+get_3d_mi_chart('3d-plot', x.map((xi, i) => [xi, y[i], z[i]]), 3);
+</script>
 
 
 # Kullback-Leibler Divergence
