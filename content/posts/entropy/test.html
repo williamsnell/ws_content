@@ -213,14 +213,69 @@ function mutual_information(x_points, y_points, k=3) {
 
     return digamma(k) - mean_psi_nx_ny + digamma(x_points.length);
 }
+
+/* Estimate the Mutual Information of a collection
+   of signals.
+
+   x_points: An [n x m] dimensional array, with
+             m unique signals and n samples.
+
+   returns: I(X1, X2, ... Xm)
+
+*/ 
+function mutual_information_n(x_points, k=3) {
+    let joint_samples = normalize(x_points);
+
+    let m = x_points[0].length;
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+
+    let marginal_trees = [];
+
+    for (let signal = 0; signal < m; signal++) {
+        marginal_trees.push(new KDTree(joint_samples.map((x, i) => [x[signal]])));
+    }
+
+    // Across all n_x[m], compute digamma(n_x[m] + 1), and then
+    // take the mean.
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, x, i) => 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(x, k + 1, true);
+            // We add an offset because we don't want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let digamma_sum = 0;
+
+            for (let signal = 0; signal < m; signal++) {
+                let bounds = [[x[signal] - bound_length, x[signal] + bound_length]];
+                // n_xm = (length - 1) because we will always find the search point, and 
+                // need to ignore it.
+                let n_xm = marginal_trees[signal].find_bounded(bounds).length - 1;
+                digamma_sum += digamma(n_xm + 1);
+            }
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
+}
+
 //////// Benchmarks /////////////////
 let tree;
 
 let n_points = 10_000;
 let x = Array(n_points).fill(0).map((x) => Math.random() * 80);
-let y = Array(n_points).fill(0).map((x) => (Math.random()  - 0.5) * 50);
+let y = Array(n_points).fill(0).map((x) => (Math.random()) * 50);
 // let z = Array(n_points).fill(0).map((x) => Math.random());
-let z = x.map((x, i) => 0.05 * (Math.sin(x / 2) * Math.sin(y[i] / 2) * x * y[i] + Math.random() * 1));
+//let z = x.map((x, i) => 0.05 * (Math.sin(x / 3) * Math.sin(y[i] / 3) * x * y[i] + Math.random() * 1));
+let z = x.map((x, i) => (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
+//let z = x.map((x, i) => x + y[i]);
+
+
 let points = x.map((x, i) => [x, y[i], z[i]]);
 points = normalize(points);
 
@@ -278,9 +333,12 @@ let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
 
 // Estimate the mutual information
 console.log(mutual_information(x.map((x) => [x]), y.map((x) => [x])));
-console.log(mutual_information(x.map((x) => [x]), z.map((x) => [x])));
-console.log(mutual_information(x.map((x, i) => [x, y[i]]), z.map((x) => [x])));
-console.log(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]));
+console.log("I(X, Y): ", mutual_information_n(x.map((x, i) => [x, y[i]])));
+console.log("I(X, Z): ", mutual_information_n(x.map((x, i) => [x, z[i]])));
+console.log("I(Y, Z): ", mutual_information_n(y.map((x, i) => [x, z[i]])));
+console.log("I(X, Y, Z): ", mutual_information_n(x.map((x, i) => [x, y[i], z[i]])));
+console.log("I(X, Z): ", mutual_information(x.map((x) => [x]), z.map((x) => [x])));
+console.assert(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]) == 0.9499999999999998);
 
 ///////////////////////// Plots for verification ////////////////////
 
@@ -329,7 +387,7 @@ Plotly.newPlot('plot', [
         mode: 'markers',
         marker: {
             size: 0.5,
-            color: "black",
+            color: "#061623",
         },
         type: 'scatter3d',
     },
@@ -341,7 +399,18 @@ Plotly.newPlot('plot', [
         mode: 'markers',
         marker: {
             size: 2,
-            color: "green"
+            color: "#E15554"
+        },
+        type: 'scatter3d',
+    },
+    {
+        x: bounded_y_points.map((x) => x[0]),
+        y: bounded_y_points.map((x) => x[1]),
+        z: bounded_y_points.map((x) => x[2]),
+        mode: 'markers',
+        marker: {
+            size: 2,
+            color: "#E1BC29"
         },
         type: 'scatter3d',
     },
@@ -352,7 +421,7 @@ Plotly.newPlot('plot', [
         mode: 'markers',
         marker: {
             size: 2,
-            color: "orange"
+            color: "#3BB273"
         },
         type: 'scatter3d',
     },
@@ -363,11 +432,21 @@ Plotly.newPlot('plot', [
         mode: 'markers',
         marker: {
             size: 3,
-            color: "red"
+            color: "#7768AE",
         },
         type: 'scatter3d',
     },
-
+    {
+        x: [points[0][0]],
+        y: [points[0][1]],
+        z: [points[0][2]],
+        mode: 'markers',
+        marker: {
+            size: 5,
+            color: "#0D1321",
+        },
+        type: 'scatter3d',
+    },
 ],
     {
         width: 1200,
@@ -378,7 +457,14 @@ Plotly.newPlot('plot', [
         },
         zaxis: {
             scaleanchor: 'z'
-        }
+        },
+        scene: {
+            camera: {
+                projection: {
+                    type: "orthographic",
+                }
+            }
+        },
     }
 );
 document.getElementById('benchmark').textContent = `

@@ -11,13 +11,14 @@ readingTime = false
 hideComments = false
 color = "" #color from the theme settings
 +++
-<script src="./config.js"></script>
-<script src="./charts.js"></script>
+<script src="./mi_charts.js" type="module"></script>
+<script src="./knn.js" type="module"></script>
 <script src="./observer.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link href="./charts.css" rel="stylesheet">
 
 Information theory - and in particular, entropy - can be quite an intimidating topic.
 It doesn't have to be. If you can develop some key intuitions for the topic, you can
@@ -392,7 +393,10 @@ This is arguably the most useful distribution in statistics, and we'd
 very much like to characterise its entropy.
 
 <div id="normal distribution chart"></div>
-<script>normal_chart("normal distribution chart");</script>
+<script type="module">
+import {normal_chart} from "./charts.js";
+normal_chart("normal distribution chart");
+</script>
 
 The plot above is the *probability density function*, which we label \(p(x)\).
 Points are more likely to be sampled from regions of high \(p(x)\) than from low
@@ -400,7 +404,10 @@ Points are more likely to be sampled from regions of high \(p(x)\) than from low
 distribution that looks like this:
 
 <div id="normal samples chart"></div>
-<script>normal_sample_chart("normal samples chart");</script>
+<script type="module">
+import {normal_sample_chart} from "./charts.js";
+normal_sample_chart("normal samples chart");
+</script>
 
 We use the lowercase \(p(x)\) to denote probability *density*, which is 
 different to the probability for discrete events, \(P(X)\). With a probability
@@ -494,7 +501,10 @@ we'll have **infinite** entropy.
 <button id="integral_chart +">More Bins</button>
 <div id="integral_chart text" style="margin-left: 100px;"></div>
 </div>
-<script>integral_chart("integral_chart");</script>
+<script type="module">
+import {integral_chart} from "./charts.js";
+integral_chart("integral_chart");
+</script>
 
 ##### What Went Wrong?
 
@@ -675,7 +685,10 @@ This nicely cancels out the \(\Delta x\) term. But does it work?
 <button id="divergence_chart +">More Bins</button>
 <div id="divergence_chart text" style="margin-left: 100px; display: none;"></div>
 </div>
-<script>integral_chart("divergence_chart", "divergence_chart history");</script>
+<script type="module">
+import {integral_chart} from "./charts.js";
+integral_chart("divergence_chart", "divergence_chart history");
+</script>
 
 
 Yes! Just as \(P(X) = \int_{-\infty}^{\infty} p(x) dx\) rapidly converges to 1, \(D_{KL}\)
@@ -688,247 +701,6 @@ converges to a constant value, even as \(H(X)\) continues to increase.
 
 
 ## Mutual Information
-
-
-## Key Concept 2: Entropy for Continuous Numbers
-
-Entropy as defined earlier seems quite restrictive:
-- We need to know all the possible messages that could be transmitted.
-- We need to know the probabilities of receiving each possible message.
-
-In our case, we're sampling from two uniform distributions and one normal distribution,
-all of which give us continuous values in some range. By their very nature, there are infinitely
-many numbers between, say, -25 and 25. How can we even define entropy? Well,
-there are a few approaches:
-
-1. Discretize our values. For example, our signal \(X\) isn't really continuous - if
-it's represented as a 32-bit floating point number, it can't take on more than \(2^{32}\) 
-different values. 
-1. a) Artificially discretize our values. We can think of this as taking many similar 
-values and putting them all in a single bucket. We might choose to have 50 buckets, or
-50,000. A good representation of this is a [histogram](https://en.wikipedia.org/wiki/Histogram).
-2. Modify our definition of entropy from a sum (over finite values) to an integral (over
-infinitesimally small values).
-
-Typically, we'll have to do some combination of both. Take our example of \(X, Y,\) and \(f\). 
-If we only have samples of each and don't know the true underlying mathematical distributions,
-we have to estimate. Often, we'll assume the distributions are continuous and work backwards 
-to try and estimate a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function).
-
-But once we have a pdf, we still need a definition of entropy that works with continuous numbers.
-Here's a sketch of how we get there. First, recall the definition of entropy as 
-
-\[
-        H(X) = -\sum_{x\in X} p(x) \log_2{p(x)}
-\]
-
-Second, remember that we can integrate our probability density function \(f(x)\) over some range (a, b)
-to get the probability of our random sample falling within that range. That is,
-
-\[
-       p(a \leq x \leq b) = \int_a^b f(x) dx 
-\]
-
-So, we can start with a set of bins \((a_i, a_i + \Delta x)\) of some size \(\Delta x\), and treat each bin as if it
-represents a discrete event with a discrete probability. We'll call the event \((a_i, a_i + \Delta x)\). Then,
-the entropy is:
-
-\[
-        H(X) = -\sum_{(a_i, a_i+\Delta x) \in X} \int_{a_i}^{a_i + \Delta x} f(x)\:dx\;\log_2 \int_{a_i}^{a_i + \Delta x} f(x)\:dx
-\]
-
-Provide our \(\Delta x\) is small enough, we can use the [Riemann sum](https://en.wikipedia.org/wiki/Riemann_sum) to 
-approximate the integral of the pdf for each function. If you haven't seen this before, you might've seen 
-the [trapezoidal rule](https://en.wikipedia.org/wiki/Trapezoidal_rule#Periodic_and_peak_functions),
-which is quite similar. Essentially, we approximate the area under the curve using a bunch of rectangles or 
-trapezoids. For the Riemann sum, we take some point \(x_i^*\) in our interval \((a_i, a_i + \Delta x)\) and
-calculate the area of a rectangle of width \(\Delta x\) and height \(f(x_i^*) \). For simplicity, let's 
-set \(x_i^*\) to \(a_i\):
- 
-\[
-
-        \int_{a_i}^{a_i + \Delta x} f(x)\:dx \approx \Delta x \cdot f(a_i)
-\]
-!!!!! Area under curve = ..., True area = 1.0 !!!!!!!
-
-
-In fact, under cert
-
-Substituting in to our entropy formula,
-
-\[
-        H(X) = -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \Delta x\
-f(a_i)\log_2 \left( \Delta x \cdot f(a_i) \right)
-\]
-
-We can do some rearranging in our log, including exploiting the fact that \(\log(a\cdot b) = \log(a) + \log(b)\).
-
-\[
-\begin{align}
-        H(X) &= -\lim_{\Delta x \rightarrow 0}\sum_{a_i \in X} \Delta x \
-f(a_i) \left( \log_2 \Delta x + \log_2 f(a_i) \right) \\
-\
-        H(X) &= -\left(
-\lim_{\Delta x \rightarrow 0} \log_2 \Delta x \sum_{a_i \in X} \Delta x \
-f(a_i)  \right) - \left( \lim_{\Delta x \rightarrow 0} \sum_{a_i \in X} \Delta x\
-f(a_i) \log_2 f(a_i)
-\right)
-\end{align}
-\]
-
-As \(\Delta x \rightarrow 0\), the width of our rectangles get smaller, but we also sum over more and more points.
-If we assume some [conditions](https://en.wikipedia.org/wiki/Riemann_integral#Integrability) 
-(e.g. our probability density function is smooth everywhere,) our approximation above becomes exact:
-
-\[
-        \lim_{\Delta x \rightarrow 0} \Delta x \cdot f(a_i) = \int_{a_i}^{a_i + \Delta x} f(x)\:dx
-\]
-
-Since the integral of our probability density function across the domain of possible events \(X\) must equal 1,
-we have 
-
-\[
-        \lim_{\Delta x \rightarrow 0} \Delta x \cdot f(a_i) = \int_{a_i}^{a_i + \Delta x} f(x)\:dx = 1
-\]
-
-Also, summing all the integrals for each infinitesimal interval \((a_i, a_i + \Delta x) \) becomes 
-equivalent to one big integral across all possible values - in this case, \((-\infty, \infty)\). 
-So, the entropy is:
-
-\[
-    H(X) = -\log_2{\Delta x} -\int_{-\infty}^\infty f(x) \log_2 f(x)\:dx
-\]
-
-The term on the right looks reasonable - if we swapped our \(f\)'s for \(p\)'s and our \(\int\) for a \(\sum\)
-we'd have the discrete entropy we defined at the start. The issue is that \(\log_2{\Delta x}\) term. For truly 
-continuous data, \(\Delta x \rightarrow 0\) and so \(\log_2{\Delta x} \rightarrow \infty \).
-
-We can demonstrate this effect numerically, too. Let's sample lots of random points from a continuous distribution.
-Then, we can divide space into a number of bins. The likelihood of a sample falling into each discrete bin is 
-approximated as 
-
-\[P(\text{bin}) \approx \frac{n_\text{bin}}{n_\text{total}}\]
-
-*Where \(n_\text{bin}\) is the number of points in a given bin.*
-
-As our bins get smaller and smaller, the likelihood of a sample falling into a given bin becomes 
-increasingly unlikely. Consequently, the information content of each bin becomes larger and larger. In the limit,
-where we are talking about truly continuous numbers, each bin is infinitely unlikely (but still possible), 
-and therefore carries infinite information. 
-
-
-
-!!!!! Plot of applying the histogram method !!!!!!
-
-How to proceed? We could close our eyes and ignore the \(\log_2{0}\) term. This gives us the 
-[Differential Entropy](https://en.wikipedia.org/wiki/Differential_entropy) \(h(X)\), which has many unfortunate
-properties that make it much less useful than discrete entropy \(H(X)\) with a capital \(H\):
-
-1. \(H(X) = 0\) implied there was only ever one message, and so we couldn't send any information. 
-\(h(X) = 0\) does not have any special meaning. This is because:
-2. Differential entropy can be negative. Finally,
-3. If I have a random continuous distribution \(X\) and I pass it through an arbitrary invertible 
-map *(read: a function)*, there's no guarantee it has the same entropy when it comes out. For example,
-if I define \[Y = 10 X\] Measuring its differential entropy tells me that \[h(Y) = h(X) \cdot \log_2{10}\]
-Despite producing exactly the same samples (just scaled up in magnitude by a factor of 10), the differential
-entropy has apparently increased by \(\approx 3.32\) times.
-
-What's going on here? It might be clearer if we think of the volume of some shape that could fit all the samples
-of \(X\) inside it. That box would have a volume of \(V \approx 2^{h(X)}\). In other words, differential entropy 
-is the (log) volume of the distribution. This explains why 
-scaling up \(X\) by a factor of 10 increased the entropy. It also explains why differential entropy can
-be 0, or negative: \(2^0 = 1\) is a valid volume, as is \(2^{-5.23}\). 
-
-While this explanation is good for building intuition, it doesn't help us much practically. We want to follow
-signals through functions, like \(f = \sin{X}\).
-
-Fortunately, there's still hope. While outright ignoring the \(\log_2{0}\) term is fraught, we can cancel
-it out in more legitimate ways. 
-
-For example, if we had two different distributions over the same space, \(p(x)\) and \(q(x)\), we could 
-take the *difference* in information between the two distributions, and find the expected value.
-
-\[
-    \mathbb{E}\left[ \log_2 p(x) - \log_2 q(x) \right]
-\]
-
-Remember when we defined entropy, the expected value ended up just being the sum of \(p(x)\) times the information? 
-To calculate the expected value here, we do a similar trick. We could use either \(p(x)\) or \(q(x)\),
-since both sum to 1. It doesn't really matter which we pick, since we can just rename \(p(x)\) and \(q(x)\) if 
-we want to swap them. Using \(p(x)\), our new measure is:
-
-\[
-\begin{align}
-    D_{KL}(P || Q) &= \sum_{x \in X} p(x) \left( \log_2 p(x) - \log_2 q(x) \right) \\
-                   &=  \sum_{x \in X} p(x) \log_2\left(\frac{p(x)}{q(x)}\right)
-\end{align}
-\]
-
-This is the [Kullback-Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence),
-and it has many nice properties.
-
-One such property is that it doesn't blow up to infinity as we make our discretization finer. To see why,
-let's try converting it from discrete form to continuous, like we did with the entropy above:
-
-\[
-\begin{align}
-        D_{KL}(P || Q) &= -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \Delta x\
-p(a_i)\log_2 \left(\frac{\Delta x\:p(a_i)}{\Delta x\:q(a_i)} \right) \\
-                       &= -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \Delta x\
-p(a_i)\log_2 \left(\frac{p(a_i)}{q(a_i)} \right)\\
-\end{align}
-\]
-
-We don't have to take this derivation all the way to see that the problematic \(\log{\Delta x}\) term has
-disappeared - by looking at the *difference* between two distributions, we've cancelled out the infinity.
-
-In the histogram plot, notice that as the bins get finer and finer:
-
-1. The entropies \(H(X)\) and \(H(Y)\) get larger and larger
-2. The KL-Divergence \(D_{KL}(X||Y)\) rapidly converges to a constant value.
-
-The KL-divergence is the basis of most of the useful metrics that use continuous entropy. For it to work,
-the *support* of \(p(x)\) must be enclosed by the support of \(q(x)\). In other words, for every \(x\) such
-that \(q(x) = 0\), \(p(x)\) must also be 0. Otherwise, we'd have \[p(x) \log_2 \frac{p(x)}{0} \] Which ends up
-being infinite. \(p(x)\) by itself being 0 is fine, though, because we can define \[0 \log 0 = 0\]
-
-Estimating the KL-divergence from discrete samples also requires some care. In places where \(q(x) \approx 0\)
-the KL-divergence can technically be valid, but might still not be computable, because we are very unlikely to
-sample any points from \(q\) in this region. If we naively use a histogram method, we're quite likely to sample
-\(p(x)\) in places where we have no \(q(x)\), and vice versa.
-
-Take the mutual information, defined as:
-
-\[
-        I(X;Y) \equiv H(X) - H(X | Y)
-\]
- 
-
-
-
-
-
-Even if the system we're analysing does send a discrete set of messages, it can often be difficult 
-to estimate the chances of low-probability events. In our lottery example, with only two messages,
-we could easily have received >20 *0* messages in a row. If we stopped sampling at that point, 
-we'd wrongly conclude that there was only one message and the entropy was 0.
-
-
-## Key Concept 3: Entropy Estimation
-
-So far, we've seen a lot of visualisations. I keep coming back to the humble point-cloud - plotting a single
-point for each sample, with an axis for \(X\), \(Y\), and \(f\) - because it presents all the data in the set 
-at once with no simplifications.
-
-One recurring motif is the idea of "thinness" increasing as entropy decreases - if we plot our signal against
-one (or more) of the components that comprise it, we transform what was a fuzzy cloud into a
-surface or membrane.
-
-It turns out that some state-of-the-art methods for estimating entropy and mutual information calculate
-exactly that - the "surfacey-ness" of a point cloud.
-
-
--- Histogram Method (and the issues with it)
 
 
 
@@ -947,6 +719,15 @@ where we are trying to predict the alphabet used to generate the messages
 
 
 # Mutual Information
+
+<div id="plot"></div>
+<script type="module">
+import {get_mi_chart} from "./mi_charts.js";
+let x = Array(500).fill(0).map((_) => Math.random());
+let y = x.map((xi) => Math.sin(xi * 5) + Math.random() * 0.5);
+get_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 6);
+</script>
+
 
 
 # Kullback-Leibler Divergence

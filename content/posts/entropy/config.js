@@ -1,24 +1,26 @@
-const DEFAULT_CONFIG = {
+export const DEFAULT_CONFIG = {
   bargap: 0,
   displayModeBar: false,
   dragmode: false,
-  scrollZoom: true,
+  scrollZoom: false,
   showAxisDragHandles: false,
+  doubleClick: false,
 };
 
-const accent_color = "#FFA86A";
-const theme_text_color = "#FFFFFF";
-const colors = ["#23B0FF", "#FF6266", "#FFA86A", "#EE72F1", "#23B0FF"];
+export const accent_color = "#FFA86A";
+export const theme_text_color = "#FFFFFF";
+export const colors = ["#23B0FF", "#FF6266", "#FFA86A", "#EE72F1", "#23B0FF"];
+export const darker_marker_color = "rgb(150, 150, 150)";
 
-const DEFAULT_AXIS_FONT = {
+export const DEFAULT_AXIS_FONT = {
   family: "Arial, Helvetica, sans-serif",
   size: 16,
   color: theme_text_color,
 };
 
-const EMPTY_PLOT_OPTIONS = {mode: 'markers', layout: {}, config: {}, marker_settings: {}};
+export const EMPTY_PLOT_OPTIONS = {mode: 'markers', layout: {}, config: {}, marker_settings: {}};
 
-const DEFAULT_2D_LAYOUT = {
+export const DEFAULT_2D_LAYOUT = {
   bargap: 0,
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
@@ -26,6 +28,8 @@ const DEFAULT_2D_LAYOUT = {
   hovermode: false,
   showlegend: false,
   dragmode: false,
+  scrollZoom: false,
+  doubleClick: false,
   margin: {
     l: 40,
     r: 40,
@@ -55,7 +59,7 @@ const DEFAULT_2D_LAYOUT = {
   },
 };
 
-const d2_layout = {  
+export const d2_layout = {  
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
   autosize: false,
@@ -90,7 +94,7 @@ const d2_layout = {
   },
 }
 
-const d1_layout = {  
+export const d1_layout = {  
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
   autosize: false,
@@ -124,7 +128,7 @@ const d1_layout = {
   },
 }
 
-const DEFAULT_MARKERS = {
+export const DEFAULT_MARKERS = {
   size: 10.0,
   color: accent_color,
   line: {
@@ -132,7 +136,7 @@ const DEFAULT_MARKERS = {
   }
 }
 
-const DEFAULT_3D_MARKERS = {
+export const DEFAULT_3D_MARKERS = {
   size: 0.5,
   color: accent_color,
   line: {
@@ -140,7 +144,7 @@ const DEFAULT_3D_MARKERS = {
   }
 }
 
-const DEFAULT_BARS = {
+export const DEFAULT_BARS = {
     color: colors[2],
     opacity: 0.5,
     line: {
@@ -148,7 +152,7 @@ const DEFAULT_BARS = {
     }
 }
 
-const scene_rules = {
+export const scene_rules = {
     aspectmode: 'cube',
     camera: {
         projection: {
@@ -175,12 +179,12 @@ const scene_rules = {
     },
   };
 
-const d2_rules = structuredClone(scene_rules);
+export const d2_rules = structuredClone(scene_rules);
 
 d2_rules.zaxis.range = [0];
 d2_rules.zaxis.tickvals = [];
 
-const DEFAULT_3D_LAYOUT = {
+export const DEFAULT_3D_LAYOUT = {
   autosize: false,
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
@@ -197,4 +201,4 @@ const DEFAULT_3D_LAYOUT = {
   },
 };
 
-const MAX_SIDEBYSIDE_WIDTH = 600;
+export const MAX_SIDEBYSIDE_WIDTH = 600;

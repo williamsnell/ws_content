@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<head>
+<script src="./plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="./mi_charts.js" type="module"></script>
+</head>
+<body>
+    <div id="plot" style="width: 1000px; height: 600px;"></div>
+<script type="module">
+    import {get_mi_chart} from "./mi_charts.js";
+    let x = Array(10_000).fill(0).map((_) => Math.random());
+    let y = x.map((xi) => xi + Math.random() * 0.1);
+    get_mi_chart('plot', x.map((xi, i) => [xi, y[i]]));
+</script>
+</body>

@@ -1,3 +1,5 @@
+import {DEFAULT_CONFIG, DEFAULT_MARKERS, DEFAULT_2D_LAYOUT, DEFAULT_AXIS_FONT, colors, theme_text_color, accent_color} from "./config.js";
+
 function normal_distribution(x, mu, std) {
     return Math.exp(-((x - mu)**2) / (2 * std**2)) / Math.sqrt(2 * Math.PI * std**2)
 }
@@ -14,14 +16,14 @@ function sample_normal(mean=0, stdev=1) {
 
 function linspace(start, stop, num) {
     let step = (stop - start) / (num - 1);
-    out = []
+    let out = []
     for (let i = 0; i < num; i++) {
         out.push(start + i * step);
     }
     return out;
 }
 
-function normal_chart(id) {
+export function normal_chart(id) {
     let elem = document.getElementById(id);
     let x_min = -7;
     let x_max = 7;
@@ -51,7 +53,7 @@ function normal_chart(id) {
     Plotly.newPlot(id, [trace2], {...auto_sizing, ...layout}, DEFAULT_CONFIG);
 }
 
-function normal_sample_chart(id) {
+export function normal_sample_chart(id) {
     let elem = document.getElementById(id);
     let x_min = -7;
     let x_max = 7;
@@ -84,7 +86,7 @@ function normal_sample_chart(id) {
     Plotly.newPlot(id, [trace2], {...auto_sizing, ...layout}, DEFAULT_CONFIG);
 }
 
-function integral_chart(id, divergence=null) {
+export function integral_chart(id, divergence=null) {
     let elem = document.getElementById(id);
     let text_elem = document.getElementById(id + ' text');
     
