@@ -153,7 +153,12 @@ export const DEFAULT_BARS = {
 }
 
 export const scene_rules = {
-    aspectmode: 'cube',
+    aspectratio: {
+        x: 1,
+        y: 1,
+        z: 1,
+    },
+    aspectmode: 'manual',
     camera: {
         projection: {
             type: "orthographic", 
@@ -162,19 +167,19 @@ export const scene_rules = {
     xaxis: {
       zeroline: false,
       tickmode: "array",
-      tickvals: [-1, 0, 1], 
+      tickvals: [], 
       range: [-1.5, 1.5],
     },
     yaxis: {
       zeroline: false,
       tickmode: "array",
-      tickvals: [-1, 0, 1], 
+      tickvals: [], 
       range: [-1.5, 1.5],
     },
     zaxis: {
       zeroline: false,
       tickmode: "array",
-      tickvals: [-1, 0, 1], 
+      tickvals: [], 
       range: [-1.5, 1.5],
     },
   };
@@ -190,38 +195,13 @@ export const DEFAULT_3D_LAYOUT = {
   plot_bgcolor: 'rgba(0,0,0,0)',
   hovermode: false,
   showlegend: false,
-  scene1: structuredClone(scene_rules),
-  scene2: d2_rules,
-  scene3: structuredClone(scene_rules),
   margin: {
       l: 10,
       r: 10,
       b: 10,
       t: 10
   },
-  scene: {
-      xaxis: {
-        showgrid: false,
-        zeroline: false,
-        tickmode: "array",
-        tickvals: [], 
-        range: [-1, 1],
-      },
-      yaxis: {
-        showgrid: false,
-        zeroline: false,
-        tickmode: "array",
-        tickvals: [], 
-        range: [-1, 1],
-      },
-      zaxis: {
-        showgrid: false,
-        zeroline: false,
-        tickmode: "array",
-        tickvals: [], 
-        range: [-1, 1],
-      },
-  }
+  scene: structuredClone(scene_rules),
 };
 
 export const MAX_SIDEBYSIDE_WIDTH = 600;

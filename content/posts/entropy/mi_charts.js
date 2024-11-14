@@ -592,9 +592,8 @@ export function get_3d_mi_chart(id, signals, k=3) {
 
         layout.scene.xaxis.range = [mins[0], maxs[0]];
         layout.scene.yaxis.range = [mins[1], maxs[1]];
-        layout.scene.yaxis.scaleanchor = "x";
         layout.scene.zaxis.range = [mins[2], maxs[2]];
-        layout.scene.zaxis.scaleanchor = "x";
+        layout.scene.aspectmode = "data";
 
         let zoomed = false;
 
@@ -604,12 +603,15 @@ export function get_3d_mi_chart(id, signals, k=3) {
                 layout.scene.xaxis.range = full_range.slice(0, 2);
                 layout.scene.yaxis.range = full_range.slice(2, 4);
                 layout.scene.zaxis.range = full_range.slice(4, 6);
+                layout.scene.aspectmode = "data";
                 zoomed = !zoomed;
             } else {
                 select_hypercube.style = `outline: ${theme_text_color} 5px solid;`;
                 layout.scene.xaxis.range = constrained_range.slice(0, 2);
                 layout.scene.yaxis.range = constrained_range.slice(2, 4);
                 layout.scene.zaxis.range = constrained_range.slice(4, 6);
+                layout.scene.aspectmode = "manual";
+                layout.scene.aspectratio = {x: 1, y: 1, z: 1};
                 zoomed = !zoomed;
             }
             Plotly.relayout(elem.id, layout);

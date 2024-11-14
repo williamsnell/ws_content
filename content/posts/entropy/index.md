@@ -733,9 +733,9 @@ get_2d_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 3);
 <div id="3d-plot"></div>
 <script type="module">
 import {get_3d_mi_chart} from "./mi_charts.js";
-let x = Array(10_000).fill(0).map((_) => Math.random());
-let y = Array(10_000).fill(0).map((_) => Math.random());
-let z = x.map((xi, i) => Math.sin(xi * 5) + Math.cos(y[i] * 5) + Math.random() * 0.5);
+let x = Array(10_000).fill(0).map((_) => Math.random() * 10);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
 get_3d_mi_chart('3d-plot', x.map((xi, i) => [xi, y[i], z[i]]), 3);
 </script>
 
