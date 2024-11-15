@@ -164,6 +164,7 @@ export const scene_rules = {
             type: "orthographic", 
         }
     },
+    dragmode: "turntable",
     xaxis: {
       zeroline: false,
       tickmode: "array",

@@ -325,7 +325,20 @@ export function get_3d_mi_chart(id, signals, k=3) {
     let ny = create_button("$$n_y$$");
     let nz = create_button("$$n_z$$");
 
+    function save_camera_position() {
+        const scene = elem._fullLayout.scene._scene;
+        const layout = scene.graphDiv.layout;
+
+        function restore_layout() {
+            scene.saveLayout(layout);
+        }
+
+        return restore_layout;
+    }
+
+
     function click_nx() {
+        let restore = save_camera_position();
         if (!showing_nx) {
             showing_nx = true;
             showing_ny = false;
@@ -349,9 +362,11 @@ export function get_3d_mi_chart(id, signals, k=3) {
             Plotly.restyle(elem.id, {visible: true});
             Plotly.restyle(elem.id, {visible: false}, [7, 8, 9]);
         }
+        restore();
     }
 
     function click_ny() {
+        let restore = save_camera_position();
         if (!showing_ny) {
             showing_nx = false;
             showing_ny = true;
@@ -375,9 +390,11 @@ export function get_3d_mi_chart(id, signals, k=3) {
             Plotly.restyle(elem.id, {visible: true});
             Plotly.restyle(elem.id, {visible: false}, [7, 8, 9]);
         }    
+        restore();
     }
 
     function click_nz() {
+        let restore = save_camera_position();
         if (!showing_nz) {
             showing_nx = false;
             showing_ny = false;
@@ -401,6 +418,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
             Plotly.restyle(elem.id, {visible: true});
             Plotly.restyle(elem.id, {visible: false}, [7, 8, 9]);
         }    
+        restore();
     }
     nx.onclick = click_nx;
     ny.onclick = click_ny;
@@ -585,15 +603,20 @@ export function get_3d_mi_chart(id, signals, k=3) {
             side_length] = knn_calcs(point);
 
         let full_range = [mins[0], maxs[0], mins[1], maxs[1], mins[2], maxs[2]];
-        let cs = 15;
-        let constrained_range = [point[0] - side_length * cs, point[0] + side_length * cs, 
-                                 point[1] - side_length * cs, point[1] + side_length * cs,
-                                 point[2] - side_length * cs, point[2] + side_length * cs];
+        let constrained_range = [point[0] - (maxs[0] - mins[0]), point[0] + (maxs[0] - mins[0]), 
+                                 point[1] - (maxs[1] - mins[1]), point[1]  + (maxs[1] - mins[1]),
+                                 point[2] - (maxs[2] - mins[2]), point[2] + (maxs[2] - mins[2])];
 
         layout.scene.xaxis.range = [mins[0], maxs[0]];
         layout.scene.yaxis.range = [mins[1], maxs[1]];
         layout.scene.zaxis.range = [mins[2], maxs[2]];
-        layout.scene.aspectmode = "data";
+        layout.scene.aspectmode = "manual";
+        layout.scene.aspectratio = {x: 1, y: 1, z: 1};
+        layout.scene.camera = {
+            center: {x: 0, y: 0, z: 0},
+            eye: {x: 1, y: 1, z: 1},
+        };
+
 
         let zoomed = false;
 
@@ -603,15 +626,20 @@ export function get_3d_mi_chart(id, signals, k=3) {
                 layout.scene.xaxis.range = full_range.slice(0, 2);
                 layout.scene.yaxis.range = full_range.slice(2, 4);
                 layout.scene.zaxis.range = full_range.slice(4, 6);
-                layout.scene.aspectmode = "data";
+                layout.scene.camera = {
+                    center: {x: 0, y: 0, z: 0},
+                    eye: {x: 1, y: 1, z: 1},
+                };
                 zoomed = !zoomed;
             } else {
                 select_hypercube.style = `outline: ${theme_text_color} 5px solid;`;
                 layout.scene.xaxis.range = constrained_range.slice(0, 2);
                 layout.scene.yaxis.range = constrained_range.slice(2, 4);
                 layout.scene.zaxis.range = constrained_range.slice(4, 6);
-                layout.scene.aspectmode = "manual";
-                layout.scene.aspectratio = {x: 1, y: 1, z: 1};
+                layout.scene.camera = {
+                    center: {x: 0, y: 0, z: 0},
+                    eye: {x: 0.1, y: 0.1, z: 0.1},
+                };
                 zoomed = !zoomed;
             }
             Plotly.relayout(elem.id, layout);
@@ -642,8 +670,11 @@ export function get_3d_mi_chart(id, signals, k=3) {
     draw_for_point(joint_samples[0]);
     
     next_point.onclick = () => {
+        let restore = save_camera_position();
         point_id += 1;
         draw_for_point(joint_samples[point_id]);
+        
+        restore();
         showing_nx = false;
         showing_ny = false;
         showing_nz = false;
@@ -652,4 +683,40 @@ export function get_3d_mi_chart(id, signals, k=3) {
         nz.style = "";
         select_hypercube.style = "";
     };
+}
+
+export function get_3d_chart(id, signals) {
+    let elem = document.getElementById(id); 
+
+    let joint_samples = normalize(signals);
+
+    let maxs = joint_samples[0].map((_, i) => Math.max(...joint_samples.map((x) => x[i]))); // min, max for each signal
+    let mins = joint_samples[0].map((_, i) => Math.min(...joint_samples.map((x) => x[i]))); // min, max for each signal
+ 
+    let points_trace = {
+        x: joint_samples.map((x) => x[0]),
+        y: joint_samples.map((x) => x[1]),
+        z: joint_samples.map((x) => x[2]),
+        mode: 'markers',
+        marker: {
+            size: 0.5,
+            color: darker_marker_color,
+            opacity: 0.7,
+        },
+        type: 'scatter3d',
+    };
+
+    let layout = structuredClone(DEFAULT_3D_LAYOUT);
+    let auto_sizing = {
+        width: Math.min(elem.offsetWidth, 600).toFixed(0),
+        height: Math.min(elem.offsetWidth, 600).toFixed(0),
+        margin: {t: 0, l: 0, r: 0, b: 0},
+    }
+    layout = {...auto_sizing, ...layout}; 
+    layout.scene.xaxis.range = [mins[0], maxs[0]];
+    layout.scene.yaxis.range = [mins[1], maxs[1]];
+    layout.scene.zaxis.range = [mins[2], maxs[2]];
+    layout.scene.aspectmode = 'cube';
+
+    Plotly.newPlot(elem.id, [points_trace], layout, DEFAULT_CONFIG);
 }

@@ -272,20 +272,23 @@ samples from \(X\), \(Y\), and \(f\).
 
 \[
 \begin{align}
-            X &\sim \mathcal{U}(0, 40) \\
-            Y &\sim \mathcal{U}(-25, 25) \\
-            f &\sim \sin(X) \sin(Y)\;X\;Y + \mathcal{N}(0, 1)\\
+            X &\sim \mathcal{U}(0, 20) \\
+            Y &\sim \mathcal{U}(-10, 10) \\
+            f &\sim \sin(X) \sin(Y)\;X\;Y\\
 \end{align}
 \]
 
-\(f\) is mostly a deterministic function of \(X\) and \(Y\), although there's a
-sprinkling of gaussian noise (the \(\mathcal{N}(0, 1)\) term) for reasons
-I'll explain later.
+\(f\) is a deterministic function of \(X\) and \(Y\), and so we should be able to figure
+out, from samples of the three distributions, that they are all correlated.
 
-
-!!! TO DO: 
-- 3d plot of x, y, f
-- buttons that flip the view to \(f(X | Y)\) etc.
+<div id="teaser-plot"></div>
+<script type="module">
+import {get_3d_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
+get_3d_chart('teaser-plot', x.map((xi, i) => [xi, y[i], z[i]]));
+</script>
 
 This function was chosen because:
 - It's completely deterministic if you know \(X\) and \(Y\).
@@ -295,15 +298,15 @@ multiplied together, but not a linear term in sight. It's a mess!
 A lot of successful techniques assume underlying normal distributions,
 but we want a technique that doesn't *require* those assumptions hold
 to be accurate.
-- It looks like a Christmas tree from one side and a bow-tie from the other.
+- It looks a bit like a sideways christmas-tree on the x-z plane, and a bit like a bow-tie on 
+the y-z plane.
 
 I'm not completely joking with the last point - 
-our human brain can *easily* tell that \(f\), \(X\), and \(Y\) are related. There's 
+our human brains can *easily* tell that \(f\), \(X\), and \(Y\) are related. There's 
 so much structure in the plot! So many patterns appear before us as we explore the 
 space.
 
-Despite this, many conventional data analysis techniques 
-
+Despite this, many common techniques completely fail to detect these patterns.
 If we were to use linear analysis techniques - for example, the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) -
 we would get results telling us that \(f\) is uncorrelated to \(X\) and \(Y\), because
 the slopes of \(f\) against \(X\), \(Y\), or both are on average flat.
@@ -312,19 +315,19 @@ Similary, [Spearman's rank correlation coefficient](https://en.wikipedia.org/wik
 won't help us because \(f\) is not monotonic.
 
 It's also important that our method distinguishes between the actual generating source (e.g. \(X\)) and
-an identically distributed but independent source (e.g. \(Q \sim \mathcal{U}(0, 40)\)) which
-just happens to share population statistics. Again, if we were to plot \(Q\) instead of \(X\) 
+an identically distributed but independent source (e.g. \(Q \sim \mathcal{U}(0, 20)\)) which
+just happens to share population statistics. If we were to plot \(Q\) instead of \(X\), we 
+can clearly see less structure. We want our method to be able to distinguish between these
+two cases.
 
-
-!!!TO DO: swap X with X[shift 1]!!!
-
-
-, the
-distinction is obvious. Looking at population statistics like the mean and variance of \(Q\) and \(X\),
-however, would not distinguish between the two. Even some entropy measures - if poorly chosen - could
-fail to separate the two distributions. The KL-divergences \(D_{KL}(f||Q)\) and \(D_{KL}(f||X)\), 
-for example, should be equal to one another.
-
+<div id="teaser-plot-2"></div>
+<script type="module">
+import {get_3d_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
+get_3d_chart('teaser-plot-2', y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]]));
+</script>
 
 Note that we do not require our method to prove there is a **causal** relationship 
 between \(f\), \(X\), and \(Y\). It can (and does) produce the same results whether
@@ -332,49 +335,6 @@ f is truly a function of \(X\) and \(Y\), or f is a function of some other varia
 that happen to be (perfectly) correlated with \(X\) and \(Y\). If we think in terms
 of how much information knowing \(X\) or \(Y\) tells us about \(f\), this distinction 
 is irrelevant.
-
-## Key Concept 1: Mutual Information
-
-An information theory concept that seems quite promising is the [Mutual Information](https://en.wikipedia.org/wiki/Mutual_information),
-\(I(X;Y)\). *(In our particular case, we might be interested in something like \(I(f;X)\), \(I(f;Y)\).)*
-
-It describes how much information we learn about \(X\) if we know the value of \(Y\).
-
-Mutual information has many definitions, some of which are given below:
-
-\[
-\begin{align}
-    I(X;Y) &\equiv H(X) - H(X | Y) \\
-           &\equiv H(X) + H(Y) - H(X,Y) \\
-\end{align}
-\]
-
-The first definition says that Mutual Information is the entropy of \(X\) minus
-the entropy of \(X | Y\). \(X | Y\) is the conditional entropy of X given Y. If that 
-description means nothing to you, play around with the plot below. 
-
-Conditional entropy has two helpful properties: 
-1. \(H(Y|X) = 0\) if and only if knowing X tells us the exact value of Y.
-2. \(H(Y|X) = H(Y)\) if and only if \(Y\) and \(X\) are independent random variables.
-
-Visually, we can plot the conditional *distribution* \(Y|X\) and from it qualitatively
-assess the entropy:
-1. If \(H(Y|X) = 0\), the plot of \(Y|X\) will be a "thin" line, where each value of \(Y\)
-maps exactly to a single value of \(X\).
-2. If \(H(Y|X) = H(Y)\), the spread of \(Y\) is uniform across all \(X\). In other words,
-we should get a cloud of points with constant density from left to right, and (potentially)
-changing density as we go up or down.
-
-!!!! Conditional Distribution Plot !!!!!
-
-The second definition says that Mutual Information is the entropy of \(X\) plus 
-the entropy of \(Y\) minus the entropy of \(X, Y\). \(X, Y\) is the *joint distribution*
-of \(X\) and \(Y\), and can be visualized below.
-
-!!!! Joint Distribution Plot !!!!!
-
-The Joint Distribution
-
 
 
 ## Entropy for Continuous Numbers
@@ -585,7 +545,7 @@ higher the entropy. This should perhaps not be surprising since, as we said earl
 any particular number from a continuous distribution is infinitely unlikely, and hence carries infinite information. 
 As our bins approach 0 width, this is exactly the situation we get.
 
-##### A Bad Solution: Differential Entropy
+##### A Flawed Solution: Differential Entropy
 
 What if we just closed our eyes and ignored the \(\log_2 \Delta x\) term? Since it's the part that blows up to infinity, we can 
 salvage the rest of the equation and define the *[Differential Entropy](https://en.wikipedia.org/wiki/Differential_entropy)*, 
@@ -680,11 +640,11 @@ This nicely cancels out the \(\Delta x\) term. But does it work?
 
 <div id="divergence_chart" style="display: flex;"></div>
 <div id="divergence_chart history" style="display: flex;"></div>
-<div id="button-bar" style="display: flex;">
-<button id="divergence_chart -">Fewer Bins</button>
-<button id="divergence_chart +">More Bins</button>
-<div id="divergence_chart text" style="margin-left: 100px; display: none;"></div>
+<div id="button-bar dkl" class="button_bar">
+<button id="divergence_chart -" class="mi_buttons">Fewer Bins</button>
+<button id="divergence_chart +" class="mi_buttons">More Bins</button>
 </div>
+<div id="divergence_chart text" style="margin-left: 100px; display: none;"></div>
 <script type="module">
 import {integral_chart} from "./charts.js";
 integral_chart("divergence_chart", "divergence_chart history");
@@ -697,47 +657,282 @@ converges to a constant value, even as \(H(X)\) continues to increase.
 
 ##### So what *is* the KL-Divergence?
 
+The KL-Divergence is a core tool in Information Theory, for discrete, continuous, and mixed
+distributions. With it, we'll build the tools we need to make sense of signals.
 
+To understand the KL-Divergence better, I'd highly recommend reading through [Six (and a half) intuitions for KL divergence.](https://www.lesswrong.com/posts/no5jDTut5Byjqb4j5/six-and-a-half-intuitions-for-kl-divergence)
 
+For now, suffice it to say that the KL-divergence is a measure of the *difference in information*
+between two distributions.
 
-## Mutual Information
+If we observe a particular event, the information we gain from that observation varies depending
+on if we're sampling from one probability distribution, *p*, or a different one, *q*. 
 
+In our lottery example from earlier, observing a 1 carries a lot of information. But if I was 
+secretly sending you a 0 every time the number was odd, and a 1 every time it was even, the 
+information content of that "1" message would be lower. The KL-Divergence quantifies this difference,
+averaged (using \(p\)) across the whole distribution.
 
+##### Why is KL-Divergence an Improvement?
 
-# Things I want to show
+Even though the derivation of KL-Divergence seems more mathematically sound than that of 
+differential entropy, is it better in practical ways? To see, let's examine some of its
+properties:
 
-- Differential entropy estimation ends up becoming (somewhat like) discrete entropy estimation
-where we are trying to predict the alphabet used to generate the messages
-- How, and why, K-nearest neighbors methods work
-- Differential entropy is the volume of the support of the messages
+1. \(D_{KL}(p || q) = 0\) implies \(p = q\).
+2. \(D_{KL} \geq 0\). 
+3. \(D_{KL}\) is insensitive to unit changes, rescaling etc. Because we have two probability distributions
+\(p\) and \(q\), if we change the units of one, we have to change units of the other. These effects cancel out, 
+and we get back the same divergence as we started with. In fact, we can pick an arbitrary 
+    function \(y(x)\) which need not be linear, provided that \(y(x)\) is unique for each unique \(x\).
 
-# Differential Entropy
+KL-Divergence has one major consideration, though: anywhere \(p(x) > 0\), \(q(x)\) **must** be greater than
+0, too. Otherwise, the \(p(x) \log\frac{p(x)}{q(x)}\) term blows up to \(\infty\), and with it the divergence.
 
-- 
-
-# Estimating Entropy
-
+With this tool, we now have a firm footing for using information theory in continuous domains. We can
+build on it to obtain the *mutual information*, the tool we will use to finally solve our problem.
 
 # Mutual Information
+
+Mutual Information is exactly the tool we've been looking for, yet subtly different to what we might've
+expect. Mutual information tells us how much information we learn about a signal \(Y\) if we were 
+to observe samples of a different signal, \(X\). 
+
+Formally, the mutual information between two distributions \(X\) and \(Y\), \(I(X;Y\), is defined as
+
+\[
+            I(X;Y) = D_{KL} (P_{(X,Y)} || P_X \otimes P_Y)
+\]
+
+\(P_{(X,Y)}\) is the [joint distribution](https://en.wikipedia.org/wiki/Joint_probability_distribution) of X and Y,
+\(P_X\) and \(P_Y\) are the [marginal distributions](https://en.wikipedia.org/wiki/Marginal_distribution) or X and Y
+respectively, and \(\otimes\) is the element-wise product between them. 
+
+That's a lot of words!  I promise it'll make more sense when you see 
+it in action. For now, there are some important properties to note:
+
+1. \(I(X;Y) = 0\) *if and only if* \(X\) is independent of \(Y\).
+2. \(I(X;Y) \geq 0\).
+3. \(I(X;Y) = I(Y;X)\) - that is, mutual information is *symmetric*.
+
+## The Histogram Method
+
+There are a number of ways to estimate mutual information. The most straightforward approach would be to divide the space
+into lots of bins, and count how many samples fall into each bin. We could then assume the probability is constant 
+across each bin, giving an estimate for \(p(x)\):
+
+\[
+    \hat{p}(\text{bin}) = \frac{n_\text{bin}}{n_\text{total}}
+\]
+
+We could apply the same technique, with the same bins, to sample from \(q\) and estimate \(q(x)\) as \(\hat{q}(\text{bin})\). 
+
+We immediately run into problems, though. Anywhere one or more samples from \(p\) fall into a bin, that 
+bin **must** also capture at least one sample from \(q\). Otherwise, the estimated probability of \(q = 0\), 
+and we blow up the KL-divergence to infinity (recall, mutual information is a special application of the KL-divergence.)
+
+In practice, this means we need lots of samples **and** large bin sizes, neither of which are ideal.
+
+# K-Nearest Neighbors
+
+Instead, we'll use K-Nearest-Neighbors (KNN). This technique can be used for a number of problems, although we'll
+use it to estimate the mutual information directly (as per [Kraskov, Stögbauer, and Grassberger](https://arxiv.org/pdf/cond-mat/0305641)).
+
+K-nearest-neighbors can be thought of as a "dynamically binning" method - it only runs calculations in areas 
+where samples have actually fallen. Before we dive into the maths, lets have a play around with it. In this plot,
+\[
+\begin{align}
+X = \mathcal{U}(0, 5) \\
+Y = \sin(X) + \mathcal{U}(0, 1) \\
+\end{align}
+\]
+
+So, our two signals are correlated, but \(Y\) has some noise added.
 
 <div id="plot"></div>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
-let x = Array(500).fill(0).map((_) => Math.random());
-let y = x.map((xi) => Math.sin(xi * 5) + Math.random() * 0.5);
-get_2d_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 3);
+let x = Array(500).fill(0).map((_) => Math.random() * 5);
+let y = x.map((xi) => Math.sin(xi) + Math.random() * 1);
+get_2d_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 5);
 </script>
+
+What's going on is:
+
+For each point \((x_i, y_i)\):
+1. Calculate the distance, \(d_k\) to the Kth nearest neighbor (e.g. if k=5, 
+    \(d_5\) is the distance to the third nearest neighbor to \(x_i\)). We calculate distance using 
+    the [Infinity Norm](https://en.wikipedia.org/wiki/Uniform_norm), i.e. \(d = \max(d_x, d_y)\), giving
+    us a hypercube.
+2. Ignoring the x-direction, calculate \(n_y\), the number of points that are within a distance \(d_k\) of \(y_i\).
+3. Ignoring the y-direction, calculate \(n_x\), the number of points that are within a distance \(d_k\) of \(x_i\).
+
+Then, the mutual information can be estimated as 
+
+\[
+        I(X;Y) \approx \psi(k) + \psi(N) - \frac{1}{N} \sum_{i=0}^N \psi(n_x + 1) + \psi(n_y + 1)
+\]
+
+\(\psi(x)\) is the [Digamma function](https://en.wikipedia.org/wiki/Digamma_function), which is close to \(\log(x)\) for
+large x. N is the number of points, k is the k from K-nearest-neighbors, and \(n_x\) and \(n_y\) are the values
+described above.
+
+Again, this formula is not the most illuminating. We need to pick it apart to really understand what's going on.
+Recall that \(I(X;Y) = 0\) *if and only if* the two signals are uncorrelated. For our formula to equal zero,
+\(n_x\) and \(n_y\) would have to be, on average, very close to \(N\), the total number of points. On the other hand, 
+if \(n_x\) and \(n_y\) are small most of the time, the mutual information would be very high. 
+
+We can maximise mutual information if the only points captured in our \(n_x\) and \(n_y\) bounds were already
+captured inside our k-nearest neighbors.
+
+Also note that \(n_x\) and \(n_y\) are treated identically by the function. This again highlights the 
+symmetric nature of mutual information (foreshadowing).
+
+### Illustrative Examples of Mutual Information
+
+So, we can maximize mutual information by capturing as few points in our \(n_x\) and \(n_y\) bounds 
+as possible. One way to do that very effectively is to have \(Y\) be a linear function of \(X\). E.g.
+
+\[
+\begin{align}
+    X = \mathcal{U}(0, 5) \\
+    Y = X;
+\end{align}
+\]
+
+Indeed, this gives us a very high mutual information score.
+
+<div id="very-linear-plot"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(500).fill(0).map((_) => Math.random() * 5);
+let y = x.map((xi) => xi);
+get_2d_mi_chart('very-linear-plot', x.map((xi, i) => [xi, y[i]]), 5);
+</script>
+
+But mutual information does not **require** linearity. For example, the 
+following very non-linear function which would flummox any linear analysis 
+(but is obviously quite correlated to the naked eye) also gives us a high 
+mutual information score:
+    
+\[
+\begin{align}
+X &= \mathcal{U}(0, 5) \\
+Y &= \left\{ \begin{array}{ll}
+           x & 0 \leq x < 1 \\
+           -x & 1 \leq x < 2 \\
+           x & 2 \leq x < 3 \\
+           ... & \\
+\end{array}
+\right.
+\end{align}
+\]
+
+<div id="very-nonlinear-plot"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(500).fill(0).map((_) => Math.random() * 5);
+let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
+get_2d_mi_chart('very-nonlinear-plot', x.map((xi, i) => [xi, y[i]]), 5);
+</script>
+
+Mutual information is subtle, though. Just because \(y\) might be a 
+function of \(x\) doesn't mean mutual information is maximised. Take the 
+following distributions, 
+
+\[
+\begin{align}
+X &= \mathcal{U}(0, 20) \\
+Y &= \sin(X) \\
+\end{align}
+\]
+
+
+<div id="sine-plot"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(2000).fill(0).map((_) => Math.random() * 20);
+let y = x.map((xi) => Math.sin(xi));
+get_2d_mi_chart('sine-plot', x.map((xi, i) => [xi, y[i]]), 5);
+</script>
+
+Notice how the samples for \(n_y\) come from multiple different cycles of
+the sine wave. Also, remember that mutual information is **symmetric**. So, 
+even though knowing \(x\) tells us exactly what \(y\) will be, knowing 
+the value of \(y\) doesn't let us pinpoint an exact \(x\). Instead, we know
+\(x \mod 2\pi \), but there are still an infinite number of \(x\)'s for every
+\(y\).
+
+Another way to think about this is that, probabilistically, there are lot of different
+ways to get a particular value of \(y\), and so actually getting that value isn't too surprising.
+Each value of \(x\), however, is more surprising. Since information content increases with surprise, 
+we learn more by observing \(x\) than we do \(y\), and so they cannot have maximum mutual information.
 
 
 
 <div id="3d-plot"></div>
 <script type="module">
 import {get_3d_mi_chart} from "./mi_charts.js";
-let x = Array(10_000).fill(0).map((_) => Math.random() * 10);
-let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
+let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
-get_3d_mi_chart('3d-plot', x.map((xi, i) => [xi, y[i], z[i]]), 3);
+get_3d_mi_chart('3d-plot', x.map((xi, i) => [xi, y[i], z[i]]), 5);
 </script>
 
 
+### Why does this work?
+
+- We're calculating the average across all our sample points. Entropy is the expected value 
+across all our points. By only placing bins in points where our samples fall, the average of our
+bins should approximate the expected value of our probability distribution.
+
+
 # Kullback-Leibler Divergence
+
+
+# Graveyard
+
+
+## Key Concept 1: Mutual Information
+
+An information theory concept that seems quite promising is the [Mutual Information](https://en.wikipedia.org/wiki/Mutual_information),
+\(I(X;Y)\). *(In our particular case, we might be interested in something like \(I(f;X)\), \(I(f;Y)\).)*
+
+It describes how much information we learn about \(X\) if we know the value of \(Y\).
+
+Mutual information has many definitions, some of which are given below:
+
+\[
+\begin{align}
+    I(X;Y) &\equiv H(X) - H(X | Y) \\
+           &\equiv H(X) + H(Y) - H(X,Y) \\
+\end{align}
+\]
+
+The first definition says that Mutual Information is the entropy of \(X\) minus
+the entropy of \(X | Y\). \(X | Y\) is the conditional entropy of X given Y. If that 
+description means nothing to you, play around with the plot below. 
+
+Conditional entropy has two helpful properties: 
+1. \(H(Y|X) = 0\) if and only if knowing X tells us the exact value of Y.
+2. \(H(Y|X) = H(Y)\) if and only if \(Y\) and \(X\) are independent random variables.
+
+Visually, we can plot the conditional *distribution* \(Y|X\) and from it qualitatively
+assess the entropy:
+1. If \(H(Y|X) = 0\), the plot of \(Y|X\) will be a "thin" line, where each value of \(Y\)
+maps exactly to a single value of \(X\).
+2. If \(H(Y|X) = H(Y)\), the spread of \(Y\) is uniform across all \(X\). In other words,
+we should get a cloud of points with constant density from left to right, and (potentially)
+changing density as we go up or down.
+
+!!!! Conditional Distribution Plot !!!!!
+
+The second definition says that Mutual Information is the entropy of \(X\) plus 
+the entropy of \(Y\) minus the entropy of \(X, Y\). \(X, Y\) is the *joint distribution*
+of \(X\) and \(Y\), and can be visualized below.
+
+!!!! Joint Distribution Plot !!!!!
+
+The Joint Distribution
+
+
