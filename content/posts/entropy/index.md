@@ -272,26 +272,37 @@ samples from \(X\), \(Y\), and \(f\).
 
 \[
 \begin{align}
-            X &\sim \mathcal{U}(0, 20) \\
-            Y &\sim \mathcal{U}(-10, 10) \\
-            f &\sim \sin(X) \sin(Y)\;X\;Y\\
+            X_1 &\sim \mathcal{U}(0, 20) \\
+            X_2 &\sim \mathcal{U}(-10, 10) \\
+            Y &\sim \sin(X_1) \sin(X_2)\;X_1\;X_2\\
 \end{align}
 \]
 
-\(f\) is a deterministic function of \(X\) and \(Y\), and so we should be able to figure
+\(Y\) is a deterministic function of \(X_1\) and \(X_2\), and so we should be able to figure
 out, from samples of the three distributions, that they are all correlated.
+
+If we treat our three distributions as timeseries signals, we can sample from them and
+plot their values over time:
+
+<div id="timeseries-plot"></div>
+
+
+This just looks like a bunch of noise. If we instead plot each trio of samples as a point in space,
+i.e. \((x_1, x_2, y)^t\) for each timestep \(t\), the structure makes itself very clear:
 
 <div id="teaser-plot"></div>
 <script type="module">
-import {get_3d_chart} from "./mi_charts.js";
+import {get_timeseries_chart, get_3d_chart} from "./mi_charts.js";
 let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
 let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
+get_timeseries_chart("timeseries-plot", [x.slice(0, 500), y.slice(0, 500), z.slice(0, 500)], 
+                                        ['x₁', 'x₂', 'y']);
 get_3d_chart('teaser-plot', x.map((xi, i) => [xi, y[i], z[i]]));
 </script>
 
 This function was chosen because:
-- It's completely deterministic if you know \(X\) and \(Y\).
+- It's completely deterministic if you know \(X_1\) and \(X_2\).
 - It's decidedly non-linear. There are periodic functions, terms 
 multiplied together, but not a linear term in sight. It's a mess!
 - The underlying distributions are not just normally distributed. 
@@ -302,21 +313,21 @@ to be accurate.
 the y-z plane.
 
 I'm not completely joking with the last point - 
-our human brains can *easily* tell that \(f\), \(X\), and \(Y\) are related. There's 
+our human brains can *easily* tell that \(Y\), \(X_1\), and \(X_2\) are related. There's 
 so much structure in the plot! So many patterns appear before us as we explore the 
 space.
 
 Despite this, many common techniques completely fail to detect these patterns.
 If we were to use linear analysis techniques - for example, the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) -
-we would get results telling us that \(f\) is uncorrelated to \(X\) and \(Y\), because
-the slopes of \(f\) against \(X\), \(Y\), or both are on average flat.
+we would get results telling us that \(Y\) is uncorrelated to \(X_1\) and \(X_2\), because
+the slopes of \(Y\) against \(X_1\), \(X_2\), or both are on average flat.
 
 Similary, [Spearman's rank correlation coefficient](https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
-won't help us because \(f\) is not monotonic.
+won't help us because \(Y\) is not monotonic.
 
-It's also important that our method distinguishes between the actual generating source (e.g. \(X\)) and
+It's also important that our method distinguishes between the actual generating source (e.g. \(X_1\)) and
 an identically distributed but independent source (e.g. \(Q \sim \mathcal{U}(0, 20)\)) which
-just happens to share population statistics. If we were to plot \(Q\) instead of \(X\), we 
+just happens to share population statistics. If we were to plot \(Q\) instead of \(X_1\), we 
 can clearly see less structure. We want our method to be able to distinguish between these
 two cases.
 
@@ -328,14 +339,6 @@ let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
 get_3d_chart('teaser-plot-2', y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]]));
 </script>
-
-Note that we do not require our method to prove there is a **causal** relationship 
-between \(f\), \(X\), and \(Y\). It can (and does) produce the same results whether
-f is truly a function of \(X\) and \(Y\), or f is a function of some other variables
-that happen to be (perfectly) correlated with \(X\) and \(Y\). If we think in terms
-of how much information knowing \(X\) or \(Y\) tells us about \(f\), this distinction 
-is irrelevant.
-
 
 ## Entropy for Continuous Numbers
 

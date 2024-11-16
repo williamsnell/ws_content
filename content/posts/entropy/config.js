@@ -166,24 +166,27 @@ export const scene_rules = {
     },
     dragmode: "turntable",
     xaxis: {
-      zeroline: false,
-      tickmode: "array",
-      tickvals: [], 
-      range: [-1.5, 1.5],
+        title: {text: "x₁"},
+        zeroline: false,
+        tickmode: "array",
+        tickvals: [], 
+        range: [-1.5, 1.5],
     },
     yaxis: {
-      zeroline: false,
-      tickmode: "array",
-      tickvals: [], 
-      range: [-1.5, 1.5],
+        title: {text: "x₂"},
+        zeroline: false,
+        tickmode: "array",
+        tickvals: [], 
+        range: [-1.5, 1.5],
     },
     zaxis: {
-      zeroline: false,
-      tickmode: "array",
-      tickvals: [], 
-      range: [-1.5, 1.5],
+        title: {text: "y"},
+        zeroline: false,
+        tickmode: "array",
+        tickvals: [], 
+        range: [-1.5, 1.5],
     },
-  };
+};
 
 export const d2_rules = structuredClone(scene_rules);
 
@@ -196,6 +199,7 @@ export const DEFAULT_3D_LAYOUT = {
   plot_bgcolor: 'rgba(0,0,0,0)',
   hovermode: false,
   showlegend: false,
+  font: DEFAULT_AXIS_FONT,
   margin: {
       l: 10,
       r: 10,

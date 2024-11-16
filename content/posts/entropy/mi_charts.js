@@ -1,5 +1,5 @@
 import {get_epsilon, KDTree, normalize} from "./knn.js";
-import {DEFAULT_2D_LAYOUT, DEFAULT_3D_LAYOUT, DEFAULT_CONFIG, theme_text_color, colors, darker_marker_color, accent_color} from "./config.js";
+import {DEFAULT_2D_LAYOUT, DEFAULT_3D_LAYOUT, DEFAULT_CONFIG, theme_text_color, colors, darker_marker_color, accent_color, DEFAULT_MARKERS, DEFAULT_AXIS_FONT} from "./config.js";
 
 function get_rect(xmin, xmax, ymin, ymax, style={}) {
     return {
@@ -724,4 +724,46 @@ export function get_3d_chart(id, signals) {
     layout.scene.aspectmode = 'cube';
 
     Plotly.newPlot(elem.id, [points_trace], layout, DEFAULT_CONFIG);
+}
+
+export function get_timeseries_chart(id, signals, labels=null) {
+    let elem = document.getElementById(id); 
+
+    let min = Math.min(...signals.map((signal, i) => Math.min(...signal)));
+    let max = Math.max(...signals.map((signal, i) => Math.max(...signal)));
+
+    let traces = signals.map((signal, i) => {
+        let marker = structuredClone(DEFAULT_MARKERS);
+        marker.color = colors[i];
+        marker.size = 3;
+        let out = {
+            x: signal.map((_, i) => i),
+            y: signal,
+            mode: 'markers',
+            marker: marker,
+            type: 'scatter',
+        };
+        if (labels) {
+            out.name = labels[i];
+        }
+        return out;
+    });
+
+    let layout = structuredClone(DEFAULT_2D_LAYOUT);
+    let auto_sizing = {
+        width: Math.min(elem.offsetWidth, 600).toFixed(0),
+        height: Math.min(elem.offsetWidth, 600).toFixed(0),
+        margin: {t: 0, l: 0, r: 0, b: 0},
+    }
+    layout.font = DEFAULT_AXIS_FONT;
+    layout.xaxis.range = [0, signals[0].length];
+    layout.xaxis.title = "Time";
+    layout.xaxis.zeroline = true;
+    layout.yaxis.range = [min, max];
+    layout.yaxis.title = "Value";
+    layout.yaxis.zeroline = true;
+    layout.showlegend = true;
+    layout = {...auto_sizing, ...layout}; 
+
+    Plotly.newPlot(elem.id, traces, layout, DEFAULT_CONFIG);
 }
