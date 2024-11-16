@@ -869,14 +869,56 @@ Each value of \(x\), however, is more surprising. Since information content incr
 we learn more by observing \(x\) than we do \(y\), and so they cannot have maximum mutual information.
 
 
+<div id="2d-hero-plot"></div>
+<div id="mi-text-2d"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(4_000).fill(0).map((_) => Math.random() * 15);
+let y = Array(4_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
+get_2d_mi_chart('2d-hero-plot', x.map((xi, i) => [xi, z[i]]), 5);
+import {mutual_information} from "./knn.js";
+document.getElementById("mi-text-2d").textContent = mutual_information(x.map((x, i) => [x, z[i]]));
+</script>
+
+
 
 <div id="3d-plot"></div>
+<div id="mi-text"></div>
 <script type="module">
 import {get_3d_mi_chart} from "./mi_charts.js";
 let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
 let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
 get_3d_mi_chart('3d-plot', x.map((xi, i) => [xi, y[i], z[i]]), 5);
+import {partial_mutual_information} from "./knn.js";
+document.getElementById("mi-text").textContent = partial_mutual_information(x, z, y);
+</script>
+
+
+
+<div id="3d-plot-2"></div>
+<div id="mi-text-2"></div>
+<script type="module">
+import {get_3d_mi_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
+get_3d_mi_chart('3d-plot-2', x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5);
+import {partial_mutual_information} from "./knn.js";
+document.getElementById("mi-text-2").textContent = partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]));
+</script>
+
+<div id="3d-plot-3"></div>
+<div id="mi-text-3"></div>
+<script type="module">
+import {get_3d_mi_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
+get_3d_mi_chart('3d-plot-3', x.map((xi, i) => [xi, xi**2, z[i]]), 5);
+import {partial_mutual_information} from "./knn.js";
+document.getElementById("mi-text-3").textContent = partial_mutual_information(x, z, x.map((x) => x**2));
 </script>
 
 

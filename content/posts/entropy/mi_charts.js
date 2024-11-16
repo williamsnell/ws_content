@@ -321,9 +321,9 @@ export function get_3d_mi_chart(id, signals, k=3) {
     let showing_ny = false;
     let showing_nz = false;
 
-    let nx = create_button("$$n_x$$"); 
-    let ny = create_button("$$n_y$$");
-    let nz = create_button("$$n_z$$");
+    let nx = create_button("$$n_{xy}$$"); 
+    let ny = create_button("$$n_{yz}$$");
+    let nz = create_button("$$n_y$$");
 
     function save_camera_position() {
         const scene = elem._fullLayout.scene._scene;
@@ -349,7 +349,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
             nz.style = "";
             
             Plotly.restyle(elem.id, {visible: false}, [1, 2, 3, 4, 5, 6, 7, 8, 9])
-            Plotly.restyle(elem.id, {visible: true}, [1, 6, 7])
+            Plotly.restyle(elem.id, {visible: true}, [2, 6, 7])
         } else {
             showing_nx = false;
             showing_ny = false;
@@ -377,7 +377,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
             nz.style = "";
 
             Plotly.restyle(elem.id, {visible: false}, [1, 2, 3, 4, 5, 6, 7, 8, 9])
-            Plotly.restyle(elem.id, {visible: true}, [2, 6, 8])
+            Plotly.restyle(elem.id, {visible: true}, [3, 6, 8])
         } else {
             showing_nx = false;
             showing_ny = false;
@@ -405,7 +405,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
             nz.style = `outline: 5px ${theme_text_color} solid;`;
 
             Plotly.restyle(elem.id, {visible: false}, [1, 2, 3, 4, 5, 6, 7, 8, 9])
-            Plotly.restyle(elem.id, {visible: true}, [3, 6, 9])
+            Plotly.restyle(elem.id, {visible: true}, [1, 6, 9])
         } else {
             showing_nx = false;
             showing_ny = false;
@@ -476,16 +476,16 @@ export function get_3d_mi_chart(id, signals, k=3) {
         let zmax = cz + l;
 
         let bounded_x_points = joint_tree.find_bounded([[xmin, xmax], 
-                                                        [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                                        [ymin, ymax], 
                                                         [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
 
         let bounded_y_points = joint_tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
                                                         [ymin, ymax],
-                                                        [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
+                                                        [zmin, zmax]]);
 
         let bounded_z_points = joint_tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
-                                                        [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
-                                                        [zmin, zmax]]);
+                                                        [ymin, ymax],
+                                                        [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
 
         let point_trace = {
             x: [point[0]],
@@ -558,7 +558,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
                 type: "mesh3d",
             });
 
-        let x_hyperrect = get_cube(cx - l, cx + l, mins[1], maxs[1], mins[2], maxs[2],
+        let x_hyperrect = get_cube(xmin, xmax, ymin, ymax, mins[2], maxs[2], 
             {
                 color: colors[0],
                 opacity: 0.2,
@@ -567,7 +567,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
             }
         );
 
-        let y_hyperrect = get_cube(mins[0], maxs[0], cy - l, cy + l, mins[2], maxs[2],
+        let y_hyperrect = get_cube(mins[0], maxs[0], ymin, ymax, zmin, zmax,
             {
                 color: colors[1],
                 opacity: 0.2,
@@ -576,7 +576,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
             }
         );
 
-        let z_hyperrect = get_cube(mins[0], maxs[0], mins[1], maxs[1], zmin, zmax,
+        let z_hyperrect = get_cube(mins[0], maxs[0], ymin, ymax, mins[2], maxs[2], 
             {
                 color: colors[3],
                 opacity: 0.2,
@@ -615,6 +615,9 @@ export function get_3d_mi_chart(id, signals, k=3) {
         layout.scene.camera = {
             center: {x: 0, y: 0, z: 0},
             eye: {x: 1, y: 1, z: 1},
+            projection: {
+                type: "orthographic", 
+            }
         };
 
 
@@ -626,33 +629,35 @@ export function get_3d_mi_chart(id, signals, k=3) {
                 layout.scene.xaxis.range = full_range.slice(0, 2);
                 layout.scene.yaxis.range = full_range.slice(2, 4);
                 layout.scene.zaxis.range = full_range.slice(4, 6);
-                layout.scene.camera = {
-                    center: {x: 0, y: 0, z: 0},
-                    eye: {x: 1, y: 1, z: 1},
-                };
+                layout.scene.camera.center = {x: 0, y: 0, z: 0};
+                layout.scene.camera.eye = {x: 1, y: 1, z: 1};
+                // in orthographic mode, the aspect ratio sets the zoom
+                layout.scene.aspectratio = {x: 1, y: 1, z: 1};
                 zoomed = !zoomed;
             } else {
                 select_hypercube.style = `outline: ${theme_text_color} 5px solid;`;
                 layout.scene.xaxis.range = constrained_range.slice(0, 2);
                 layout.scene.yaxis.range = constrained_range.slice(2, 4);
                 layout.scene.zaxis.range = constrained_range.slice(4, 6);
-                layout.scene.camera = {
-                    center: {x: 0, y: 0, z: 0},
-                    eye: {x: 0.1, y: 0.1, z: 0.1},
-                };
+                layout.scene.camera.center = {x: 0, y: 0, z: 0};
+                // In perspective mode, the camera eye sets the zoom level
+                // layout.scene.camera.eye = {x: 0.1, y: 0.1, z: 0.1};
+                layout.scene.aspectratio = {x: 0.01, y: 0.01, z: 0.01};
                 zoomed = !zoomed;
             }
             Plotly.relayout(elem.id, layout);
         };
 
         if (drawn) {
-            Plotly.react(elem.id, [points_trace, x_marginal, y_marginal, 
-                                   z_marginal, xyz_neighbors, point_trace, 
+            // We plot z_marginal before x_marginal and y_marginal because y is 
+            // a subset of z and will otherwise be masked.
+            Plotly.react(elem.id, [points_trace, z_marginal, x_marginal, y_marginal, 
+                                   xyz_neighbors, point_trace, 
                                    hypercube, x_hyperrect, y_hyperrect, z_hyperrect], 
                         layout, DEFAULT_CONFIG);
         } else {
-            Plotly.newPlot(elem.id, [points_trace, x_marginal, y_marginal, 
-                                    z_marginal, xyz_neighbors, point_trace, 
+            Plotly.newPlot(elem.id, [points_trace, z_marginal, x_marginal, y_marginal, 
+                                    xyz_neighbors, point_trace, 
                                     hypercube, x_hyperrect, y_hyperrect, z_hyperrect], 
                             layout, DEFAULT_CONFIG);
             drawn = true;

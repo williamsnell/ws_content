@@ -186,7 +186,7 @@ function normalize(points) {
    returns: I(X1, X2, ... Xm)
 
 */ 
-function mutual_information(x_points, k=3) {
+export function mutual_information(x_points, k=3) {
     let joint_samples = normalize(x_points);
 
     let m = x_points[0].length;
@@ -225,4 +225,47 @@ function mutual_information(x_points, k=3) {
     0) / x_points.length;
 
     return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
+}
+
+export function partial_mutual_information(x_points, y_points, z_points, k=3) {
+    x_points = normalize(x_points.map((x) => [x]));
+    y_points = normalize(y_points.map((x) => [x]));
+    z_points = normalize(z_points.map((x) => [x]));
+
+    let joint_samples = x_points.map((x, i) => [...x, ...y_points[i], ...z_points[i]]);
+
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+    
+    let xz_tree = new KDTree(x_points.map((x, i) => [...x, ...z_points[i]]));
+    let yz_tree = new KDTree(y_points.map((y, i) => [...y, ...z_points[i]]));
+    let z_tree = new KDTree(z_points);
+
+    // Compute the mean of psi(n_xz) + psi(n_yz) - psi(n_z) 
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, point, i) => 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(point, k + 1, true);
+            // We add an offset because we don't want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let x_bounds = [point[0] - bound_length, point[0] + bound_length];
+            let y_bounds = [point[1] - bound_length, point[1] + bound_length];
+            let z_bounds = [point[2] - bound_length, point[2] + bound_length];
+
+            // Length - 1 to account for the search point, length + 1 because
+            // we want digamma(n_xz + 1), ...
+            let h_xz = digamma(xz_tree.find_bounded([x_bounds, z_bounds]).length)
+            let h_yz = digamma(yz_tree.find_bounded([y_bounds, z_bounds]).length)
+            let h_z = digamma(z_tree.find_bounded([z_bounds]).length)
+
+            let digamma_sum = h_xz + h_yz - h_z;
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) - mean_psi_nxm);
 }

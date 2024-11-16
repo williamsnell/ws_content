@@ -264,15 +264,56 @@ function mutual_information_n(x_points, k=3) {
     return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
 }
 
+function partial_mutual_information(x_points, y_points, z_points, k=3) {
+    x_points = normalize(x_points.map((x) => [x]));
+    y_points = normalize(y_points.map((x) => [x]));
+    z_points = normalize(z_points.map((x) => [x]));
+
+    let joint_samples = x_points.map((x, i) => [...x, ...y_points[i], ...z_points[i]]);
+
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+    
+    let xz_tree = new KDTree(x_points.map((x, i) => [...x, ...z_points[i]]));
+    let yz_tree = new KDTree(y_points.map((y, i) => [...y, ...z_points[i]]));
+    let z_tree = new KDTree(z_points);
+
+    // Compute the mean of psi(n_xz) + psi(n_yz) - psi(n_z) 
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, point, i) => 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(point, k + 1, true);
+            // We add an offset because we don't want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let x_bounds = [point[0] - bound_length, point[0] + bound_length];
+            let y_bounds = [point[1] - bound_length, point[1] + bound_length];
+            let z_bounds = [point[2] - bound_length, point[2] + bound_length];
+
+            let h_xz = digamma(xz_tree.find_bounded([x_bounds, z_bounds]).length)
+            let h_yz = digamma(yz_tree.find_bounded([y_bounds, z_bounds]).length)
+            let h_z = digamma(z_tree.find_bounded([z_bounds]).length)
+
+            let digamma_sum = h_xz + h_yz - h_z;
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) - mean_psi_nxm);
+}
+
 //////// Benchmarks /////////////////
 let tree;
 
-let n_points = 10_000;
+let n_points = 1_000;
 let x = Array(n_points).fill(0).map((x) => Math.random() * 80);
-let y = Array(n_points).fill(0).map((x) => (Math.random()) * 50);
+let z = Array(n_points).fill(0).map((x) => (Math.random()) * 50);
 // let z = Array(n_points).fill(0).map((x) => Math.random());
-//let z = x.map((x, i) => 0.05 * (Math.sin(x / 3) * Math.sin(y[i] / 3) * x * y[i] + Math.random() * 1));
-let z = x.map((x, i) => (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
+let y = x.map((x, i) => 0.05 * (Math.sin(x / 3) * Math.sin(z[i] / 3) * x * z[i] + Math.random() * 1));
+//let z = x.map((x, i) => (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
 //let z = x.map((x, i) => x + y[i]);
 
 
@@ -316,18 +357,18 @@ let search_time = (Date.now() - start_knn_search) / n_repeats;
 let bound_length = dists[0] + -get_epsilon(dists[0]);
 let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
                                           [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
-                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
 
 let bounded_y_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
                                           [points[0][1] - bound_length, points[0][1] + bound_length],
-                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]]);
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
 
 let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
                                           [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
                                           [points[0][2] - bound_length, points[0][2] + bound_length]]);
 
 
-console.log(`n_x = ${bounded_x_points.length}, n_z = ${bounded_z_points.length}`);
+console.log(`n_x = ${bounded_x_points.length}, n_y = ${bounded_y_points.length}, n_z = ${bounded_z_points.length}`);
 
 let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
 
@@ -336,8 +377,9 @@ console.log(mutual_information(x.map((x) => [x]), y.map((x) => [x])));
 console.log("I(X, Y): ", mutual_information_n(x.map((x, i) => [x, y[i]])));
 console.log("I(X, Z): ", mutual_information_n(x.map((x, i) => [x, z[i]])));
 console.log("I(Y, Z): ", mutual_information_n(y.map((x, i) => [x, z[i]])));
-console.log("I(X, Y, Z): ", mutual_information_n(x.map((x, i) => [x, y[i], z[i]])));
-console.log("I(X, Z): ", mutual_information(x.map((x) => [x]), z.map((x) => [x])));
+console.log("I(X, Z | X): ", partial_mutual_information(x, z, x));
+console.log("I(X, Z | Y): ", partial_mutual_information(x, z, y));
+//console.log("I(X, Z): ", mutual_information(x.map((x) => [x]), z.map((x) => [x])));
 console.assert(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]) == 0.9499999999999998);
 
 ///////////////////////// Plots for verification ////////////////////
