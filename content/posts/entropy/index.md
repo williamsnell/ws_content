@@ -7,7 +7,7 @@ cover = ""
 keywords = ["", ""]
 description = ""
 showFullContent = false
-readingTime = false
+readingTime = true
 hideComments = false
 color = "" #color from the theme settings
 +++
@@ -250,8 +250,8 @@ as well as to communication in human languages like English.
 
 Like in our lottery example, real messages written in human language
 have *much less entropy* than could theoretically be transmitted with the same set of symbols (for example, the English alphabet.)
-We can think of this as *redundancy* - what fraction of the letters in a message could we delete 
-before it lost its original meaning.
+We can think of this as *redundancy* - what fraction of the letters in a message we could delete 
+before the message lost its original meaning.
 
 As Shannon wrote, 
 
@@ -262,21 +262,24 @@ crossword puzzles to be possible.
 
 For this article, however, we will focus on *signal processing*. My claim is that entropy can be explained
 visually, and that this visualization provides good intuitive insights. My hope is that
-bringing the underlying geometry to the forefront will make it obvious what is going on.
+bringing the underlying geometry to the forefront will make it clearer what is going on than 
+bombarding you with maths would.
 
 To motivate what would otherwise 
-be a very abstract journey, we will examine the function \(f\). Our goal is to try and determine 
-whether f is related to \(X\) and \(Y\), using only
-samples from \(X\), \(Y\), and \(f\).
+be a very abstract journey, we will examine the function \(Y\). Our goal is to try and determine 
+whether \(Y\) is related to \(X_1\) and \(X_2\), using only
+samples from \(X_1\), \(X_2\), and \(Y\). We define these signals as such:
 
 
 \[
 \begin{align}
             X_1 &\sim \mathcal{U}(0, 20) \\
             X_2 &\sim \mathcal{U}(-10, 10) \\
-            Y &\sim \sin(X_1) \sin(X_2)\;X_1\;X_2\\
+            Y &= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
 \end{align}
 \]
+
+Where \(\mathcal{U}(a, b)\) denotes a uniform distribution between a and b.
 
 \(Y\) is a deterministic function of \(X_1\) and \(X_2\), and so we should be able to figure
 out, from samples of the three distributions, that they are all correlated.
@@ -287,8 +290,8 @@ plot their values over time:
 <div id="timeseries-plot"></div>
 
 
-This just looks like a bunch of noise. If we instead plot each trio of samples as a point in space,
-i.e. \((x_1, x_2, y)^t\) for each timestep \(t\), the structure makes itself very clear:
+This just looks like a collection of colourful noise. Instead, we can plot each trio of samples as a point in space,
+i.e. \((x_1, x_2, y)_t\) for each timestep \(t\):
 
 <div id="teaser-plot"></div>
 <script type="module">
@@ -305,12 +308,12 @@ This function was chosen because:
 - It's completely deterministic if you know \(X_1\) and \(X_2\).
 - It's decidedly non-linear. There are periodic functions, terms 
 multiplied together, but not a linear term in sight. It's a mess!
-- The underlying distributions are not just normally distributed. 
+- The underlying distributions are not normally distributed. 
 A lot of successful techniques assume underlying normal distributions,
 but we want a technique that doesn't *require* those assumptions hold
 to be accurate.
-- It looks a bit like a sideways christmas-tree on the x-z plane, and a bit like a bow-tie on 
-the y-z plane.
+- It looks a bit like a sideways christmas-tree on the \(x_1-y\) plane, and a bit like a bow-tie on 
+the \(x_2-y\) plane.
 
 I'm not completely joking with the last point - 
 our human brains can *easily* tell that \(Y\), \(X_1\), and \(X_2\) are related. There's 
@@ -326,9 +329,15 @@ Similary, [Spearman's rank correlation coefficient](https://en.wikipedia.org/wik
 won't help us because \(Y\) is not monotonic.
 
 It's also important that our method distinguishes between the actual generating source (e.g. \(X_1\)) and
-an identically distributed but independent source (e.g. \(Q \sim \mathcal{U}(0, 20)\)) which
-just happens to share population statistics. If we were to plot \(Q\) instead of \(X_1\), we 
-can clearly see less structure. We want our method to be able to distinguish between these
+an identically distributed but independent source. For example, we could define an independent distribution
+with exactly the same *distribution* as \(X_1\):
+
+\[
+Q \sim \mathcal{U}(0, 20)
+\]
+
+If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure. 
+Whatever method we end up with, it should be able to distinguish between these
 two cases.
 
 <div id="teaser-plot-2"></div>
@@ -340,15 +349,20 @@ let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math
 get_3d_chart('teaser-plot-2', y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]]));
 </script>
 
-## Entropy for Continuous Numbers
+With our challenge posed, let's start building the tools we need to tackle it!
+
+# Entropy for Continuous Numbers
 
 Entropy as defined earlier is quite restrictive:
 - We need to know all the possible messages that could be transmitted.
 - We need to know the probabilities of receiving each possible message.
 
-##### A Refresher on Continuous Probability Distributions
+In this section, we will extend these concepts into signals made up of continuous 
+numbers.
+
+## A Refresher on Continuous Probability Distributions
 While some probability distributions are discrete - the outcomes of
-rolling dice, our lottere example from before, etc. - a lot of situations call for 
+rolling dice, our lottery example from before, etc. - a lot of situations call for 
 continuous probability distributions. 
 
 As an example, let's look at the normal distribution.
@@ -388,7 +402,7 @@ is 50%. Formally (for a normal distribution),
 Finally, the integral under the curve of \(p(x)\) from \(-\infty\) to \(\infty\) must equal
 exactly 1. That is, when we sample from the distribution, we have to get a point *somewhere*.
 
-##### Making Things Discrete
+## Making Things Discrete
 
 We want a definition of entropy that works for continuous distributions. What we currently
 have is a definition for discrete events:
@@ -452,7 +466,7 @@ You should see that as we increase the number of bins, the area under the curve,
 rapidly converges to its true value of \(\approx 1\). This is just our earlier statement, that all of our
 points must fall between \((-\infty, \infty)\). 
 
-You might also notice that the entropy \(H(X)\) keeps increasing as the bins get narrower. Worryingly, i
+You might also notice that the entropy \(H(X)\) keeps increasing as the bins get narrower. Worryingly,
 this value never converges - it just keeps increasing. If we take the limit of \(\Delta x \rightarrow 0\),
 we'll have **infinite** entropy.
 
@@ -469,7 +483,7 @@ import {integral_chart} from "./charts.js";
 integral_chart("integral_chart");
 </script>
 
-##### What Went Wrong?
+### What Went Wrong?
 
 This result isn't an issue with any of our assumptions. Instead, we can tease what's going on directly out of the maths.
 
@@ -548,7 +562,7 @@ higher the entropy. This should perhaps not be surprising since, as we said earl
 any particular number from a continuous distribution is infinitely unlikely, and hence carries infinite information. 
 As our bins approach 0 width, this is exactly the situation we get.
 
-##### A Flawed Solution: Differential Entropy
+### A Flawed Solution: Differential Entropy
 
 What if we just closed our eyes and ignored the \(\log_2 \Delta x\) term? Since it's the part that blows up to infinity, we can 
 salvage the rest of the equation and define the *[Differential Entropy](https://en.wikipedia.org/wiki/Differential_entropy)*, 
@@ -570,7 +584,7 @@ and love:
 3. \(h(X)\) is sensitive to scale (and therefore units). If we measured 100 people's heights,
     \[h_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
     \[h_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\] 
-    The differential entropy of h would be *larger* than the differential entropy of h2.
+    The differential entropy of \(h_\text{cm}\) would be *larger* than the differential entropy of \(h_\text{m}\).
 
 One useful property differential entropy does have is *translational invariance*:
 \[
@@ -592,9 +606,10 @@ rigorous explanation, see [here](https://stats.stackexchange.com/a/616892).
 
 This intuitive explanation clarifies all of the above properties. 1. and 2. occur because 
 volumes can be smaller than 1 (\(2^{-3} = 0.125\), for example.) 3. occurs because when we change units,
-the box containing our numbers grows or shrinks (even if the actual underlying data is the same.) 
+the box containing our numbers grows or shrinks in terms of absolute number magnitude 
+(even if the actual underlying data is the same.) 
 
-##### A Good Solution: Divergence
+### A Better Solution: Divergence
 
 Differential Entropy, then, isn't the whole answer. To motivate the actual solution, we'll start by
 looking at the entropy formula we tried to discretize earlier:
@@ -613,10 +628,12 @@ The trouble really stems from the last term:
 \]
 
 We want to introduce some term that knocks out this \(\Delta x\). To do so, 
-we need to introduce a second distribution. We'll label the *probability density function*
+we need to introduce a second distribution - say, as second normal distribution
+that may (or may not) have the same mean and variance as our original distribution \(p(x)\). 
+We'll label the *probability density function*
 of this distribution \(q(x)\).
 
-What if instead of measuring the information content of each slice, we measured the *difference*
+Instead of measuring the information content of each slice, we could try measuring the *difference*
 in information content between \(p(x)\) and \(q(x)\). That is, instead of 
 
 \[\log_2 p(x_i) \Delta x\]
@@ -625,17 +642,22 @@ We measure
 
 \[
 \begin{align}
-\log_2 p(x_i) \Delta x - \log_2 q(x_i) \Delta x &= \log_2 \frac{q(x_i) \Delta x}{p(x_i) \Delta x} \\
-                                                &= \log_2 \frac{q(x_i)}{p(x_i)} \\
+\log_2 p(x_i) \Delta x - \log_2 q(x_i) \Delta x &= \log_2 \frac{p(x_i) \Delta x}{q(x_i) \Delta x} \\
+                                                &= \log_2 \frac{p(x_i)}{q(x_i)} \\
 \end{align}
 \]
 
-In other words, we're now calculating 
+Because we want our quantity to still be an expectation value \(\mathbb{E}\), we 
+need to weight how likely each slice is, somehow. We can choose \(p(x)\) to do
+this weighting. In other words, we're now calculating 
 
 \[
-D_{KL}(p || q) = - \lim_{\Delta x \rightarrow 0} \sum_{i = 0}^{N} p(x_i) \Delta x\:\
-\log_2 \frac{q(x_i)}{p(x_i)} \\
+D_{KL}(p || q) = \lim_{\Delta x \rightarrow 0} \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+\log_2 \frac{p(x_i)}{q(x_i)} \\
 \]
+
+If we really want to use \(q(x)\) to do the weighting (and sometimes we do), we could just 
+swap which distribution we call \(p\) and which we call \(q\).
 
 This nicely cancels out the \(\Delta x\) term. But does it work?
 
@@ -655,10 +677,10 @@ integral_chart("divergence_chart", "divergence_chart history");
 
 
 Yes! Just as \(P(X) = \int_{-\infty}^{\infty} p(x) dx\) rapidly converges to 1, \(D_{KL}\)
-converges to a constant value, even as \(H(X)\) continues to increase.
+also converges to a constant value, even as \(H(X)\) continues to increase.
 
 
-##### So what *is* the KL-Divergence?
+### So what *is* the KL-Divergence?
 
 The KL-Divergence is a core tool in Information Theory, for discrete, continuous, and mixed
 distributions. With it, we'll build the tools we need to make sense of signals.
@@ -666,17 +688,16 @@ distributions. With it, we'll build the tools we need to make sense of signals.
 To understand the KL-Divergence better, I'd highly recommend reading through [Six (and a half) intuitions for KL divergence.](https://www.lesswrong.com/posts/no5jDTut5Byjqb4j5/six-and-a-half-intuitions-for-kl-divergence)
 
 For now, suffice it to say that the KL-divergence is a measure of the *difference in information*
-between two distributions.
-
-If we observe a particular event, the information we gain from that observation varies depending
-on if we're sampling from one probability distribution, *p*, or a different one, *q*. 
+between two distributions. If we observe a particular event, the information we gain from that 
+observation varies depending on the message was generated according to the statistics of one probability
+distribution, *p*, or a different one, *q*. 
 
 In our lottery example from earlier, observing a 1 carries a lot of information. But if I was 
 secretly sending you a 0 every time the number was odd, and a 1 every time it was even, the 
 information content of that "1" message would be lower. The KL-Divergence quantifies this difference,
 averaged (using \(p\)) across the whole distribution.
 
-##### Why is KL-Divergence an Improvement?
+### Why is KL-Divergence an Improvement?
 
 Even though the derivation of KL-Divergence seems more mathematically sound than that of 
 differential entropy, is it better in practical ways? To see, let's examine some of its
@@ -686,8 +707,9 @@ properties:
 2. \(D_{KL} \geq 0\). 
 3. \(D_{KL}\) is insensitive to unit changes, rescaling etc. Because we have two probability distributions
 \(p\) and \(q\), if we change the units of one, we have to change units of the other. These effects cancel out, 
-and we get back the same divergence as we started with. In fact, we can pick an arbitrary 
-    function \(y(x)\) which need not be linear, provided that \(y(x)\) is unique for each unique \(x\).
+and we get back the same divergence as we started with. In fact, we can warp our coordinates using an arbitrary 
+    function \(y(x)\) which need not be linear, provided that \(y(x)\) is unique for each unique \(x\) (i.e. it
+    is [bijective).](https://en.wikipedia.org/wiki/Bijection)
 
 KL-Divergence has one major consideration, though: anywhere \(p(x) > 0\), \(q(x)\) **must** be greater than
 0, too. Otherwise, the \(p(x) \log\frac{p(x)}{q(x)}\) term blows up to \(\infty\), and with it the divergence.
@@ -697,11 +719,11 @@ build on it to obtain the *mutual information*, the tool we will use to finally 
 
 # Mutual Information
 
-Mutual Information is exactly the tool we've been looking for, yet subtly different to what we might've
-expect. Mutual information tells us how much information we learn about a signal \(Y\) if we were 
+Mutual Information is the tool we've been looking for, yet subtly different to what we might've
+expected. Mutual information tells us how much information we learn about a signal \(Y\) if we were 
 to observe samples of a different signal, \(X\). 
 
-Formally, the mutual information between two distributions \(X\) and \(Y\), \(I(X;Y\), is defined as
+Formally, the mutual information between two distributions \(X\) and \(Y\), \(I(X;Y)\), is defined as
 
 \[
             I(X;Y) = D_{KL} (P_{(X,Y)} || P_X \otimes P_Y)
@@ -717,6 +739,8 @@ it in action. For now, there are some important properties to note:
 1. \(I(X;Y) = 0\) *if and only if* \(X\) is independent of \(Y\).
 2. \(I(X;Y) \geq 0\).
 3. \(I(X;Y) = I(Y;X)\) - that is, mutual information is *symmetric*.
+4. \(I(X;X) = H(X)\). For continuous signals, the amount of information gained (or uncertainty removed) about \(X\)
+by observing \(X\) is \(\infty\). This applies too for \(I(X;f(X)\) where \(f()\) is invertible (i.e. bijective.)
 
 ## The Histogram Method
 
@@ -741,8 +765,10 @@ In practice, this means we need lots of samples **and** large bin sizes, neither
 Instead, we'll use K-Nearest-Neighbors (KNN). This technique can be used for a number of problems, although we'll
 use it to estimate the mutual information directly (as per [Kraskov, Stögbauer, and Grassberger](https://arxiv.org/pdf/cond-mat/0305641)).
 
-K-nearest-neighbors can be thought of as a "dynamically binning" method - it only runs calculations in areas 
+K-nearest-neighbors can be thought of as a "dynamic binning" method - it only runs calculations in areas 
 where samples have actually fallen. Before we dive into the maths, lets have a play around with it. In this plot,
+we sample from a uniform distribution on the x axis, and feed samples of x through the sine function - before 
+adding some noise - to get y.
 \[
 \begin{align}
 X = \mathcal{U}(0, 5) \\
@@ -750,7 +776,7 @@ Y = \sin(X) + \mathcal{U}(0, 1) \\
 \end{align}
 \]
 
-So, our two signals are correlated, but \(Y\) has some noise added.
+So, our two signals are correlated, but not perfectly.
 
 <div id="plot"></div>
 <script type="module">
@@ -765,8 +791,8 @@ What's going on is:
 For each point \((x_i, y_i)\):
 1. Calculate the distance, \(d_k\) to the Kth nearest neighbor (e.g. if k=5, 
     \(d_5\) is the distance to the third nearest neighbor to \(x_i\)). We calculate distance using 
-    the [Infinity Norm](https://en.wikipedia.org/wiki/Uniform_norm), i.e. \(d = \max(d_x, d_y)\), giving
-    us a hypercube.
+    the [Infinity Norm](https://en.wikipedia.org/wiki/Uniform_norm), i.e. \(d = \max(d_x, d_y)\). Hence,
+    we know there are exactly \(k\) points within a hypercube of side-length \(d\).
 2. Ignoring the x-direction, calculate \(n_y\), the number of points that are within a distance \(d_k\) of \(y_i\).
 3. Ignoring the y-direction, calculate \(n_x\), the number of points that are within a distance \(d_k\) of \(x_i\).
 
@@ -782,14 +808,17 @@ described above.
 
 Again, this formula is not the most illuminating. We need to pick it apart to really understand what's going on.
 Recall that \(I(X;Y) = 0\) *if and only if* the two signals are uncorrelated. For our formula to equal zero,
-\(n_x\) and \(n_y\) would have to be, on average, very close to \(N\), the total number of points. On the other hand, 
-if \(n_x\) and \(n_y\) are small most of the time, the mutual information would be very high. 
+either \(n_x\) or \(n_y\) (or both) would have to be, on average, very close to \(N\), the total number of points. 
+
+On the other hand, if \(n_x\) and \(n_y\) are small most of the time, the mutual information would be very high. 
 
 We can maximise mutual information if the only points captured in our \(n_x\) and \(n_y\) bounds were already
-captured inside our k-nearest neighbors.
+captured inside our k-nearest neighbors. In some sense, the "sharper" the line in our plot is, the fewer
+points will be captured by \(n_x\) and \(n_y\). As we add noise, the line gets fuzzier, and \(n_x\) and \(n_y\)
+increase.
 
 Also note that \(n_x\) and \(n_y\) are treated identically by the function. This again highlights the 
-symmetric nature of mutual information (foreshadowing).
+symmetric nature of mutual information: \(I(X;Y) = I(Y;X)\).
 
 ### Illustrative Examples of Mutual Information
 
@@ -806,11 +835,14 @@ as possible. One way to do that very effectively is to have \(Y\) be a linear fu
 Indeed, this gives us a very high mutual information score.
 
 <div id="very-linear-plot"></div>
+<div id="linear-text"></div>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi);
 get_2d_mi_chart('very-linear-plot', x.map((xi, i) => [xi, y[i]]), 5);
+import {mutual_information} from "./knn.js";
+document.getElementById("linear-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 But mutual information does not **require** linearity. For example, the 
@@ -832,11 +864,14 @@ Y &= \left\{ \begin{array}{ll}
 \]
 
 <div id="very-nonlinear-plot"></div>
+<div id="very-nonlinear-text"></div>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
 get_2d_mi_chart('very-nonlinear-plot', x.map((xi, i) => [xi, y[i]]), 5);
+import {mutual_information} from "./knn.js";
+document.getElementById("very-nonlinear-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 Mutual information is subtle, though. Just because \(y\) might be a 
@@ -852,19 +887,22 @@ Y &= \sin(X) \\
 
 
 <div id="sine-plot"></div>
+<div id="sine-text"></div>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = x.map((xi) => Math.sin(xi));
 get_2d_mi_chart('sine-plot', x.map((xi, i) => [xi, y[i]]), 5);
+import {mutual_information} from "./knn.js";
+document.getElementById("sine-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 Notice how the samples for \(n_y\) come from multiple different cycles of
 the sine wave. Also, remember that mutual information is **symmetric**. So, 
 even though knowing \(x\) tells us exactly what \(y\) will be, knowing 
-the value of \(y\) doesn't let us pinpoint an exact \(x\). Instead, we know
+the value of \(y\) doesn't let us pinpoint an exact \(x.\) Instead, we know
 \(x \mod 2\pi \), but there are still an infinite number of \(x\)'s for every
-\(y\).
+\(y.\)
 
 Another way to think about this is that, probabilistically, there are lot of different
 ways to get a particular value of \(y\), and so actually getting that value isn't too surprising.
