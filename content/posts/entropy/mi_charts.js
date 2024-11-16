@@ -321,9 +321,9 @@ export function get_3d_mi_chart(id, signals, k=3) {
     let showing_ny = false;
     let showing_nz = false;
 
-    let nx = create_button("$$n_{xy}$$"); 
-    let ny = create_button("$$n_{yz}$$");
-    let nz = create_button("$$n_y$$");
+    let nx = create_button("$$n_{x_1 x_2}$$"); 
+    let ny = create_button("$$n_{x_2 y}$$");
+    let nz = create_button("$$n_{x_2}$$");
 
     function save_camera_position() {
         const scene = elem._fullLayout.scene._scene;

@@ -294,15 +294,6 @@ This just looks like a collection of colourful noise. Instead, we can plot each 
 i.e. \((x_1, x_2, y)_t\) for each timestep \(t\):
 
 <div id="teaser-plot"></div>
-<script type="module">
-import {get_timeseries_chart, get_3d_chart} from "./mi_charts.js";
-let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
-let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
-let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
-get_timeseries_chart("timeseries-plot", [x.slice(0, 500), y.slice(0, 500), z.slice(0, 500)], 
-                                        ['x₁', 'x₂', 'y']);
-get_3d_chart('teaser-plot', x.map((xi, i) => [xi, y[i], z[i]]));
-</script>
 
 This function was chosen because:
 - It's completely deterministic if you know \(X_1\) and \(X_2\).
@@ -342,11 +333,15 @@ two cases.
 
 <div id="teaser-plot-2"></div>
 <script type="module">
-import {get_3d_chart} from "./mi_charts.js";
+import {get_timeseries_chart, get_3d_chart} from "./mi_charts.js";
 let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
 let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
-get_3d_chart('teaser-plot-2', y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]]));
+spawn_plot("timeseries-plot", (id) => get_timeseries_chart(id, 
+                                        [x.slice(0, 500), y.slice(0, 500), z.slice(0, 500)], 
+                                        ['x₁', 'x₂', 'y']));
+spawn_plot("teaser-plot", (id) => get_3d_chart(id, x.map((xi, i) => [xi, y[i], z[i]])));
+spawn_plot("teaser-plot-2", (id) => get_3d_chart(id, y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]])));
 </script>
 
 With our challenge posed, let's start building the tools we need to tackle it!
@@ -372,7 +367,7 @@ very much like to characterise its entropy.
 <div id="normal distribution chart"></div>
 <script type="module">
 import {normal_chart} from "./charts.js";
-normal_chart("normal distribution chart");
+spawn_plot("normal distribution chart", (id) => normal_chart(id));
 </script>
 
 The plot above is the *probability density function*, which we label \(p(x)\).
@@ -383,7 +378,7 @@ distribution that looks like this:
 <div id="normal samples chart"></div>
 <script type="module">
 import {normal_sample_chart} from "./charts.js";
-normal_sample_chart("normal samples chart");
+spawn_plot("normal samples chart", (id) => normal_sample_chart(id));
 </script>
 
 We use the lowercase \(p(x)\) to denote probability *density*, which is 
@@ -472,15 +467,10 @@ we'll have **infinite** entropy.
 
 
 
-<div id="integral_chart" style="display: flex;"></div>
-<div id="button-bar" style="display: flex;">
-<button id="integral_chart -">Fewer Bins</button>
-<button id="integral_chart +">More Bins</button>
-<div id="integral_chart text" style="margin-left: 100px;"></div>
-</div>
+<div id="integral"></div>
 <script type="module">
 import {integral_chart} from "./charts.js";
-integral_chart("integral_chart");
+spawn_plot("integral", (id) => integral_chart(id));
 </script>
 
 ### What Went Wrong?
@@ -662,17 +652,10 @@ swap which distribution we call \(p\) and which we call \(q\).
 This nicely cancels out the \(\Delta x\) term. But does it work?
 
 
-
-<div id="divergence_chart" style="display: flex;"></div>
-<div id="divergence_chart history" style="display: flex;"></div>
-<div id="button-bar dkl" class="button_bar">
-<button id="divergence_chart -" class="mi_buttons">Fewer Bins</button>
-<button id="divergence_chart +" class="mi_buttons">More Bins</button>
-</div>
-<div id="divergence_chart text" style="margin-left: 100px; display: none;"></div>
+<div id="divergence"></div>
 <script type="module">
 import {integral_chart} from "./charts.js";
-integral_chart("divergence_chart", "divergence_chart history");
+spawn_plot("divergence", (id) => integral_chart(id, true));
 </script>
 
 
@@ -783,7 +766,7 @@ So, our two signals are correlated, but not perfectly.
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => Math.sin(xi) + Math.random() * 1);
-get_2d_mi_chart('plot', x.map((xi, i) => [xi, y[i]]), 5);
+spawn_plot("plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 </script>
 
 What's going on is:
@@ -809,6 +792,14 @@ described above.
 Again, this formula is not the most illuminating. We need to pick it apart to really understand what's going on.
 Recall that \(I(X;Y) = 0\) *if and only if* the two signals are uncorrelated. For our formula to equal zero,
 either \(n_x\) or \(n_y\) (or both) would have to be, on average, very close to \(N\), the total number of points. 
+We can actually extend this further. For large \(n\), we have very approximately:
+
+\[
+    \psi(n) \approx 2 \cdot \psi(\sqrt{n})
+\]
+
+In other words, if we have \(N\) points, \(n_x\) and \(n_y\) each only need to be slightly larger than
+\(\sqrt{N}\) for the mutual information to be 0. We'll see a visual representation of this later.
 
 On the other hand, if \(n_x\) and \(n_y\) are small most of the time, the mutual information would be very high. 
 
@@ -840,7 +831,7 @@ Indeed, this gives us a very high mutual information score.
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi);
-get_2d_mi_chart('very-linear-plot', x.map((xi, i) => [xi, y[i]]), 5);
+spawn_plot("very-linear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
 document.getElementById("linear-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
@@ -869,7 +860,7 @@ Y &= \left\{ \begin{array}{ll}
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
-get_2d_mi_chart('very-nonlinear-plot', x.map((xi, i) => [xi, y[i]]), 5);
+spawn_plot("very-nonlinear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
 document.getElementById("very-nonlinear-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
@@ -892,7 +883,7 @@ Y &= \sin(X) \\
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = x.map((xi) => Math.sin(xi));
-get_2d_mi_chart('sine-plot', x.map((xi, i) => [xi, y[i]]), 5);
+spawn_plot("sine-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
 document.getElementById("sine-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
@@ -909,56 +900,98 @@ ways to get a particular value of \(y\), and so actually getting that value isn'
 Each value of \(x\), however, is more surprising. Since information content increases with surprise, 
 we learn more by observing \(x\) than we do \(y\), and so they cannot have maximum mutual information.
 
+Finally, we can *minimize* mutual information by introducing noise that isn't shared between our signals.
+We get a value of 0 when there is nothing in common between \(X\) and \(Y\):
+For example,
+
+\[
+\begin{align}
+X &\sim \mathcal{U}(0, 20) \\
+Y &\sim \mathcal{U}(0, 20) \\
+\end{align}
+\]
+
+<div id="uncorrelated-plot"></div>
+<div id="uncorrelated-text"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(2000).fill(0).map((_) => Math.random() * 20);
+let y = Array(2000).fill(0).map((_) => Math.random() * 20);
+spawn_plot("uncorrelated-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
+import {mutual_information} from "./knn.js";
+document.getElementById("uncorrelated-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+</script>
+
+Like we said earlier, it's clear that neither \(n_x\) nor \(n_y\) are capturing anywhere close to the full
+\(N\) points in the x-y plane. However, because \(x\) and \(y\) are uncorrelated, the amount of points
+falling in each bin is roughly \(\frac{\text{bin width}}{\text{total width}}\). 
+
+Imagine the space our points live in as a square with area \(n^2\). Then, our side-lengths would
+be \(n\). We could divide the square into wide strips of height 1, giving us \(n\)
+strips of area \(n\), or we could divide it into tall strips of width 1, also giving us \(n\)
+strips of area \(n\).
+
+If we just rename \(n^2\) to \(N\), our total number of points, we get the expectation
+that if our points are uniformly distributed in the x-y space, 
+the number of points captured in a strip of height \(\sqrt{N}\) from left to right (or width
+\(\sqrt{N}\) from top-to-bottom) should be \(\sqrt{N}\). 
+
+Earlier, we established that:
+\[
+    \psi(n) \approx 2 \cdot \psi(\sqrt{n})
+\]
+
+Also, we know our equation for mutual information is:
+
+\[
+        I(X;Y) \approx \psi(k) + \psi(N) - \frac{1}{N} \sum_{i=0}^N \psi(n_x + 1) + \psi(n_y + 1)
+\]
+
+So, very roughly, if \(n_x\) and \(n_y\) capture \(\sqrt{N}\) points each (as they would if 
+the points were uniformly distributed along the x and y axes), the mutual information would 
+tend to zero. (\(n_x\) or \(n_y\) need to be slightly larger to cancel out the \(\psi(k)\) 
+term. This could be seen as compensating for the fact that our \(n_x\) and \(n_y\) bins are 
+not infinitely thin, and so capture the same points multiple times). 
+
+For non-uniform, but still uncorrelated, distributions, this analogy still 
+works - we just have to remember that the KNN algorithm
+makes the bins smaller in more dense regions, and larger in less dense regions. So, we could imagine
+this process as the algorithm first clustering or spreading out points so that they 
+are evenly distributed, and then counting the area in each constant-width strip.
+
+
+
 
 <div id="2d-hero-plot"></div>
 <div id="mi-text-2d"></div>
-<script type="module">
-import {get_2d_mi_chart} from "./mi_charts.js";
-let x = Array(4_000).fill(0).map((_) => Math.random() * 15);
-let y = Array(4_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
-let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
-get_2d_mi_chart('2d-hero-plot', x.map((xi, i) => [xi, z[i]]), 5);
-import {mutual_information} from "./knn.js";
-document.getElementById("mi-text-2d").textContent = mutual_information(x.map((x, i) => [x, z[i]]));
-</script>
-
-
 
 <div id="3d-plot"></div>
 <div id="mi-text"></div>
-<script type="module">
-import {get_3d_mi_chart} from "./mi_charts.js";
-let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
-let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
-let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
-get_3d_mi_chart('3d-plot', x.map((xi, i) => [xi, y[i], z[i]]), 5);
-import {partial_mutual_information} from "./knn.js";
-document.getElementById("mi-text").textContent = partial_mutual_information(x, z, y);
-</script>
-
-
 
 <div id="3d-plot-2"></div>
 <div id="mi-text-2"></div>
-<script type="module">
-import {get_3d_mi_chart} from "./mi_charts.js";
-let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
-let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
-let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
-get_3d_mi_chart('3d-plot-2', x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5);
-import {partial_mutual_information} from "./knn.js";
-document.getElementById("mi-text-2").textContent = partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]));
-</script>
 
 <div id="3d-plot-3"></div>
 <div id="mi-text-3"></div>
+
+
 <script type="module">
-import {get_3d_mi_chart} from "./mi_charts.js";
+import {get_2d_mi_chart, get_3d_mi_chart} from "./mi_charts.js";
 let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
 let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
-get_3d_mi_chart('3d-plot-3', x.map((xi, i) => [xi, xi**2, z[i]]), 5);
-import {partial_mutual_information} from "./knn.js";
+//
+import {mutual_information, partial_mutual_information} from "./knn.js";
+spawn_plot("2d-hero-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, z[i]]), 5));
+document.getElementById("mi-text-2d").textContent = mutual_information(x.map((x, i) => [x, z[i]]));
+// 
+spawn_plot("3d-plot", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[i], z[i]]), 5));
+document.getElementById("mi-text").textContent = partial_mutual_information(x, z, y);
+//
+spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5));
+document.getElementById("mi-text-2").textContent = partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]));
+//
+spawn_plot("3d-plot-3", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, xi**2, z[i]]), 5));
 document.getElementById("mi-text-3").textContent = partial_mutual_information(x, z, x.map((x) => x**2));
 </script>
 

@@ -86,13 +86,36 @@ export function normal_sample_chart(id) {
     Plotly.newPlot(id, [trace2], {...auto_sizing, ...layout}, DEFAULT_CONFIG);
 }
 
-export function integral_chart(id, divergence=null) {
-    let elem = document.getElementById(id);
-    let text_elem = document.getElementById(id + ' text');
-    
-    let plus = document.getElementById(`${id} +`);
-    let minus = document.getElementById(`${id} -`);
+export function integral_chart(id, divergence=false) {
+    // Set up all the sub-elements because these 
+    // need to be created/torn down on scroll.
+    let container = document.getElementById(id);
+    let elem = container.appendChild(document.createElement("div"));
+    elem.id = id + " chart";
 
+    if (divergence) {
+        let history = container.appendChild(document.createElement("div"));
+        history.id = id + " history";
+    }
+
+    let button_bar = container.appendChild(document.createElement("div"));
+    button_bar.id = id + " button-bar";
+    button_bar.classList.add("button_bar");
+
+    let minus = button_bar.appendChild(document.createElement("button"));
+    minus.id = id + " -";
+    minus.classList.add("mi_buttons");
+    minus.textContent = "Fewer Bins";
+
+    let plus = button_bar.appendChild(document.createElement("button"));
+    plus.id = id + " +";
+    plus.classList.add("mi_buttons");
+    plus.textContent = "More Bins";
+
+    let text_elem = container.appendChild(document.createElement("div"));
+    text_elem.id = id + " text";
+    text_elem.style = "margin-left: 100px;" + (divergence ? " display: none;" : "");
+    
     let n_bars = 2;
     let min_bars = 2;
     let max_bars = 2**9;
@@ -242,7 +265,7 @@ export function integral_chart(id, divergence=null) {
             layout.annotations = [];
         }
 
-        Plotly.react(id, [trace2, bar, scatter, trace3, bar2, scatter2, arrow], layout, DEFAULT_CONFIG);
+        Plotly.react(elem.id, [trace2, bar, scatter, trace3, bar2, scatter2, arrow], layout, DEFAULT_CONFIG);
         // Update the text elements, too
         history.push({
             n: n_bars,
@@ -337,7 +360,7 @@ export function integral_chart(id, divergence=null) {
                 margin: {t: 0, l: 0, r: 0, b: 0},
             }
 
-            Plotly.newPlot(divergence, traces, {...auto_sizing2, ...layout2}, DEFAULT_CONFIG);
+            Plotly.newPlot(id + " history", traces, {...auto_sizing2, ...layout2}, DEFAULT_CONFIG);
         }
         if (MathJax) {
             MathJax.typeset();
@@ -347,7 +370,7 @@ export function integral_chart(id, divergence=null) {
         if (n_bars >= max_bars) { plus.style.opacity = 0.2; } else { plus.style.opacity = 1;}
     };
 
-    Plotly.newPlot(id, [trace2], {...auto_sizing, ...layout}, DEFAULT_CONFIG);
+    Plotly.newPlot(elem.id, [trace2], {...auto_sizing, ...layout}, DEFAULT_CONFIG);
     draw_bars(n_bars);
     minus.addEventListener("click", (e) => {
         n_bars = Math.max(min_bars, Math.ceil(n_bars / 2));
