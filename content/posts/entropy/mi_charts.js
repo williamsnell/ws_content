@@ -690,7 +690,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
     };
 }
 
-export function get_3d_chart(id, signals) {
+export function get_3d_chart(id, signals, axis_labels) {
     let elem = document.getElementById(id); 
 
     let joint_samples = normalize(signals);
@@ -722,6 +722,12 @@ export function get_3d_chart(id, signals) {
     layout.scene.yaxis.range = [mins[1], maxs[1]];
     layout.scene.zaxis.range = [mins[2], maxs[2]];
     layout.scene.aspectmode = 'cube';
+
+    if (axis_labels) {
+        layout.scene.xaxis.title = {text: axis_labels[0]};
+        layout.scene.yaxis.title = {text: axis_labels[1]};
+        layout.scene.zaxis.title = {text: axis_labels[2]};
+    }
 
     Plotly.newPlot(elem.id, [points_trace], layout, DEFAULT_CONFIG);
 }

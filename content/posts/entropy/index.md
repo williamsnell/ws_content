@@ -83,7 +83,7 @@ called Shannons in this context).*
 #### Why do we need to take the log? 
 
 Let's think about the lottery. If we had a winning ticket (with probability 
-\(P = \frac{1}{20}\)), we only need to be sent a single bit to know that we won.
+\(P = \frac{1}{20}),\) we only need to be sent a single bit to know that we won.
 When we get that message, we immediately know twenty things:
 - the 1 winning number
 - the 19 numbers that did not win
@@ -113,7 +113,7 @@ This might seem too good to be true - greater than perfect compression of more t
 into a single bit message! Of course, this isn't the case.
 
 The winning lottery ticket carries so much information **because** it is
-so unlikely. Similarly, a losing lottery ticket tells us very little **because** it's such a common occurence.
+so unlikely. Similarly, a losing lottery ticket tells us very little **because** it's such a common occurrence.
 If you can internalize this notion - rare messages carry more information - you can understand entropy
 intuitively.
 
@@ -126,7 +126,7 @@ the jump from information content to entropy is almost trivial. We can define en
         H(X) := \mathbb{E}[I(X)]
 \]
 
-\(\mathbb{E}\) is just the expected value - the mean - and \(I(X)\) is what we defined before, 
+\(\mathbb{E}\) is the expected value - the mean - and \(I(X)\) is what we defined before, 
 the information
 content. So the entropy \(H(X)\) is simply the average amount of information contained in all the 
 possible messages we could receive.
@@ -167,13 +167,13 @@ the entropy of the set of messages we could receive is:
 There are a few key takeaways here:
 
 1. We're receiving, on average, a lot less than 1 bit of information per message. 
-Our communication scheme is wasting most of its bandwidth.
+Our communication scheme is wasting most of its capacity.
 2. Roughly 75% of the entropy comes from the rare *win* message. The information
 carried by each *lose* message is much, much lower.
 
 Finally, let's introduce the standard formula for entropy. By now, it shouldn't be 
 too intimidating. Remember, all it says is that entropy is the average information
-content carried by a message.
+content carried by all the messages we could send/receive:
 
 \[
             H(X) := - \sum_{x\in X} p(x) \log_2 {p(x)}
@@ -201,7 +201,7 @@ Then,
 
 In other words, our 1-bit channel has an entropy of 1 bit *if* the two messages 0 and 1 are 
 equally likely. If one message is more likely than another, our entropy would decrease, meaning
-we would be transferring less useful information per bit.
+we would be transferring less useful information per bit, on average.
 
 Without proving this, we can show its consequences. Let's imagine our 1-bit channel now
 only ever sends the message *1*. If you will always (as in *always* always) receive the same message, you can't
@@ -214,7 +214,7 @@ example, we could make the winning message a *0* and the losing message a *1*, a
 At no point does the actual message being sent factor into the calculation. Instead, all that matters
 when calculating information content and entropy is *probability*.
 
-This consequence also means that we are free to waste gratuitous amounts of information, if we want to,
+This consequence also means that we are free to waste gratuitous amounts of capacity, if we want to,
 based on how we *encode* our messages. For example, we could send the strings "WIN" and "LOSE", 
 using 3 bytes (24 bits) and 4 bytes (32 bits) respectively. Our channel would still only have 
 \(\approx 0.286\) bits of entropy, though.
@@ -341,7 +341,8 @@ spawn_plot("timeseries-plot", (id) => get_timeseries_chart(id,
                                         [x.slice(0, 500), y.slice(0, 500), z.slice(0, 500)], 
                                         ['x₁', 'x₂', 'y']));
 spawn_plot("teaser-plot", (id) => get_3d_chart(id, x.map((xi, i) => [xi, y[i], z[i]])));
-spawn_plot("teaser-plot-2", (id) => get_3d_chart(id, y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]])));
+spawn_plot("teaser-plot-2", (id) => get_3d_chart(id, y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]]), 
+                                        ['q', 'x₂', 'y']));
 </script>
 
 With our challenge posed, let's start building the tools we need to tackle it!

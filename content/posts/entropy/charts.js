@@ -163,7 +163,6 @@ export function integral_chart(id, divergence=false) {
 
         const midpoint = parseInt(n_bars/2);
 
-        let x_bar = x_discrete.map((x) => x + dx/2);
         let y = x_discrete.map((x) => normal_distribution(x, 0, 1));
 
         var bar = {
@@ -265,7 +264,7 @@ export function integral_chart(id, divergence=false) {
             layout.annotations = [];
         }
 
-        Plotly.react(elem.id, [trace2, bar, scatter, trace3, bar2, scatter2, arrow], layout, DEFAULT_CONFIG);
+        Plotly.react(elem, [trace2, bar, scatter, trace3, bar2, scatter2, arrow], layout);
         // Update the text elements, too
         history.push({
             n: n_bars,
@@ -363,7 +362,7 @@ export function integral_chart(id, divergence=false) {
             Plotly.newPlot(id + " history", traces, {...auto_sizing2, ...layout2}, DEFAULT_CONFIG);
         }
         if (MathJax) {
-            MathJax.typeset();
+            MathJax.typeset([text_elem]);
         };
 
         if (n_bars <= min_bars) { minus.style.opacity = 0.2; } else { minus.style.opacity = 1;}
