@@ -1,7 +1,7 @@
 baseURL = 'https://willsnell.com/'
 languageCode = 'en-nz'
 title = "willsnell.com"
-theme = ['hugo-video', 'terminal']
+theme = ['terminal', 'hugo-video']
 paginate = 5
 enableRobotsTXT = true
 

@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>Entropy :: willsnell</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content=" Information theory - and in particular, entropy - can be quite an intimidating topic. It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, you can learn and use entropy!
+There are three main sections to this article. If you already have a solid grasp on one of them, feel free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.
+" />
+<meta name="keywords" content=", " />
+
+  <meta name="robots" content="noodp" />
+
+<link rel="canonical" href="https://willsnell.com/posts/entropy/" />
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="https://willsnell.com/styles.css">
+
+
+
+
+
+
+
+  <link rel="shortcut icon" href="https://willsnell.com/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="https://willsnell.com/img/theme-colors/orange.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Entropy">
+<meta property="og:description" content=" Information theory - and in particular, entropy - can be quite an intimidating topic. It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, you can learn and use entropy!
+There are three main sections to this article. If you already have a solid grasp on one of them, feel free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.
+" />
+<meta property="og:url" content="https://willsnell.com/posts/entropy/" />
+<meta property="og:site_name" content="willsnell" />
+
+  
+  
+  <meta property="og:image" content="https://willsnell.com/">
+
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+
+
+  <meta property="article:published_time" content="2024-11-01 13:45:34 &#43;1300 NZDT" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      displayMath: [['\\[', '\\]'], ['$$', '$$']],  
+      inlineMath: [['\\(', '\\)']]                  
+    }
+  };
+</script>
+
+
+  
+
+</head>
+<body class="orange">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    will_snell
+  </div>
+</a>
+
+    </div>
+    
+      <ul class="menu menu--mobile">
+  <li class="menu__trigger">Menu&nbsp;▾</li>
+  <li>
+    <ul class="menu__dropdown">
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+      
+    </ul>
+  </li>
+</ul>
+
+    
+    
+  </div>
+  
+    <nav class="navigation-menu">
+  <ul class="navigation-menu__inner menu--desktop">
+    
+      
+        
+          <li><a href="/about" >About</a></li>
+        
+      
+      
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<article class="post">
+  <h1 class="post-title">
+    <a href="https://willsnell.com/posts/entropy/">Entropy</a>
+  </h1>
+  <div class="post-meta"><time class="post-date">2024-11-01</time><span class="post-reading-time">34 min read (7239 words)</span></div>
+
+  
+  
+
+
+  
+
+  <div class="post-content"><div>
+        <script src="./mi_charts.js" type="module"></script>
+<script src="./knn.js" type="module"></script>
+<script src="./observer.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link href="./charts.css" rel="stylesheet">
+<p>Information theory - and in particular, entropy - can be quite an intimidating topic.
+It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, you can
+learn and use entropy!</p>
+<p>There are three main sections to this article. If you already have a solid grasp on one of them, feel
+free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.</p>
+<h1 id="table-of-contents">Table of Contents<a href="#table-of-contents" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<ol>
+<li><a href="/posts/entropy/#what-is-entropy">What is Entropy?</a> - If you&rsquo;re new to information theory</li>
+<li><a href="/posts/entropy/#entropy-for-continuous-numbers">Entropy for Continuous Numbers</a> - If terms like &ldquo;differential entropy&rdquo;
+aren&rsquo;t familiar.</li>
+<li><a href="/posts/entropy/#mutual-information">Mutual Information and Conditional Mutual Information</a> - Graphical depictions of
+mutual information and variants thereof, intended to build an intuition for why and how these
+measures work.</li>
+</ol>
+<h1 id="what-is-entropy">What is Entropy?<a href="#what-is-entropy" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>So let&rsquo;s dive right in&hellip; by playing the lottery!</p>
+<p>Each round, you get to pick one number on the ticket below:</p>
+<div style="width: 100%; margin: auto; margin-bottom: -200px;">
+    <object id="ticket" type="image/svg+xml" data="lottery_ticket.svg" height="500px"></object>
+    <div id="ticket numbers" style="position: relative; top: -340px; left: 86px; 
+        width: 202px; height: 182px; display: flex; flex-wrap: wrap;"></div>
+</div>
+<p>Once you&rsquo;ve picked the number, you can get the results of
+the lottery on the machine below.</p>
+<p>There are two possible outcomes,
+and so I only need to send you a single <em>bit</em> of information:</p>
+<ul>
+<li>1, if your ticket is a winner,</li>
+<li>0, otherwise</li>
+</ul>
+<p>It&rsquo;s tiiiiiimmmmmme to play the lottery! Each press of the button below
+will pick a <strong>new random number</strong>, and give you the results.</p>
+<p><object id="machine" type="image/svg+xml" data="lottery_machine.svg" style="margin-bottom: -80px"></object></p>
+<script src="./lottery.js"></script>
+<p>Did you win?</p>
+<p>Chances are, you didn&rsquo;t. You can keep playing until you do, but be warned,
+it might take a while.</p>
+<p>It might seem like each time you played, I would send you the same amount of information. Either you won or you lost,
+and both times you learned a single bit of information.</p>
+<p><em>But that&rsquo;s not the whole story.</em> To see why, let&rsquo;s modify the game slightly. This time,
+I want you to tell me <strong>the winning number</strong> for each round.
+Is this possible? Most of the time - no. If your ticket lost, you can eliminate
+1 of the 20 numbers, but there&rsquo;s still 19 to pick from!</p>
+<p><strong>However</strong>, if you <strong>won</strong>, you immediately know which number was picked. More
+than that, you also know all the 19 numbers that weren&rsquo;t picked!</p>
+<p>The key intuition for understanding entropy is exactly this: the <strong>more likely</strong> a piece of information
+is, the <strong>less information</strong> it carries. Formally, we define <strong>Information Content</strong>, sometimes called <em>surprisal</em>, as \(\frac{1}{P}\),
+where \(P\) is the probability of the event happening. Actually, we need to take the <em>log</em> of this term
+to get the exact definition of Information Content:</p>
+\[
+\begin{align}
+            I(x) &= \log_2{\frac{1}{P(x)}} \\
+                 &= -\log_2{P(x)}
+\end{align}
+\]<p><em>Where \(P(x)\) is the probability of event \(x\) occuring, and \(I(x)\) is measured in bits (sometimes
+called Shannons in this context).</em></p>
+<h4 id="why-do-we-need-to-take-the-log">Why do we need to take the log?<a href="#why-do-we-need-to-take-the-log" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>Let&rsquo;s think about the lottery. If we had a winning ticket (with probability
+\(P = \frac{1}{20}),\) we only need to be sent a single bit to know that we won.
+When we get that message, we immediately know twenty things:</p>
+<ul>
+<li>the 1 winning number</li>
+<li>the 19 numbers that did not win</li>
+</ul>
+<p>If I wanted to just send you the winning number directly, and we were using binary,
+we&rsquo;d need somewhere between 4 bits (\(2^4 = 16\))
+and 5 bits (\(2^5 = 32\)) for me to specify which number has won.</p>
+<p>So why do we take the log? Because it takes the <strong>number</strong> of things we&rsquo;ve learned, and
+converts it into the <em>bits of information</em> we&rsquo;d need to represent that many things.</p>
+<p>In our example, the information content of a winning ticket is:</p>
+\[
+\begin{align}
+        I(\text{win}) &= \log_2{\frac{1}{1/20}} \\
+                      &\approx 4.322\;\text{bits}
+\end{align}
+\]<p>So in the winning case, I send you a 1-bit message, and with it you&rsquo;ve learned about 4.32 bits
+of <em>information</em>.</p>
+<h3 id="a-free-lunch">A Free Lunch?<a href="#a-free-lunch" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>This might seem too good to be true - greater than perfect compression of more than 4 bits of information
+into a single bit message! Of course, this isn&rsquo;t the case.</p>
+<p>The winning lottery ticket carries so much information <strong>because</strong> it is
+so unlikely. Similarly, a losing lottery ticket tells us very little <strong>because</strong> it&rsquo;s such a common occurrence.
+If you can internalize this notion - rare messages carry more information - you can understand entropy
+intuitively.</p>
+<h2 id="defining-entropy">Defining Entropy<a href="#defining-entropy" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>We&rsquo;ve talked about <em>information content</em> so far, but I promised to explain entropy. Fortunately,
+the jump from information content to entropy is almost trivial. We can define entropy as</p>
+\[
+        H(X) := \mathbb{E}[I(X)]
+\]<p>\(\mathbb{E}\) is the expected value - the mean - and \(I(X)\) is what we defined before,
+the information
+content. So the entropy \(H(X)\) is simply the average amount of information contained in all the
+possible messages we could receive.</p>
+<p>How do we calculate the average? After all, some messages are much more likely than others. Easy!
+We just multiply the <em>information</em> of each message by the <em>likelihood</em> of receiving that message.</p>
+<p>Let&rsquo;s calculate the entropy of the single-bit messages I send you, communicating
+the results of the lottery:</p>
+\[
+        H(\text{Lottery}) = P(\text{win}) I(\text{win}) + P(\text{lose}) I(\text{lose}) \\
+\]<p>Remember from before, that:
+</p>
+\[
+                    I(x)  = \log_2{\frac{1}{P(x)}} = -\log_2{P(x)} \\
+\]<p>Therefore,
+</p>
+\[
+H(\text{Lottery}) = -P(\text{win}) \log_2{P(\text{win})} \\
+                    - P(\text{lose}) \log_2{P(\text{lose})}
+\]<p>We know that \(P(\text{win}) = \frac{1}{20}\) and \(P(\text{lose}) = \frac{19}{20}\), so
+the entropy of the set of messages we could receive is:</p>
+\[
+\begin{align}
+            H(\text{Lottery}) &= -\frac{1}{20} \log_2\left(\frac{1}{20}\right) 
+            -\frac{19}{20}\log_2\left(\frac{19}{20}\right) \\
+                              &\approx 0.216... +\;0.070... \\
+                              &\approx 0.286...
+\end{align}
+\]<p>There are a few key takeaways here:</p>
+<ol>
+<li>We&rsquo;re receiving, on average, a lot less than 1 bit of information per message.
+Our communication scheme is wasting most of its capacity.</li>
+<li>Roughly 75% of the entropy comes from the rare <em>win</em> message. The information
+carried by each <em>lose</em> message is much, much lower.</li>
+</ol>
+<p>Finally, let&rsquo;s introduce the standard formula for entropy. By now, it shouldn&rsquo;t be
+too intimidating. Remember, all it says is that entropy is the average information
+content carried by all the messages we could send/receive:</p>
+\[
+            H(X) := - \sum_{x\in X} p(x) \log_2 {p(x)}
+\]<p><em>Where \(x \in X\) just means all the messages \(x\) in the collection of messages that
+could be transmitted, \(X\). In the lottery example, \(X = [0, 1]\).</em></p>
+<h3 id="another-entropy-example">Another Entropy Example<a href="#another-entropy-example" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>To really solidify the concept, lets look at a different binary channel. We can
+receive the message 0 or 1, like in the lottery. However, let&rsquo;s say that both
+messages are equally likely: \(P(0) = P(1) = \frac{1}{2}\).</p>
+<p>Then,</p>
+\[
+\begin{align}
+            H(X) &= -\left(\frac{1}{2}\log_2\left(\frac{1}{2}\right) + \frac{1}{2}\log_2\left(\frac{1}{2}\right)\right) \\
+                 &= -\log_2\left(\frac{1}{2}\right) \\
+                 &= \log_2 (2) \\
+                 &= 1
+\end{align}
+\]<p>In other words, our 1-bit channel has an entropy of 1 bit <em>if</em> the two messages 0 and 1 are
+equally likely. If one message is more likely than another, our entropy would decrease, meaning
+we would be transferring less useful information per bit, on average.</p>
+<p>Without proving this, we can show its consequences. Let&rsquo;s imagine our 1-bit channel now
+only ever sends the message <em>1</em>. If you will always (as in <em>always</em> always) receive the same message, you can&rsquo;t
+glean anything useful from it. The entropy of this situation would be 0.</p>
+<h2 id="consequences">Consequences<a href="#consequences" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>What&rsquo;s interesting about entropy is that it says nothing about the <em>contents</em> of the message. In the lottery
+example, we could make the winning message a <em>0</em> and the losing message a <em>1</em>, and nothing would change.
+At no point does the actual message being sent factor into the calculation. Instead, all that matters
+when calculating information content and entropy is <em>probability</em>.</p>
+<p>This consequence also means that we are free to waste gratuitous amounts of capacity, if we want to,
+based on how we <em>encode</em> our messages. For example, we could send the strings &ldquo;WIN&rdquo; and &ldquo;LOSE&rdquo;,
+using 3 bytes (24 bits) and 4 bytes (32 bits) respectively. Our channel would still only have
+\(\approx 0.286\) bits of entropy, though.</p>
+<h4 id="compression">Compression<a href="#compression" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>For our exact case (communicating the results of a lottery), our 1-bit channel is actually optimal.
+We need to send something each time the lottery is drawn - otherwise, how would the receiver know
+that they&rsquo;d received the results? - and the smallest amount of information we can send is a single bit.</p>
+<p>This encoding scheme is quite suboptimal for our other problem, though: if we want to know
+what number was drawn, we&rsquo;d have to receive up to 19 losing bits (or 1 winning bit) before we
+were certain we knew the winning number. If we wanted to optimize our scheme for transmission of the winning
+number, we could use a 5 bit scheme <em>(or perhaps a variable-length 4 bit / 5 bit scheme)</em> to
+just transmit the number directly. But if our receiver is just going to compare the winning number
+against the number on the ticket to see if we&rsquo;ve won, we&rsquo;ve wasted 3 or 4 bits.</p>
+<p>This is an example of the <a href="https://en.wikipedia.org/wiki/Pigeonhole_principle">Pigeonhole principle</a>:
+any time we losslessly compress messages on a channel, some kinds of messages get longer, and others get
+shorter.</p>
+<p><em>(It&rsquo;s called the Pigeonhole principle because if you have <strong>n</strong> pigeonholes, you can&rsquo;t put <strong>n+1</strong> messages
+in them without putting at least two messages in the same hole. [Pigeonholes are a kind of
+mailbox, although I like the idea of literal pigeons better.] In our case, if we only have 2 messages
+and 20 possible winning numbers, 19 of our numbers end up in one kind of message, and only one ends up in the other.)</em></p>
+<h1 id="practical-applications">Practical Applications<a href="#practical-applications" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Information Theory is widely used for analyzing all kind of communication. In his seminal paper -
+<a href="https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf">A Mathematical Theory of Communication</a> -
+Claude Shannon applied the ideas to telecommunication (at the time, the telegraph and the teletype were dominant), artificial
+languages <em>(sequences of characters such as ABBDABCD)</em>,
+as well as to communication in human languages like English.</p>
+<p>Like in our lottery example, real messages written in human language
+have <em>much less entropy</em> than could theoretically be transmitted with the same set of symbols (for example, the English alphabet.)
+We can think of this as <em>redundancy</em> - what fraction of the letters in a message we could delete
+before the message lost its original meaning.</p>
+<p>As Shannon wrote,</p>
+<blockquote>
+<p>The redundancy of a language is related to the existence of crossword puzzles. If the redundancy is
+zero any sequence of letters is a reasonable text in the language and any two-dimensional array of letters
+forms a crossword puzzle. If the redundancy is too high the language imposes too many constraints for large
+crossword puzzles to be possible.</p>
+</blockquote>
+<p>For this article, however, we will focus on <em>signal processing</em>. My claim is that entropy can be explained
+visually, and that this visualization provides good intuitive insights. My hope is that
+bringing the underlying geometry to the forefront will make it clearer what is going on than
+bombarding you with maths would.</p>
+<p>To motivate what would otherwise
+be a very abstract journey, we will examine the function \(Y\). Our goal is to try and determine
+whether \(Y\) is related to \(X_1\) and \(X_2\), using only
+samples from \(X_1\), \(X_2\), and \(Y\). We define these signals as such:</p>
+\[
+\begin{align}
+            X_1 &\sim \mathcal{U}(0, 20) \\
+            X_2 &\sim \mathcal{U}(-10, 10) \\
+            Y &= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
+\end{align}
+\]<p>Where \(\mathcal{U}(a, b)\) denotes a uniform distribution between a and b.</p>
+<p>\(Y\) is a deterministic function of \(X_1\) and \(X_2\), and so we should be able to figure
+out, from samples of the three distributions, that they are all correlated.</p>
+<p>If we treat our three distributions as timeseries signals, we can sample from them and
+plot their values over time:</p>
+<div id="timeseries-plot"></div>
+<p>This just looks like a collection of colourful noise. Instead, we can plot each trio of samples as a point in space,
+i.e. \((x_1, x_2, y)_t\) for each timestep \(t\):</p>
+<div id="teaser-plot"></div>
+<p>This function was chosen because:</p>
+<ul>
+<li>It&rsquo;s completely deterministic if you know \(X_1\) and \(X_2\).</li>
+<li>It&rsquo;s decidedly non-linear. There are periodic functions, terms
+multiplied together, but not a linear term in sight. It&rsquo;s a mess!</li>
+<li>The underlying distributions are not normally distributed.
+A lot of successful techniques assume underlying normal distributions,
+but we want a technique that doesn&rsquo;t <em>require</em> those assumptions hold
+to be accurate.</li>
+<li>It looks a bit like a sideways christmas-tree on the \(x_1-y\) plane, and a bit like a bow-tie on
+the \(x_2-y\) plane.</li>
+</ul>
+<p>I&rsquo;m not completely joking with the last point -
+our human brains can <em>easily</em> tell that \(Y\), \(X_1\), and \(X_2\) are related. There&rsquo;s
+so much structure in the plot! So many patterns appear before us as we explore the
+space.</p>
+<p>Despite this, many common techniques completely fail to detect these patterns.
+If we were to use linear analysis techniques - for example, the <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a> -
+we would get results telling us that \(Y\) is uncorrelated to \(X_1\) and \(X_2\), because
+the slopes of \(Y\) against \(X_1\), \(X_2\), or both are on average flat.</p>
+<p>Similary, <a href="https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient">Spearman&rsquo;s rank correlation coefficient</a>
+won&rsquo;t help us because \(Y\) is not monotonic.</p>
+<p>It&rsquo;s also important that our method distinguishes between the actual generating source (e.g. \(X_1\)) and
+an identically distributed but independent source. For example, we could define an independent distribution
+with exactly the same <em>distribution</em> as \(X_1\):</p>
+\[
+Q \sim \mathcal{U}(0, 20)
+\]<p>If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure.
+Whatever method we end up with, it should be able to distinguish between these
+two cases.</p>
+<div id="teaser-plot-2"></div>
+<script type="module">
+import {get_timeseries_chart, get_3d_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random());
+spawn_plot("timeseries-plot", (id) => get_timeseries_chart(id, 
+                                        [x.slice(0, 500), y.slice(0, 500), z.slice(0, 500)], 
+                                        ['x₁', 'x₂', 'y']));
+spawn_plot("teaser-plot", (id) => get_3d_chart(id, x.map((xi, i) => [xi, y[i], z[i]])));
+spawn_plot("teaser-plot-2", (id) => get_3d_chart(id, y.map((yi, i) => [x[(i+1)%x.length], yi, z[i]]), 
+                                        ['q', 'x₂', 'y']));
+</script>
+<p>With our challenge posed, let&rsquo;s start building the tools we need to tackle it!</p>
+<h1 id="entropy-for-continuous-numbers">Entropy for Continuous Numbers<a href="#entropy-for-continuous-numbers" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Entropy as defined earlier is quite restrictive:</p>
+<ul>
+<li>We need to know all the possible messages that could be transmitted.</li>
+<li>We need to know the probabilities of receiving each possible message.</li>
+</ul>
+<p>In this section, we will extend these concepts into signals made up of continuous
+numbers.</p>
+<h2 id="a-refresher-on-continuous-probability-distributions">A Refresher on Continuous Probability Distributions<a href="#a-refresher-on-continuous-probability-distributions" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>While some probability distributions are discrete - the outcomes of
+rolling dice, our lottery example from before, etc. - a lot of situations call for
+continuous probability distributions.</p>
+<p>As an example, let&rsquo;s look at the normal distribution.
+This is arguably the most useful distribution in statistics, and we&rsquo;d
+very much like to characterise its entropy.</p>
+<div id="normal distribution chart"></div>
+<script type="module">
+import {normal_chart} from "./charts.js";
+spawn_plot("normal distribution chart", (id) => normal_chart(id));
+</script>
+<p>The plot above is the <em>probability density function</em>, which we label \(p(x)\).
+Points are more likely to be sampled from regions of high \(p(x)\) than from low
+\(p(x)\). If we sampled 100 points from this distribution, we&rsquo;d get a
+distribution that looks like this:</p>
+<div id="normal samples chart"></div>
+<script type="module">
+import {normal_sample_chart} from "./charts.js";
+spawn_plot("normal samples chart", (id) => normal_sample_chart(id));
+</script>
+<p>We use the lowercase \(p(x)\) to denote probability <em>density</em>, which is
+different to the probability for discrete events, \(P(X)\). With a probability
+density (and continuous numbers), the likelihood of sampling
+at any exact value of \(x\) is zero. Instead, we integrate
+across some range to get the likelihood of a sample falling in that <em>range</em>.</p>
+<p>For example, with our normal distribution, the likelihood of a point being greater than the mean (\(\mu\))
+is 50%. Formally (for a normal distribution),</p>
+\[
+    \int_\mu^\infty p(x) dx = 0.5
+\]<p>Finally, the integral under the curve of \(p(x)\) from \(-\infty\) to \(\infty\) must equal
+exactly 1. That is, when we sample from the distribution, we have to get a point <em>somewhere</em>.</p>
+<h2 id="making-things-discrete">Making Things Discrete<a href="#making-things-discrete" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>We want a definition of entropy that works for continuous distributions. What we currently
+have is a definition for discrete events:</p>
+\[
+    H(X) = -\sum_{x \in X} P(x) \log_2{P(x)} \\
+\]<p>From our definitions above, we know that we can use the integral of probability density \(p(x)\)
+to calculate the likelihood of a point falling in some range (a, b). That is,</p>
+\[
+    P(a \leq x \leq b) = \int_a^b p(x) dx       
+\]<p>
+<em>Here we use the capital \(P\) on the left side because it is an actual probability.</em></p>
+<p>So, we can approximate a discrete distribution by dividing our continuous interval into
+a number of <em>bins</em>, and calculating the probabilities of each bin. As we increase the number
+of bins, we should get a better and better approximation of the <em>continous</em> entropy, whatever
+that is. If we divide our domain into \(N\) bins, and the
+width of each bin is \(\Delta x\), then we are going to calculate all the information content between
+all \((x_i, x_i + \Delta x)\) for i from 0 to \(N\).</p>
+<p>Writing this statement in maths, we are saying:</p>
+\[
+\begin{align}
+    H(X) &= -\sum_{x \in X} P(x) \log_2 P(x) \\
+         &= -\sum_{i = 0}^{N} \left(\int_{x_i}^{x_i+\Delta x} p(x) dx\right)\:\log_2 \left(\int_{x_i}^{x_i + \Delta x} p(x) dx\right) \\
+\end{align}
+\]<p>Finally, instead of actually computing the exact integral, we can approximate it with a
+<a href="https://en.wikipedia.org/wiki/Riemann_sum">Riemann sum</a>. A Reimann sum is quite simple:
+we draw a rectangle from 0 up to a point on the function, \(f(x)\).
+The area of this rectangle is \(f(x) \cdot \Delta x\), where
+\(\Delta x\) is the width of the rectangle.</p>
+<p>As we make these rectangles narrower <em>(under some
+conditions)</em>, our approximation to the integral should get better and better. In other words,
+as our rectangle gets narrower (i.e. \(\lim_{\Delta x \rightarrow 0}\)), the area of each rectangle
+approaches the integral:</p>
+\[
+        \lim_{\Delta x \rightarrow 0}\int_{x}^{x + \Delta x} f(x)\:dx = \Delta x \cdot f(x)
+\]<p>With all our tools assembled, we can now practically compute the entropy of our normal distribution.
+Substituting in the Reimann approximation to the integral, we have:</p>
+\[
+\begin{align}
+    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 p(x_i) \Delta x \\
+\end{align}
+\]<p>Play around with the chart below, where we carry out this exact procedure..
+You should see that as we increase the number of bins, the area under the curve, \(\int_{-\infty}^{\infty} p(x) dx\),
+rapidly converges to its true value of \(\approx 1\). This is just our earlier statement, that all of our
+points must fall between \((-\infty, \infty)\).</p>
+<p>You might also notice that the entropy \(H(X)\) keeps increasing as the bins get narrower. Worryingly,
+this value never converges - it just keeps increasing. If we take the limit of \(\Delta x \rightarrow 0\),
+we&rsquo;ll have <strong>infinite</strong> entropy.</p>
+<div id="integral"></div>
+<script type="module">
+import {integral_chart} from "./charts.js";
+spawn_plot("integral", (id) => integral_chart(id));
+</script>
+<h3 id="what-went-wrong">What Went Wrong?<a href="#what-went-wrong" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>This result isn&rsquo;t an issue with any of our assumptions. Instead, we can tease what&rsquo;s going on directly out of the maths.</p>
+<p>Let&rsquo;s go back to our continous entropy formula:</p>
+\[
+\begin{align}
+    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right)\\
+\end{align}
+\]<p>Looking at the last term, and remembering that \(\log(a \cdot b) = \log(a) + \log(b)\), we can
+write it as:</p>
+\[
+\begin{align}
+    \log_2 p(x_i) \Delta x = \log_2 p(x_i) + \log_2 \Delta x \\
+\end{align}
+\]<p>Substituting this into the entropy formula,</p>
+\[
+\begin{align}
+    H(X) &= \lim_{\Delta x \rightarrow 0} - \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \\
+         &= -\lim_{\Delta x \rightarrow 0} \left(\
+            \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \sum_{i=0}^N p(x_i) \Delta x \log_2 \Delta x \right) 
+\end{align}
+\]<p>In the last line, we split the sum into two sums.
+Because \(\log_2 \Delta x\) is a constant, we can bring it out to the front of the second sum, giving us:</p>
+\[
+\begin{align}
+    H(X) &= -\lim_{\Delta x \rightarrow 0} \left(\
+            \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \log_2 \Delta x \sum_{i=0}^N p(x_i) \Delta x \right) 
+\end{align}
+\]<p>But wait! Remembering our Riemann sum approximation, and remembering that the integral of the probability
+density function from \((-\infty, \infty)\) must equal 1,
+we have:
+</p>
+\[
+\begin{align}
+        p(x) \Delta x &\approx \int_x^{x + \Delta x} p(x) dx \\
+    \lim_{\Delta x \rightarrow 0} \sum_{i=0}^N  p(x_i) \Delta x &= 1 \\
+\end{align}
+\]<p>Substituting this term into the entropy formula, we simplify the second term and rearrange the first:</p>
+\[
+\begin{align}
+   H(X) &= -\lim_{\Delta x \rightarrow 0} \left(\
+            \sum_{i=0}^N p(x_i) \log_2 p(x_i) \Delta x + \log_2 \Delta x \cdot 1 \right) 
+\end{align}
+\]<p>Finally, we can convert our Riemann sum <em>back</em> to an integral, to give us the formula:</p>
+<blockquote>
+\[
+    H(X) = \left(-\int_{-\infty}^{\infty} p(x) \log_2 p(x)\:dx\right)\
+    - \lim_{\Delta x \rightarrow 0} \log_2 \Delta x \
+    \]</blockquote>
+<p>The first term looks pretty sensible - this is the formula for \(H(X)\) that we started
+with at the top of this section, but with \(\sum\) swapped for \(\int\), and \(P\) swapped
+for \(p\).</p>
+<p>However, the \(\log_2 \Delta x\) term is <strong>bad news</strong> - it blows up to infinity
+as \(\Delta x\) approaches 0. In other words, the more slices we use to divide our continous distribution, the
+higher the entropy. This should perhaps not be surprising since, as we said earlier, the probability of getting
+any particular number from a continuous distribution is infinitely unlikely, and hence carries infinite information.
+As our bins approach 0 width, this is exactly the situation we get.</p>
+<h3 id="a-flawed-solution-differential-entropy">A Flawed Solution: Differential Entropy<a href="#a-flawed-solution-differential-entropy" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>What if we just closed our eyes and ignored the \(\log_2 \Delta x\) term? Since it&rsquo;s the part that blows up to infinity, we can
+salvage the rest of the equation and define the <em><a href="https://en.wikipedia.org/wiki/Differential_entropy">Differential Entropy</a></em>,
+\(h(X)\), as:</p>
+\[
+\begin{align}
+        h(X) &= H(X) + \lim_{\Delta x \rightarrow 0} \log_2 \Delta x \\
+             &= -\int_{-\infty}^{\infty} p(x) \log_2 p(x)\:dx \\
+\end{align}
+\]<p>The measure we&rsquo;re left with, \(h(X)\), is a lot less useful than the discrete \(H(X)\) we know
+and love:</p>
+<ol>
+<li>\(H(X) = 0\) implied no information was transmitted, because we always sent the same message with
+100% certainty. \(h(X) = 0\), however, does not have any special meaning. This is because:</li>
+<li>Differential entropy can be negative. Negative!</li>
+<li>\(h(X)\) is sensitive to scale (and therefore units). If we measured 100 people&rsquo;s heights,
+\[h_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
+\[h_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
+The differential entropy of \(h_\text{cm}\) would be <em>larger</em> than the differential entropy of \(h_\text{m}\).</li>
+</ol>
+<p>One useful property differential entropy does have is <em>translational invariance</em>:
+</p>
+\[
+        h(X + c) = h(X)
+\]<p>So, with our normal distribution, we can shift the mean wherever we like and keep the same differential
+entropy.</p>
+<p>This seemingly arbitrary collection of properties has a simple explanation: differential entropy is
+basically a measure of (log of) <strong>volume</strong>. Without being rigorous, we can suggest that:</p>
+\[
+    V \approx 2^{h(X)}        
+\]<p>Where \(V\) is the volume of a hypercube that fits most of the probability mass of our distribution. For a more
+rigorous explanation, see <a href="https://stats.stackexchange.com/a/616892">here</a>.</p>
+<p>This intuitive explanation clarifies all of the above properties. 1. and 2. occur because
+volumes can be smaller than 1 (\(2^{-3} = 0.125\), for example.) 3. occurs because when we change units,
+the box containing our numbers grows or shrinks in terms of absolute number magnitude
+(even if the actual underlying data is the same.)</p>
+<h3 id="a-better-solution-divergence">A Better Solution: Divergence<a href="#a-better-solution-divergence" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>Differential Entropy, then, isn&rsquo;t the whole answer. To motivate the actual solution, we&rsquo;ll start by
+looking at the entropy formula we tried to discretize earlier:</p>
+\[
+\begin{align}
+    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right)\\
+\end{align}
+\]<p>The trouble really stems from the last term:</p>
+\[
+    \log_2 p(x_i) \Delta x
+\]<p>We want to introduce some term that knocks out this \(\Delta x\). To do so,
+we need to introduce a second distribution - say, as second normal distribution
+that may (or may not) have the same mean and variance as our original distribution \(p(x)\).
+We&rsquo;ll label the <em>probability density function</em>
+of this distribution \(q(x)\).</p>
+<p>Instead of measuring the information content of each slice, we could try measuring the <em>difference</em>
+in information content between \(p(x)\) and \(q(x)\). That is, instead of</p>
+\[\log_2 p(x_i) \Delta x\]<p>We measure</p>
+\[
+\begin{align}
+\log_2 p(x_i) \Delta x - \log_2 q(x_i) \Delta x &= \log_2 \frac{p(x_i) \Delta x}{q(x_i) \Delta x} \\
+                                                &= \log_2 \frac{p(x_i)}{q(x_i)} \\
+\end{align}
+\]<p>Because we want our quantity to still be an expectation value \(\mathbb{E}\), we
+need to weight how likely each slice is, somehow. We can choose \(p(x)\) to do
+this weighting. In other words, we&rsquo;re now calculating</p>
+\[
+D_{KL}(p || q) = \lim_{\Delta x \rightarrow 0} \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+\log_2 \frac{p(x_i)}{q(x_i)} \\
+\]<p>If we really want to use \(q(x)\) to do the weighting (and sometimes we do), we could just
+swap which distribution we call \(p\) and which we call \(q\).</p>
+<p>This nicely cancels out the \(\Delta x\) term. But does it work?</p>
+<div id="divergence"></div>
+<script type="module">
+import {integral_chart} from "./charts.js";
+spawn_plot("divergence", (id) => integral_chart(id, true));
+</script>
+<p>Yes! Just as \(P(X) = \int_{-\infty}^{\infty} p(x) dx\) rapidly converges to 1, \(D_{KL}\)
+also converges to a constant value, even as \(H(X)\) continues to increase.</p>
+<h3 id="so-what-is-the-kl-divergence">So what <em>is</em> the KL-Divergence?<a href="#so-what-is-the-kl-divergence" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>The KL-Divergence is a core tool in Information Theory, for discrete, continuous, and mixed
+distributions. With it, we&rsquo;ll build the tools we need to make sense of signals.</p>
+<p>To understand the KL-Divergence better, I&rsquo;d highly recommend reading through <a href="https://www.lesswrong.com/posts/no5jDTut5Byjqb4j5/six-and-a-half-intuitions-for-kl-divergence">Six (and a half) intuitions for KL divergence.</a></p>
+<p>For now, suffice it to say that the KL-divergence is a measure of the <em>difference in information</em>
+between two distributions. If we observe a particular event, the information we gain from that
+observation varies depending on the message was generated according to the statistics of one probability
+distribution, <em>p</em>, or a different one, <em>q</em>.</p>
+<p>In our lottery example from earlier, observing a 1 carries a lot of information. But if I was
+secretly sending you a 0 every time the number was odd, and a 1 every time it was even, the
+information content of that &ldquo;1&rdquo; message would be lower. The KL-Divergence quantifies this difference,
+averaged (using \(p\)) across the whole distribution.</p>
+<h3 id="why-is-kl-divergence-an-improvement">Why is KL-Divergence an Improvement?<a href="#why-is-kl-divergence-an-improvement" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>Even though the derivation of KL-Divergence seems more mathematically sound than that of
+differential entropy, is it better in practical ways? To see, let&rsquo;s examine some of its
+properties:</p>
+<ol>
+<li>\(D_{KL}(p || q) = 0\) implies \(p = q\).</li>
+<li>\(D_{KL} \geq 0\).</li>
+<li>\(D_{KL}\) is insensitive to unit changes, rescaling etc. Because we have two probability distributions
+\(p\) and \(q\), if we change the units of one, we have to change units of the other. These effects cancel out,
+and we get back the same divergence as we started with. In fact, we can warp our coordinates using an arbitrary
+function \(y(x)\) which need not be linear, provided that \(y(x)\) is unique for each unique \(x\) (i.e. it
+is <a href="https://en.wikipedia.org/wiki/Bijection">bijective).</a></li>
+</ol>
+<p>KL-Divergence has one major consideration, though: anywhere \(p(x) > 0\), \(q(x)\) <strong>must</strong> be greater than
+0, too. Otherwise, the \(p(x) \log\frac{p(x)}{q(x)}\) term blows up to \(\infty\), and with it the divergence.</p>
+<p>With this tool, we now have a firm footing for using information theory in continuous domains. We can
+build on it to obtain the <em>mutual information</em>, the tool we will use to finally solve our problem.</p>
+<h1 id="mutual-information">Mutual Information<a href="#mutual-information" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>When it comes to determining if two signals are correlated, mutual information is the tool we&rsquo;ve been looking for.
+Yet, it is also subtly different from what we might&rsquo;ve expected. Mutual information tells us how much information we learn about a signal \(Y\) if we were
+to observe samples of a different signal, \(X\).</p>
+<p>Formally, the mutual information between two distributions \(X\) and \(Y\), \(I(X;Y)\), is defined as</p>
+\[
+            I(X;Y) = D_{KL} (P_{(X,Y)} || P_X \otimes P_Y)
+\]<p>\(P_{(X,Y)}\) is the <a href="https://en.wikipedia.org/wiki/Joint_probability_distribution">joint distribution</a> of X and Y,
+\(P_X\) and \(P_Y\) are the <a href="https://en.wikipedia.org/wiki/Marginal_distribution">marginal distributions</a> or X and Y
+respectively, and \(\otimes\) is the element-wise product between them.</p>
+<p>That&rsquo;s a lot of words!  I promise it&rsquo;ll make more sense when you see
+it in action. For now, there are some important properties to note:</p>
+<ol>
+<li>\(I(X;Y) = 0\) <em>if and only if</em> \(X\) is independent of \(Y\).</li>
+<li>\(I(X;Y) \geq 0\).</li>
+<li>\(I(X;Y) = I(Y;X)\) - that is, mutual information is <em>symmetric</em>.</li>
+<li>\(I(X;X) = H(X)\). For continuous signals, the amount of information gained (or uncertainty removed) about \(X\)
+by observing \(X\) is \(\infty\). This applies too for \(I(X;f(X)\) where \(f()\) is invertible (i.e. bijective.)</li>
+</ol>
+<h2 id="the-histogram-method">The Histogram Method<a href="#the-histogram-method" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>There are a number of ways to estimate mutual information. The most straightforward approach would be to divide the space
+into lots of bins, and count how many samples fall into each bin. We could then assume the probability is constant
+across each bin, giving an estimate for \(p(x)\):</p>
+\[
+    \hat{p}(\text{bin}) = \frac{n_\text{bin}}{n_\text{total}}
+\]<p>We could apply the same technique, with the same bins, to sample from \(q\) and estimate \(q(x)\) as \(\hat{q}(\text{bin})\).</p>
+<p>We immediately run into problems, though. Anywhere one or more samples from \(p\) fall into a bin, that
+bin <strong>must</strong> also capture at least one sample from \(q\). Otherwise, the estimated probability of \(q = 0\),
+and we blow up the KL-divergence to infinity (recall, mutual information is a special application of the KL-divergence.)</p>
+<p>In practice, this means we need lots of samples <strong>and</strong> large bin sizes, neither of which are ideal.</p>
+<h1 id="k-nearest-neighbors">K-Nearest Neighbors<a href="#k-nearest-neighbors" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Instead, we&rsquo;ll use K-Nearest-Neighbors (KNN). This technique can be used for a number of problems, although we&rsquo;ll
+use it to estimate the mutual information directly (as per <a href="https://arxiv.org/pdf/cond-mat/0305641">Kraskov, Stögbauer, and Grassberger</a>).</p>
+<p>K-nearest-neighbors can be thought of as a &ldquo;dynamic binning&rdquo; method - it only runs calculations in areas
+where samples have actually fallen. Before we dive into the maths, lets have a play around with it. In this plot,
+we sample from a uniform distribution on the x axis, and feed samples of x through the sine function - before
+adding some noise - to get y.
+</p>
+\[
+\begin{align}
+X = \mathcal{U}(0, 5) \\
+Y = \sin(X) + \mathcal{U}(0, 1) \\
+\end{align}
+\]<p>So, our two signals are correlated, but not perfectly.</p>
+<div id="plot"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(500).fill(0).map((_) => Math.random() * 5);
+let y = x.map((xi) => Math.sin(xi) + Math.random() * 1);
+spawn_plot("plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
+</script>
+<p>What&rsquo;s going on is:</p>
+<p>For each point \((x_i, y_i)\):</p>
+<ol>
+<li>Calculate the distance, \(d_k\) to the Kth nearest neighbor (e.g. if k=5,
+\(d_5\) is the distance to the third nearest neighbor to \(x_i\)). We calculate distance using
+the <a href="https://en.wikipedia.org/wiki/Uniform_norm">Infinity Norm</a>, i.e. \(d = \max(d_x, d_y)\). Hence,
+we know there are exactly \(k\) points within a hypercube of side-length \(d\).</li>
+<li>Ignoring the x-direction, calculate \(n_y\), the number of points that are within a distance \(d_k\) of \(y_i\).</li>
+<li>Ignoring the y-direction, calculate \(n_x\), the number of points that are within a distance \(d_k\) of \(x_i\).</li>
+</ol>
+<p>Then, the mutual information can be estimated as</p>
+\[
+        I(X;Y) \approx \psi(k) + \psi(N) - \frac{1}{N} \sum_{i=0}^N \psi(n_x + 1) + \psi(n_y + 1)
+\]<p>\(\psi(x)\) is the <a href="https://en.wikipedia.org/wiki/Digamma_function">Digamma function</a>, which is close to \(\log(x)\) for
+large x. N is the number of points, k is the k from K-nearest-neighbors, and \(n_x\) and \(n_y\) are the values
+described above.</p>
+<p>The reason we can just take an average over all our points without needing to weight by \(p(x)\) is because
+KNN naturally samples more in areas of high probability, and less in areas of low probability. Because each bin
+is dynamically constructed around points actually sampled from our distributions, the probability weighting happens
+for free.</p>
+<p>Again, this formula is not the most illuminating. We need to pick it apart to really understand what&rsquo;s going on.
+Recall that \(I(X;Y) = 0\) <em>if and only if</em> the two signals are uncorrelated. For our formula to equal zero,
+either \(n_x\) or \(n_y\) (or both) would have to be, on average, very close to \(N\), the total number of points.
+We can actually extend this further. For large \(n\), we have very approximately:</p>
+\[
+    \psi(n) \approx 2 \cdot \psi(\sqrt{n})
+\]<p>In other words, if we have \(N\) points, \(n_x\) and \(n_y\) each only need to be slightly larger than
+\(\sqrt{N}\) for the mutual information to be 0. We&rsquo;ll see a visual representation of this later.</p>
+<p>On the other hand, if \(n_x\) and \(n_y\) are small most of the time, the mutual information would be very high.</p>
+<p>We can maximise mutual information if the only points captured in our \(n_x\) and \(n_y\) bounds were already
+captured inside our k-nearest neighbors. In some sense, the &ldquo;sharper&rdquo; the line in our plot is, the fewer
+points will be captured by \(n_x\) and \(n_y\). As we add noise, the line gets fuzzier, and \(n_x\) and \(n_y\)
+increase.</p>
+<p>Also note that \(n_x\) and \(n_y\) are treated identically by the function. This again highlights the
+symmetric nature of mutual information: \(I(X;Y) = I(Y;X)\).</p>
+<p>Finally, the \(\psi(N)\) term means that in cases of very high mutual information, the exact
+number we get will depend on the number of samples we analyse. If \(X\) is continuous and \(Y = X\), for example,
+the true mutual information should be infinite. Instead, we will see it gradually increase as the number of
+samples increases, much like the differential entropy from earlier. Typically, \(Y\) is not exactly equal to
+\(X\), for example if some extra noise were added, which means that mutual information typically plateaus
+at some (high) value, even for very correlated signals.</p>
+<h3 id="illustrative-examples-of-mutual-information">Illustrative Examples of Mutual Information<a href="#illustrative-examples-of-mutual-information" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>So, we can maximize mutual information by capturing as few points in our \(n_x\) and \(n_y\) bounds
+as possible. One way to do that very effectively is to have \(Y\) be a linear function of \(X\). E.g.</p>
+\[
+\begin{align}
+    X = \mathcal{U}(0, 5) \\
+    Y = X;
+\end{align}
+\]<p>Indeed, this gives us a very high mutual information score.</p>
+<div id="very-linear-plot"></div>
+<div id="linear-text"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(500).fill(0).map((_) => Math.random() * 5);
+let y = x.map((xi) => xi);
+spawn_plot("very-linear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
+import {mutual_information} from "./knn.js";
+document.getElementById("linear-text").textContent = ` Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+</script>
+<p>But mutual information does not <strong>require</strong> linearity. For example, the
+following very non-linear function which would flummox any linear analysis
+(but is obviously quite correlated to the naked eye) also gives us a high
+mutual information score:</p>
+\[
+\begin{align}
+X &= \mathcal{U}(0, 5) \\
+Y &= \left\{ \begin{array}{ll}
+           x & 0 \leq x < 1 \\
+           -x & 1 \leq x < 2 \\
+           x & 2 \leq x < 3 \\
+           ... & \\
+\end{array}
+\right.
+\end{align}
+\]<div id="very-nonlinear-plot"></div>
+<div id="very-nonlinear-text"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(500).fill(0).map((_) => Math.random() * 5);
+let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
+spawn_plot("very-nonlinear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
+import {mutual_information} from "./knn.js";
+document.getElementById("very-nonlinear-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+</script>
+<p>Mutual information is subtle, though. Just because \(y\) might be a
+function of \(x\) doesn&rsquo;t mean mutual information is maximised. Take the
+following distributions,</p>
+\[
+\begin{align}
+X &= \mathcal{U}(0, 20) \\
+Y &= \sin(X) \\
+\end{align}
+\]<div id="sine-plot"></div>
+<div id="sine-text"></div>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(2000).fill(0).map((_) => Math.random() * 20);
+let y = x.map((xi) => Math.sin(xi));
+spawn_plot("sine-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
+import {mutual_information} from "./knn.js";
+document.getElementById("sine-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+</script>
+<p>Notice how the samples for \(n_y\) come from multiple different cycles of
+the sine wave. Also, remember that mutual information is <strong>symmetric</strong>. So,
+even though knowing \(x\) tells us exactly what \(y\) will be, knowing
+the value of \(y\) doesn&rsquo;t let us pinpoint an exact \(x.\) Instead, we know
+\(x \mod 2\pi \), but there are still an infinite number of \(x\)&rsquo;s for every
+\(y.\)</p>
+<p>Another way to think about this is that, probabilistically, there are lot of different
+ways to get a particular value of \(y\), and so actually getting that value isn&rsquo;t too surprising.
+Each value of \(x\), however, is more surprising. Since information content increases with surprise,
+we learn more by observing \(x\) than we do \(y\), and so they cannot have maximum mutual information.</p>
+<p>Finally, we can <em>minimize</em> mutual information by introducing noise that isn&rsquo;t shared between our signals.
+We get a value of 0 when there is nothing in common between \(X\) and \(Y\):
+For example,</p>
+\[
+\begin{align}
+X &\sim \mathcal{U}(0, 20) \\
+Y &\sim \mathcal{U}(0, 20) \\
+\end{align}
+\]<div id="uncorrelated-plot"></div>
+<code id="uncorrelated-text"></code>
+<script type="module">
+import {get_2d_mi_chart} from "./mi_charts.js";
+let x = Array(2000).fill(0).map((_) => Math.random() * 20);
+let y = Array(2000).fill(0).map((_) => Math.random() * 20);
+spawn_plot("uncorrelated-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
+import {mutual_information} from "./knn.js";
+document.getElementById("uncorrelated-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+</script>
+<p>Like we said earlier, it&rsquo;s clear that neither \(n_x\) nor \(n_y\) are capturing anywhere close to the full
+\(N\) points in the x-y plane. However, because \(x\) and \(y\) are uncorrelated, the amount of points
+falling in each bin is roughly \(\frac{\text{bin width}}{\text{total width}}\).</p>
+<p>Imagine the space our points live in as a square with area \(n^2\). Then, our side-lengths would
+be \(n\). We could divide the square into wide strips of height 1, giving us \(n\)
+strips of area \(n\), or we could divide it into tall strips of width 1, also giving us \(n\)
+strips of area \(n\).</p>
+<p>If we just rename \(n^2\) to \(N\), our total number of points, we get the expectation
+that if our points are uniformly distributed in the x-y space,
+the number of points captured in a wide strip of height 1 (or a tall
+strip of width 1) should be \(\sqrt{N}\). In other words, if the orange square
+that holds our K nearest neighbors held 1 point, we should expect \(n_x\) and \(n_y\)
+to both hold \(\sqrt{N}\) points in this uncorrelated case.</p>
+<p>Earlier, we established that:
+</p>
+\[
+    \psi(n) \approx 2 \cdot \psi(\sqrt{n})
+\]<p>Also, we know our equation for mutual information is:</p>
+\[
+        I(X;Y) \approx \psi(k) + \psi(N) - \frac{1}{N} \sum_{i=0}^N \psi(n_x + 1) + \psi(n_y + 1)
+\]<p>So, very roughly, if \(n_x\) and \(n_y\) capture \(\sqrt{N}\) points each (as they would if
+the points were uniformly distributed along the x and y axes), the mutual information would
+tend to zero. (\(n_x\) or \(n_y\) need to be slightly larger to cancel out the \(\psi(k)\)
+term. This could be seen as compensating for the fact that our \(n_x\) and \(n_y\) bins are
+not infinitely thin, and so capture the same points multiple times).</p>
+<p>For non-uniform (but still uncorrelated) distributions, this analogy still
+works. We just have to remember that the KNN algorithm
+makes the bins smaller in more dense regions, and larger in less dense regions. So, we could imagine
+this process as the algorithm first clustering or spreading out points so that they
+are evenly distributed, and then counting the area in each constant-width strip.</p>
+<p>Finally, let&rsquo;s look at our 3 signals from much earlier in the article. Recall,</p>
+\[
+\begin{align}
+            X_1 &\sim \mathcal{U}(0, 20) \\
+            X_2 &\sim \mathcal{U}(-10, 10) \\
+            Y &= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
+\end{align}
+\]<p>We can calculate the mutual information between \(X_1\) and \(Y\):</p>
+<div id="2d-hero-plot"></div>
+<code id="mi-text-2d"></code>
+<p>While the mutual information isn&rsquo;t as high as it would be for a purely bijective
+function, it&rsquo;s still significant. Even though the average slope of \(X_1\) vs \(Y\)
+is flat, and even despite the noise from the unaccounted for \(X_2\), mutual information
+is successful in telling us that, yes, our signals are correlated.</p>
+<p>As we increase the number of samples, the estimated mutual information will continue to climb.
+Potentially, we could tackle this would by normalizing the mutual information estimate against
+it&rsquo;s maximum possible value - something like:</p>
+\[
+    \hat{I}(X;Y) = \frac{\psi(k) + \psi(N) - \frac{1}{N} \sum_{i=0}^N \psi(n_x + 1) + \psi(n_y + 1)}{\psi(N)}
+\]<p>Here, \(\hat{I}\) close to 1 implies maximum information shared, and \(\hat{I} = 0\) implies
+no information shared between \(X_1\) and \(Y\). It&rsquo;s not completely clear whether this quantity
+has a direct link back to information theory, though. It&rsquo;s somewhat close to the <a href="https://en.wikipedia.org/wiki/Mutual_information#Metric">Rajski Distance</a>,
+defined as:</p>
+\[
+    D(X, Y) = 1 - \frac{I(X;Y)}{H(X,Y)}
+\]<p>Perhaps we could derive a mathematically sound version of this metric that converges
+to a useful value, and would give us a useful, normalized criteria for comparing signals.</p>
+<h3 id="handling-the-second-input">Handling the Second Input<a href="#handling-the-second-input" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>We can&rsquo;t let \(X_1\) have all the fun. Let&rsquo;s calculate the mutual
+information between \(X_2\) and \(Y\).</p>
+<div id="2d-hero-plot-x2"></div>
+<code id="mi-text-2d-x2"></code>
+<p>We should pause for a moment, though. This approach doesn&rsquo;t really take into account the fact that we need
+both \(X_1\) and \(X_2\) to fully define a value of \(Y\). Looking only at
+one input and one output at a time also doesn&rsquo;t tell us whether \(X_1\) carries
+unique information about \(Y\) that \(X_2\) does not, or if we&rsquo;re just double-counting
+the same information each time.</p>
+<p>To figure out if both \(X_1\) and \(X_2\) are correlated to \(Y\), <strong>and</strong> that \(X_2\)
+carries information \(X_2\) does not, we need to go deeper.</p>
+<h1 id="conditional-mutual-information">Conditional Mutual Information<a href="#conditional-mutual-information" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>There are a lot of extensions of mutual information to more variables. For our example,
+we&rsquo;re interested in the <a href="https://en.wikipedia.org/wiki/Conditional_mutual_information">Conditional Mutual Information</a>.</p>
+<p>Although it&rsquo;s typically written as \(I(X;Y|Z)\), we&rsquo;ll use the terminology \(I(X_1;Y|X_2)\). This way, all our
+inputs are X&rsquo;s, and our output is Y.</p>
+<p>Conditional mutual information tells us how much of the mutual information \(I(X_1;Y\) between
+\(X_1\) and \(Y\) is <em>not</em> found in \(X_2\). In other words, if \(I(X_2;Y) > 0\), we know
+that \(X_2\) and \(Y\) share some information; if \(I(X_1;Y|X_2) = 0\), we then know that
+all the information \(X_2\) told us about \(Y\) could have been learned by observing
+\(X_1\) instead.</p>
+<p>As you can probably tell by the notation, conditional mutual information treats
+its inputs differently. There is still some symmetry:</p>
+\[
+I(X_1;Y|X_2) = I(Y;X_1|X_2)
+\]<p>However, interchanging \(X_2\) with the other inputs gives us a different result. This
+is important because if \(X_2\) is completely irrelevant (i.e. uncorrelated random noise),
+the conditional mutual information reduces to:</p>
+\[
+    I(X_1;Y|X_2) = I(X_1;Y)
+\]<div id="3d-plot"></div>
+<code id="mi-text"></code>
+<p>So, how do we calculate conditional mutual information? Well, it&rsquo;s actually very similar
+to how we calculated mutual information in the 2d case. We can use <a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.99.204101">Frenzel and Pompe&rsquo;s</a>
+modification of the <a href="https://arxiv.org/pdf/cond-mat/0305641">KSG estimator</a> from earlier.</p>
+<p>For each point p, we calculate
+the distance \(d\) to the k-th nearest neighbor (again using the infinity norm), and then count:</p>
+<ol>
+<li>\(n_{x_2}\) - the number of points within a distance \(d\) from p, ignoring both the
+\(x_1\) and \(y\) coordinates.</li>
+<li>\(n_{x_1, x_2}\) - the number of points within a distance \(d\) from p, ignoring
+the \(y\) coordinate.</li>
+<li>\(n_{x_2, y}\) - the number of points within a distance \(d\) from p, ignoring
+the \(x_1\) coordinate.</li>
+</ol>
+<p>Even though we now have 3 hyper-rectangles to keep track of, the process is very similar to before - we&rsquo;re
+basically taking a number of 2d-slices of our 3d space, and computing the mutual information
+within each slice. \(n_{x_2}\) can be thought of as \(N\), the total number of points in our
+MI estimator; \(n_{x_1, x_2}\) is analogous to \(n{x_1}\) and \(n_{x_2, y}\) is analogous to
+\(n_{y}\).</p>
+<p>So, the formula is:</p>
+\[
+        I(X_1;Y|X_2) \approx \psi(k) - \frac{1}{N} \sum_{i=0}^N \psi(n_{x2}) - \psi(n_{x_1,x_2}) - \psi(n_{x_2,y}) 
+\]<p>So, conditional mutual information is high if for each slice of \(X_2\), we have high mutual information between
+\(X_1\) and \(Y\).</p>
+<p><em>(The nearest-neighbor hypercube in the 3d plots might look a little squashed. This is just a plotting
+artifact, because the variance of our function is much larger in the z-direction than x or y. The cube is
+still a cube, we just have a squashed z-direction.)</em></p>
+<p>One important test we defined earlier is being able to distinguish between a random variable that is
+<em>in distribution</em>, but not actually correlated to the signal, and a correlated variable with the same
+distribution. For example we could define an unrelated variable \(Q\) with \(X_1\text{'s}\) distribution:</p>
+\[
+            Q \sim \mathcal{U}(0, 20) \\
+\]<p>Does conditional mutual information distinguish between these two cases?</p>
+<div id="3d-plot-2"></div>
+<code id="mi-text-2"></code>
+<p>Recall that conditional mutual information \(I(X_1;Y|X_2)\) becomes equivalent to mutual information \(I(X_1;Y)\) if
+the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y\). In this case, we know that \(Q\) is
+uncorrelated, and so \(I(X_1;Y|Q)\) should equal the value of \(I(X_1;Y)\) we calculated in the previous section.
+While the value is close, it&rsquo;s not an exact match. This is likely an issue of finite sample sizes, and should
+improve as the number of points sampled increases.</p>
+<p>At the very least, we appear to get a much stronger result (~1.5) when calculating \(I(X_1;Y|X_2)\) vs
+the ~0.3 we get with \(I(X_1;Y|Q)\).</p>
+<p>Recall, also, that conditional mutual information is not symmetric. Since \(Q\) carries no information
+about \(Y\), we should be able to swap the order of signals and get back a result of 0. I.e.
+\(I(Q;Y|X_1) = I(Q;Y) = 0\).</p>
+<p>If we run this through our estimator, we do in fact get back 0:</p>
+<p><code id="mi-text-q2"></code></p>
+<p>Finally, we should consider what happens when \(X_1\) and \(X_2\) carry the same information. They don&rsquo;t
+have to be identical signals, provided the transformation is bijective, and in fact we can show this by calculating</p>
+\[
+    I(X_1;Y|X_1^2)
+\]<p>That is, we just take \(X_1\) and square it to get our second signal. This carries no extra information over \(X_1\),
+but certainly looks quite different. Will the conditional mutual information algorithm be able to pick this up?</p>
+<div id="3d-plot-3"></div>
+<code id="mi-text-3"></code>
+<p>Not a problem! In fact, this plot gives us a clear example of what \(X_1\) and \(X_2\) carrying the same
+information looks like. Just like earlier where thin, sharp lines meant high mutual information, the same
+shapes on the x1-x2 plane implies zero conditional mutual information.</p>
+<script type="module">
+import {get_2d_mi_chart, get_3d_mi_chart} from "./mi_charts.js";
+let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
+let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
+//
+import {mutual_information, partial_mutual_information} from "./knn.js";
+spawn_plot("2d-hero-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, z[i]]), 5));
+document.getElementById("mi-text-2d").textContent = `Estimated I(X1;Y) = ${mutual_information(x.map((x, i) => [x, z[i]]))}`;
+// 
+spawn_plot("2d-hero-plot-x2", (id) => get_2d_mi_chart(id, y.map((xi, i) => [xi, z[i]]), 5));
+document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${mutual_information(y.map((x, i) => [x, z[i]]))}`;
+// 
+spawn_plot("3d-plot", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[i], z[i]]), 5));
+document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${partial_mutual_information(x, z, y)}`;
+//
+spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5));
+document.getElementById("mi-text-2").textContent = `Estimated I(X1;Y|Q) = ${partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]))}`;
+document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X1) = ${partial_mutual_information(y.map((_, i) => y[(i+1)%y.length]), z, x)}`;
+//
+spawn_plot("3d-plot-3", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, xi**2, z[i]]), 5));
+document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${partial_mutual_information(x, z, x.map((x) => x**2))}`;
+</script>
+<h1 id="conclusion">Conclusion<a href="#conclusion" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Well done for making it all this way! If you, like me, started this article without a solid grasp on what information
+entropy actually is, I hope you now have an intuitive feeling for not just what it represents, but why it might be useful.</p>
+<p>More than that, I hope you&rsquo;ve been able to see how even quite involved information theory measures like <em>conditional
+mutual information</em> can be explained geometrically. If a few of the concepts haven&rsquo;t quite clicked - that&rsquo;s ok! Come back
+in a few days when you&rsquo;ve had some time to think about it, play around with the plots again, and try and understand
+<em>why</em> a given plot has high or low entropy, mutual information, or partial mutual information.</p>
+
+      </div></div>
+
+  
+    
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        
+        <span class="button next">
+            <a href="https://willsnell.com/posts/math_composition/">
+                <span class="button__text">Why Is Measuring Composition So Difficult?</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+    
+
+  
+</article>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2024 Powered by <a href="https://gohugo.io">Hugo</a></span>
+    
+      <span>:: <a href="https://github.com/panr/hugo-theme-terminal" target="_blank">Theme</a> made by <a href="https://github.com/panr" target="_blank">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+
+
+
+
+
+<script type="text/javascript" src="/bundle.min.js"></script>
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>

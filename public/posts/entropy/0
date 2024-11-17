@@ -1,0 +1,489 @@
++++
+title = "Entropy"
+date = "2024-11-01T13:45:34+13:00"
+author = ""
+authorTwitter = "" #do not include @
+cover = ""
+keywords = ["", ""]
+description = ""
+showFullContent = false
+readingTime = false
+hideComments = false
+color = "" #color from the theme settings
++++
+<script src="./config.js"></script>
+<script src="./observer.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
+Information theory - and in particular, entropy - can be quite an intimidating topic.
+It doesn't have to be. If you can develop some key intuitions for the topic, you can
+learn and use entropy!
+
+So let's dive right in... by playing the lottery!
+
+Each round, you get to pick one number on the ticket below:
+
+<div style="width: 100%; margin: auto;  margin-top: -80px; margin-bottom: -200px;">
+    <object id="ticket" type="image/svg+xml" data="lottery_ticket.svg" height="500px"></object>
+    <div id="ticket numbers" style="position: relative; top: -275px; left: 86px; 
+        width: 202px; height: 182px; display: flex; flex-wrap: wrap;"></div>
+</div>
+
+Once you've picked the number, you can get the results of 
+the lottery on the machine below. 
+
+There are two possible outcomes,
+and so I only need to send you a single *bit* of information:
+
+- 1, if your ticket is a winner,
+- 0, otherwise
+
+It's tiiiiiimmmmmme to play the lottery! Each press of the button below
+will pick a **new random number**, and give you the results.
+
+<object id="machine" type="image/svg+xml" data="lottery_machine.svg" style="margin-bottom: -80px"></object>
+<script src="./lottery.js"></script>
+
+Did you win? 
+
+Chances are, you didn't. You can keep playing until you do, but be warned,
+it might take a while.
+
+It might seem like each time you played, I would send you the same amount of information. Either you won or you lost,
+and both times you learned a single bit of information.
+
+*But that's not the whole story.* To see why, let's modify the game slightly. This time,
+I want you to tell me **the winning number** for each round. 
+Is this possible? Most of the time - no. If your ticket lost, you can eliminate
+1 of the 20 numbers, but there's still 19 to pick from!
+
+**However**, if you **won**, you immediately know which number was picked. More 
+than that, you also know all the 19 numbers that weren't picked!
+
+The key intuition for understanding entropy is exactly this: the **more likely** a piece of information
+is, the **less information** it carries. Formally, we define **Information Content**, sometimes called *surprisal*, as \(\frac{1}{P}\),
+where \(P\) is the probability of the event happening. Actually, we need to take the *log* of this term 
+to get the exact definition of Information Content:
+
+\[
+\begin{align}
+            I(x) &= \log_2{\frac{1}{P(x)}} \\
+                 &= -\log_2{P(x)}
+\end{align}
+\]
+
+*Where \(P(x)\) is the probability of event \(x\) occuring, and \(I(x)\) is measured in bits (sometimes 
+called Shannons in this context).*
+
+#### Why do we need to take the log? 
+
+Let's think about the lottery. If we had a winning ticket (with probability 
+\(P = \frac{1}{20}\)), we only need to be sent a single bit to know that we won.
+When we get that message, we immediately know twenty things:
+- the 1 winning number
+- the 19 numbers that did not win
+
+If I wanted to just send you the winning number directly, and we were using binary, 
+we'd need somewhere between 4 bits (\(2^4 = 16\))
+and 5 bits (\(2^5 = 32\)) for me to specify which number has won. 
+
+So why do we take the log? Because it takes the **number** of things we've learned, and 
+converts it into the *bits of information* we'd need to represent that many things.
+
+In our example, the information content of a winning ticket is:
+
+\[
+\begin{align}
+        I(\text{win}) &= \log_2{\frac{1}{1/20}} \\
+                      &\approx 4.322\;\text{bits}
+\end{align}
+\]
+
+So in the winning case, I send you a 1-bit message, and with it you've learned about 4.32 bits 
+of *information*.
+
+### A Free Lunch?
+
+This might seem too good to be true - greater than perfect compression of more than 4 bits of information
+into a single bit message! Of course, this isn't the case.
+
+The winning lottery ticket carries so much information **because** it is
+so unlikely. Similarly, a losing lottery ticket tells us very little **because** it's such a common occurence.
+If you can internalize this notion - rare messages carry more information - you can understand entropy
+intuitively.
+
+## Defining Entropy
+
+We've talked about *information content* so far, but I promised to explain entropy. Fortunately,
+the jump from information content to entropy is almost trivial. We can define entropy as
+
+\[
+        H(X) := \mathbb{E}[I(X)]
+\]
+
+\(\mathbb{E}\) is just the expected value - the mean - and \(I(X)\) is what we defined before, 
+the information
+content. So the entropy \(H(X)\) is simply the average amount of information contained in all the 
+possible messages we could receive.
+
+How do we calculate the average? After all, some messages are much more likely than others. Easy!
+We just multiply the *information* of each message by the *likelihood* of receiving that message.
+
+Let's calculate the entropy of the single-bit messages I send you, communicating
+the results of the lottery:
+
+\[
+        H(\text{Lottery}) = P(\text{win}) I(\text{win}) + P(\text{lose}) I(\text{lose}) \\
+\]
+
+Remember from before, that:
+\[
+                    I(x)  = \log_2{\frac{1}{P(x)}} = -\log_2{P(x)} \\
+\]
+
+Therefore,
+\[
+H(\text{Lottery}) = -P(\text{win}) \log_2{P(\text{win})} \\
+                    - P(\text{lose}) \log_2{P(\text{lose})}
+\]
+
+We know that \(P(\text{win}) = \frac{1}{20}\) and \(P(\text{lose}) = \frac{19}{20}\), so 
+the entropy of the set of messages we could receive is:
+
+\[
+\begin{align}
+            H(\text{Lottery}) &= -\frac{1}{20} \log_2\left(\frac{1}{20}\right) 
+            -\frac{19}{20}\log_2\left(\frac{19}{20}\right) \\
+                              &\approx 0.216... +\;0.070... \\
+                              &\approx 0.286...
+\end{align}
+\]
+
+There are a few key takeaways here:
+
+1. We're receiving, on average, a lot less than 1 bit of information per message. 
+Our communication scheme is wasting most of its bandwidth.
+2. Roughly 75% of the entropy comes from the rare *win* message. The information
+carried by each *lose* message is much, much lower.
+
+Finally, let's introduce the standard formula for entropy. By now, it shouldn't be 
+too intimidating. Remember, all it says is that entropy is the average information
+content carried by a message.
+
+\[
+            H(X) := - \sum_{x\in X} p(x) \log_2 {p(x)}
+\]
+
+*Where \(x \in X\) just means all the messages \(x\) in the collection of messages that
+could be transmitted, \(X\). In the lottery example, \(X = [0, 1]\).*
+
+### Another Entropy Example
+
+To really solidify the concept, lets look at a different binary channel. We can 
+receive the message 0 or 1, like in the lottery. However, let's say that both
+messages are equally likely: \(P(0) = P(1) = \frac{1}{2}\).
+
+Then,
+
+\[
+\begin{align}
+            H(X) &= -\left(\frac{1}{2}\log_2\left(\frac{1}{2}\right) + \frac{1}{2}\log_2\left(\frac{1}{2}\right)\right) \\
+                 &= -\log_2\left(\frac{1}{2}\right) \\
+                 &= \log_2 (2) \\
+                 &= 1
+\end{align}
+\]
+
+In other words, our 1-bit channel has an entropy of 1 bit *if* the two messages 0 and 1 are 
+equally likely. If one message is more likely than another, our entropy would decrease, meaning
+we would be transferring less useful information per bit.
+
+Without proving this, we can show its consequences. Let's imagine our 1-bit channel now
+only ever sends the message *1*. If you will always (as in *always* always) receive the same message, you can't
+glean anything useful from it. The entropy of this situation would be 0.
+
+## Consequences
+
+What's interesting about entropy is that it says nothing about the *contents* of the message. In the lottery 
+example, we could make the winning message a *0* and the losing message a *1*, and nothing would change. 
+At no point does the actual message being sent factor into the calculation. Instead, all that matters
+when calculating information content and entropy is *probability*.
+
+This consequence also means that we are free to waste gratuitous amounts of information, if we want to,
+based on how we *encode* our messages. For example, we could send the strings "WIN" and "LOSE", 
+using 3 bytes (24 bits) and 4 bytes (32 bits) respectively. Our channel would still only have 
+\(\approx 0.286\) bits of entropy, though.
+
+#### Compression
+For our exact case (communicating the results of a lottery), our 1-bit channel is actually optimal. 
+We need to send something each time the lottery is drawn - otherwise, how would the receiver know
+that they'd received the results? - and the smallest amount of information we can send is a single bit.
+
+This encoding scheme is quite suboptimal for our other problem, though: if we want to know
+what number was drawn, we'd have to receive up to 19 losing bits (or 1 winning bit) before we
+were certain we knew the winning number. If we wanted to optimize our scheme for transmission of the winning 
+number, we could use a 5 bit scheme *(or perhaps a variable-length 4 bit / 5 bit scheme)* to 
+just transmit the number directly. But if our receiver is just going to compare the winning number
+against the number on the ticket to see if we've won, we've wasted 3 or 4 bits.
+
+This is an example of the [Pigeonhole principle](https://en.wikipedia.org/wiki/Pigeonhole_principle):
+any time we losslessly compress messages on a channel, some kinds of messages get longer, and others get
+shorter.
+
+*(It's called the Pigeonhole principle because if you have **n** pigeonholes, you can't put **n+1** messages
+in them without putting at least two messages in the same hole. [Pigeonholes are a kind of 
+mailbox, although I like the idea of literal pigeons better.] In our case, if we only have 2 messages
+and 20 possible winning numbers, 19 of our numbers end up in one kind of message, and only one ends up in the other.)*
+
+# Practical Applications
+
+Information Theory is widely used for analyzing all kind of communication. In his seminal paper -
+[A Mathematical Theory of Communication](https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf) -
+Claude Shannon applied the ideas to telecommunication (at the time, the telegraph and the teletype were dominant), artificial
+languages *(sequences of characters such as ABBDABCD)*,
+as well as to communication in human languages like English. 
+
+Like in our lottery example, real messages written in human language
+have *much less entropy* than could theoretically be transmitted with the same set of symbols (for example, the English alphabet.)
+We can think of this as *redundancy* - what fraction of the letters in a message could we delete 
+before it lost its original meaning.
+
+As Shannon wrote, 
+
+> The redundancy of a language is related to the existence of crossword puzzles. If the redundancy is 
+zero any sequence of letters is a reasonable text in the language and any two-dimensional array of letters
+forms a crossword puzzle. If the redundancy is too high the language imposes too many constraints for large
+crossword puzzles to be possible.
+
+For this article, however, we will focus on *signal processing*. My claim is that entropy can be explained
+visually, and that this visualization provides good intuitive insights. My hope is that
+bringing the underlying geometry to the forefront will make it obvious what is going on.
+
+To motivate what would otherwise 
+be a very abstract journey, we will examine the function \(f\). Our goal is to try and determine 
+whether f is related to \(X\) and \(Y\), using only
+samples from \(X\), \(Y\), and \(f\).
+
+
+\[
+\begin{align}
+            X &\sim \mathcal{U}(0, 40) \\
+            Y &\sim \mathcal{U}(-25, 25) \\
+            f &\sim \sin(X) \sin(Y)\;X\;Y + \mathcal{N}(0, 1)\\
+\end{align}
+\]
+
+\(f\) is mostly a deterministic function of \(X\) and \(Y\), although there's a
+sprinkling of gaussian noise (the \(\mathcal{N}(0, 1)\) term) for reasons
+I'll explain later.
+
+
+!!! TO DO: 
+- 3d plot of x, y, f
+- buttons that flip the view to \(f(X | Y)\) etc.
+
+This function was chosen because:
+- It's completely deterministic if you know \(X\) and \(Y\).
+- It's decidedly non-linear. There are periodic functions, terms 
+multiplied together, but not a linear term in sight. It's a mess!
+- The underlying distributions are not just normally distributed. 
+A lot of successful techniques assume underlying normal distributions,
+but we want a technique that doesn't *require* those assumptions hold
+to be accurate.
+- It looks like a Christmas tree from one side and a bow-tie from the other.
+
+I'm not completely joking with the last point - 
+our human brain can *easily* tell that \(f\), \(X\), and \(Y\) are related. There's 
+so much structure in the plot! So many patterns appear before us as we explore the 
+space.
+
+Despite this, many conventional data analysis techniques 
+
+If we were to use linear analysis techniques - for example, the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) -
+we would get results telling us that \(f\) is uncorrelated to \(X\) and \(Y\), because
+the slopes of \(f\) against \(X\), \(Y\), or both are on average flat.
+
+Similary, [Spearman's rank correlation coefficient](https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
+won't help us because \(f\) is not monotonic.
+
+It's also important that our method distinguishes between the actual generating source (e.g. \(X\)) and
+an identically distributed but independent source (e.g. \(Q \sim \mathcal{U}(0, 40)\)) which
+just happens to share population statistics. Again, if we were to plot \(Q\) instead of \(X\) 
+
+
+!!!TO DO: swap X with X[shift 1]!!!
+
+
+, the
+distinction is obvious. Looking at population statistics like the mean and variance of \(Q\) and \(X\),
+however, would not distinguish between the two. Even some entropy measures - if poorly chosen - could
+fail to separate the two distributions. The KL-divergences \(D_{KL}(f||Q)\) and \(D_{KL}(f||X)\), 
+for example, should be equal to one another.
+
+
+Note that we do not require our method to prove there is a **causal** relationship 
+between \(f\), \(X\), and \(Y\). It can (and does) produce the same results whether
+f is truly a function of \(X\) and \(Y\), or f is a function of some other variables
+that happen to be (perfectly) correlated with \(X\) and \(Y\). If we think in terms
+of how much information knowing \(X\) or \(Y\) tells us about \(f\), this distinction 
+is irrelevant.
+
+## Key Concept 1: Mutual Information
+
+An information theory concept that seems quite promising is the [Mutual Information](https://en.wikipedia.org/wiki/Mutual_information),
+\(I(X;Y)\). *(In our particular case, we might be interested in something like \(I(f;X)\), \(I(f;Y)\).)*
+
+It describes how much information we learn about \(X\) if we know the value of \(Y\).
+
+Mutual information has many definitions, some of which are given below:
+
+\[
+\begin{align}
+    I(X;Y) &\equiv H(X) - H(X | Y) \\
+           &\equiv H(X) + H(Y) - H(X,Y) \\
+\end{align}
+\]
+
+The first definition says that Mutual Information is the entropy of \(X\) minus
+the entropy of \(X | Y\). \(X | Y\) is the conditional entropy of X given Y. If that 
+description means nothing to you, play around with the plot below. 
+
+Conditional entropy has two helpful properties: 
+1. \(H(Y|X) = 0\) if and only if knowing X tells us the exact value of Y.
+2. \(H(Y|X) = H(Y)\) if and only if \(Y\) and \(X\) are independent random variables.
+
+Visually, we can plot the conditional *distribution* \(Y|X\) and from it qualitatively
+assess the entropy:
+1. If \(H(Y|X) = 0\), the plot of \(Y|X\) will be a "thin" line, where each value of \(Y\)
+maps exactly to a single value of \(X\).
+2. If \(H(Y|X) = H(Y)\), the spread of \(Y\) is uniform across all \(X\). In other words,
+we should get a cloud of points with constant density from left to right, and (potentially)
+changing density as we go up or down.
+
+!!!! Conditional Distribution Plot !!!!!
+
+The second definition says that Mutual Information is the entropy of \(X\) plus 
+the entropy of \(Y\) minus the entropy of \(X, Y\). \(X, Y\) is the *joint distribution*
+of \(X\) and \(Y\), and can be visualized below.
+
+!!!! Joint Distribution Plot !!!!!
+
+The Joint Distribution
+
+
+## Key Concept 2: Entropy for Continuous Numbers
+
+Entropy as defined earlier seems quite restrictive:
+- We need to know all the possible messages that could be transmitted.
+- We need to know the probabilities of receiving each possible message.
+
+In our case, we're sampling from two uniform distributions and one normal distribution,
+all of which give us continuous values in some range. By their very nature, there are infinitely
+many numbers between, say, -25 and 25. How can we even define entropy? Well,
+there are a few approaches:
+
+1. Discretize our values. For example, our signal \(X\) isn't really continuous - if
+it's represented as a 32-bit floating point number, it can't take on more than \(2^{32}\) 
+different values. 
+1. a) Artificially discretize our values. We can think of this as taking many similar 
+values and putting them all in a single bucket. We might choose to have 50 buckets, or
+50,000. A good representation of this is a [histogram](https://en.wikipedia.org/wiki/Histogram).
+2. Modify our definition of entropy from a sum (over finite values) to an integral (over
+infinitesimally small values).
+
+Typically, we'll have to do some combination of both. Take our example of \(X, Y,\) and \(f\). 
+If we only have samples of each and don't know the true underlying mathematical distributions,
+we have to estimate. Often, we'll assume the distributions are continuous and work backwards 
+to try and estimate a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function).
+
+But once we have a pdf, we still need a definition of entropy that works with continuous numbers.
+Here's a sketch of how we get there. First, recall the definition of entropy as 
+
+\[
+        H(X) = -\sum_{x\in X} p(x) \log_2{p(x)}
+\]
+
+Second, remember that we can integrate our probability density function \(f(x)\) over some range (a, b)
+to get the probability of our random sample falling within that range. That is,
+
+\[
+       p(a \leq x \leq b) = \int_a^b f(x) dx 
+\]
+
+So, we can start with a set of bins \((a_i, a_i + \Delta x)\) of some size \(\Delta x\), and treat each bin as if it
+represents a discrete event with a discrete probability. We'll call the event \((a_i, a_i + \Delta x)\). Then,
+the entropy is:
+
+\[
+        H(X) = -\sum_{(a_i, a_i+\Delta x) \in X} \int_{a_i}^{a_i + \Delta x} f(x)\:dx\;\log_2 \int_{a_i}^{a_i + \Delta x} f(x)\:dx
+\]
+
+Provide our \(\Delta x\) is small enough, we can use the trapezoidal rule to 
+approximate the integral of the pdf for each function:
+
+\[
+        \int_{a_i}^{a_i + \Delta x} f(x)\:dx \approx \frac{f(a_i) + f(a_i + \Delta x)}{2} \Delta x
+\]
+
+Substituting in to our entropy formula,
+
+\[
+        H(X) = -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \frac{\Delta x}{2} \
+(f(a_i) + f(a_i + \Delta x))\log_2 \left( \frac{\Delta x}{2} (f(a_i) + f(a_i + \Delta x))
+\right)
+\]
+
+We can do some rearranging in our log, by exploiting the fact that \(\log(a\cdot b) = \log(a) + \log(b)\).
+
+\[
+        H(X) = -\lim_{\Delta x \rightarrow 0} \sum_{(a_i, a_i + \Delta x) \in X} \frac{\Delta x}{2}\
+        (f(a_i) + f(a_i + \Delta x))\log_2 \left( \frac{\Delta x}{2} (f(a_i) + f(a_i + \Delta x))
+\right)
+\]
+
+
+
+Even if the system we're analysing does send a discrete set of messages, it can often be difficult 
+to estimate the chances of low-probability events. In our lottery example, with only two messages,
+we could easily have received >20 *0* messages in a row. If we stopped sampling at that point, 
+we'd wrongly conclude that there was only one message and the entropy was 0.
+
+
+## Key Concept 3: Entropy Estimation
+
+So far, we've seen a lot of visualisations. I keep coming back to the humble point-cloud - plotting a single
+point for each sample, with an axis for \(X\), \(Y\), and \(f\) - because it presents all the data in the set 
+at once with no simplifications.
+
+One recurring motif is the idea of "thinness" increasing as entropy decreases - if we plot our signal against
+one (or more) of the components that comprise it, we transform what was a fuzzy cloud into a
+surface or membrane.
+
+It turns out that some state-of-the-art methods for estimating entropy and mutual information calculate
+exactly that - the "surfacey-ness" of a point cloud.
+
+
+-- Histogram Method (and the issues with it)
+
+
+
+# Things I want to show
+
+- Differential entropy estimation ends up becoming (somewhat like) discrete entropy estimation
+where we are trying to predict the alphabet used to generate the messages
+- How, and why, K-nearest neighbors methods work
+- Differential entropy is the volume of the support of the messages
+
+# Differential Entropy
+
+- 
+
+# Estimating Entropy
+
+
+# Mutual Information
+
+
+# Kullback-Leibler Divergence

@@ -805,6 +805,11 @@ Then, the mutual information can be estimated as
 large x. N is the number of points, k is the k from K-nearest-neighbors, and \(n_x\) and \(n_y\) are the values
 described above.
 
+The reason we can just take an average over all our points without needing to weight by \(p(x)\) is because
+KNN naturally samples more in areas of high probability, and less in areas of low probability. Because each bin
+is dynamically constructed around points actually sampled from our distributions, the probability weighting happens
+for free.
+
 Again, this formula is not the most illuminating. We need to pick it apart to really understand what's going on.
 Recall that \(I(X;Y) = 0\) *if and only if* the two signals are uncorrelated. For our formula to equal zero,
 either \(n_x\) or \(n_y\) (or both) would have to be, on average, very close to \(N\), the total number of points. 
