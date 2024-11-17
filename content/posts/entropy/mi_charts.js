@@ -642,7 +642,7 @@ export function get_3d_mi_chart(id, signals, k=3) {
                 layout.scene.camera.center = {x: 0, y: 0, z: 0};
                 // In perspective mode, the camera eye sets the zoom level
                 // layout.scene.camera.eye = {x: 0.1, y: 0.1, z: 0.1};
-                layout.scene.aspectratio = {x: 0.01, y: 0.01, z: 0.01};
+                layout.scene.aspectratio = {x: 10, y: 10, z: 10};
                 zoomed = !zoomed;
             }
             Plotly.relayout(elem.id, layout);

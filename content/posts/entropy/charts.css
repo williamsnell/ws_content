@@ -3,6 +3,7 @@
     justify-content: center;
     width: calc(min(350px, 100vw));
     height: 4rem;
+    margin-bottom: 10px;
 }
 
 .mi_buttons {

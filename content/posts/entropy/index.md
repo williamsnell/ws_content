@@ -24,6 +24,21 @@ Information theory - and in particular, entropy - can be quite an intimidating t
 It doesn't have to be. If you can develop some key intuitions for the topic, you can
 learn and use entropy!
 
+There are three main sections to this article. If you already have a solid grasp on one of them, feel
+free to skip ahead! Each section should hopefully be a bit of fun, though, so don't feel obliged to.
+
+# Table of Contents
+
+1. [What is Entropy?](#what-is-entropy) - If you're new to information theory
+2. [Entropy for Continuous Numbers](#entropy-for-continuous-numbers) - If terms like "differential entropy"
+aren't familiar.
+3. [Mutual Information and Conditional Mutual Information](#mutual-information) - Graphical depictions of 
+mutual information and variants thereof, intended to build an intuition for why and how these
+measures work.
+
+
+# What is Entropy?
+
 So let's dive right in... by playing the lottery!
 
 Each round, you get to pick one number on the ticket below:
@@ -703,8 +718,8 @@ build on it to obtain the *mutual information*, the tool we will use to finally 
 
 # Mutual Information
 
-Mutual Information is the tool we've been looking for, yet subtly different to what we might've
-expected. Mutual information tells us how much information we learn about a signal \(Y\) if we were 
+When it comes to determining if two signals are correlated, mutual information is the tool we've been looking for.
+Yet, it is also subtly different from what we might've expected. Mutual information tells us how much information we learn about a signal \(Y\) if we were 
 to observe samples of a different signal, \(X\). 
 
 Formally, the mutual information between two distributions \(X\) and \(Y\), \(I(X;Y)\), is defined as
@@ -812,6 +827,13 @@ increase.
 Also note that \(n_x\) and \(n_y\) are treated identically by the function. This again highlights the 
 symmetric nature of mutual information: \(I(X;Y) = I(Y;X)\).
 
+Finally, the \(\psi(N)\) term means that in cases of very high mutual information, the exact
+number we get will depend on the number of samples we analyse. If \(X\) is continuous and \(Y = X\), for example,
+the true mutual information should be infinite. Instead, we will see it gradually increase as the number of 
+samples increases, much like the differential entropy from earlier. Typically, \(Y\) is not exactly equal to
+\(X\), for example if some extra noise were added, which means that mutual information typically plateaus
+at some (high) value, even for very correlated signals.
+
 ### Illustrative Examples of Mutual Information
 
 So, we can maximize mutual information by capturing as few points in our \(n_x\) and \(n_y\) bounds 
@@ -834,7 +856,7 @@ let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi);
 spawn_plot("very-linear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
-document.getElementById("linear-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+document.getElementById("linear-text").textContent = ` Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 But mutual information does not **require** linearity. For example, the 
@@ -863,7 +885,7 @@ let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
 spawn_plot("very-nonlinear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
-document.getElementById("very-nonlinear-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+document.getElementById("very-nonlinear-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 Mutual information is subtle, though. Just because \(y\) might be a 
@@ -886,7 +908,7 @@ let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = x.map((xi) => Math.sin(xi));
 spawn_plot("sine-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
-document.getElementById("sine-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+document.getElementById("sine-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 Notice how the samples for \(n_y\) come from multiple different cycles of
@@ -913,14 +935,14 @@ Y &\sim \mathcal{U}(0, 20) \\
 \]
 
 <div id="uncorrelated-plot"></div>
-<div id="uncorrelated-text"></div>
+<code id="uncorrelated-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = Array(2000).fill(0).map((_) => Math.random() * 20);
 spawn_plot("uncorrelated-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
 import {mutual_information} from "./knn.js";
-document.getElementById("uncorrelated-text").textContent = `Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+document.getElementById("uncorrelated-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
 </script>
 
 Like we said earlier, it's clear that neither \(n_x\) nor \(n_y\) are capturing anywhere close to the full
@@ -934,8 +956,10 @@ strips of area \(n\).
 
 If we just rename \(n^2\) to \(N\), our total number of points, we get the expectation
 that if our points are uniformly distributed in the x-y space, 
-the number of points captured in a strip of height \(\sqrt{N}\) from left to right (or width
-\(\sqrt{N}\) from top-to-bottom) should be \(\sqrt{N}\). 
+the number of points captured in a wide strip of height 1 (or a tall
+strip of width 1) should be \(\sqrt{N}\). In other words, if the orange square
+that holds our K nearest neighbors held 1 point, we should expect \(n_x\) and \(n_y\)
+to both hold \(\sqrt{N}\) points in this uncorrelated case.
 
 Earlier, we established that:
 \[
@@ -954,27 +978,182 @@ tend to zero. (\(n_x\) or \(n_y\) need to be slightly larger to cancel out the \
 term. This could be seen as compensating for the fact that our \(n_x\) and \(n_y\) bins are 
 not infinitely thin, and so capture the same points multiple times). 
 
-For non-uniform, but still uncorrelated, distributions, this analogy still 
-works - we just have to remember that the KNN algorithm
+For non-uniform (but still uncorrelated) distributions, this analogy still 
+works. We just have to remember that the KNN algorithm
 makes the bins smaller in more dense regions, and larger in less dense regions. So, we could imagine
 this process as the algorithm first clustering or spreading out points so that they 
 are evenly distributed, and then counting the area in each constant-width strip.
 
+Finally, let's look at our 3 signals from much earlier in the article. Recall,
 
+\[
+\begin{align}
+            X_1 &\sim \mathcal{U}(0, 20) \\
+            X_2 &\sim \mathcal{U}(-10, 10) \\
+            Y &= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
+\end{align}
+\]
 
+We can calculate the mutual information between \(X_1\) and \(Y\):
 
 <div id="2d-hero-plot"></div>
-<div id="mi-text-2d"></div>
+<code id="mi-text-2d"></code>
+
+While the mutual information isn't as high as it would be for a purely bijective
+function, it's still significant. Even though the average slope of \(X_1\) vs \(Y\)
+is flat, and even despite the noise from the unaccounted for \(X_2\), mutual information
+is successful in telling us that, yes, our signals are correlated. 
+
+As we increase the number of samples, the estimated mutual information will continue to climb.
+Potentially, we could tackle this would by normalizing the mutual information estimate against
+it's maximum possible value - something like: 
+
+\[
+    \hat{I}(X;Y) = \frac{\psi(k) + \psi(N) - \frac{1}{N} \sum_{i=0}^N \psi(n_x + 1) + \psi(n_y + 1)}{\psi(N)}
+\]
+
+Here, \(\hat{I}\) close to 1 implies maximum information shared, and \(\hat{I} = 0\) implies
+no information shared between \(X_1\) and \(Y\). It's not completely clear whether this quantity
+has a direct link back to information theory, though. It's somewhat close to the [Rajski Distance](https://en.wikipedia.org/wiki/Mutual_information#Metric),
+defined as:
+
+\[
+    D(X, Y) = 1 - \frac{I(X;Y)}{H(X,Y)}
+\]
+
+Perhaps we could derive a mathematically sound version of this metric that converges 
+to a useful value, and would give us a useful, normalized criteria for comparing signals.
+
+### Handling the Second Input
+
+We can't let \(X_1\) have all the fun. Let's calculate the mutual
+information between \(X_2\) and \(Y\).
+
+<div id="2d-hero-plot-x2"></div>
+<code id="mi-text-2d-x2"></code>
+
+We should pause for a moment, though. This approach doesn't really take into account the fact that we need
+both \(X_1\) and \(X_2\) to fully define a value of \(Y\). Looking only at 
+one input and one output at a time also doesn't tell us whether \(X_1\) carries
+unique information about \(Y\) that \(X_2\) does not, or if we're just double-counting
+the same information each time.
+
+To figure out if both \(X_1\) and \(X_2\) are correlated to \(Y\), **and** that \(X_2\)
+carries information \(X_2\) does not, we need to go deeper.
+
+# Conditional Mutual Information
+
+There are a lot of extensions of mutual information to more variables. For our example,
+we're interested in the [Conditional Mutual Information](https://en.wikipedia.org/wiki/Conditional_mutual_information).
+
+Although it's typically written as \(I(X;Y|Z)\), we'll use the terminology \(I(X_1;Y|X_2)\). This way, all our 
+inputs are X's, and our output is Y. 
+
+Conditional mutual information tells us how much of the mutual information \(I(X_1;Y\) between 
+\(X_1\) and \(Y\) is *not* found in \(X_2\). In other words, if \(I(X_2;Y) > 0\), we know
+that \(X_2\) and \(Y\) share some information; if \(I(X_1;Y|X_2) = 0\), we then know that
+all the information \(X_2\) told us about \(Y\) could have been learned by observing
+\(X_1\) instead. 
+
+As you can probably tell by the notation, conditional mutual information treats
+its inputs differently. There is still some symmetry:
+
+\[
+I(X_1;Y|X_2) = I(Y;X_1|X_2)
+\]
+
+However, interchanging \(X_2\) with the other inputs gives us a different result. This 
+is important because if \(X_2\) is completely irrelevant (i.e. uncorrelated random noise),
+the conditional mutual information reduces to:
+
+\[
+    I(X_1;Y|X_2) = I(X_1;Y)
+\]
+
 
 <div id="3d-plot"></div>
-<div id="mi-text"></div>
+<code id="mi-text"></code>
+
+So, how do we calculate conditional mutual information? Well, it's actually very similar
+to how we calculated mutual information in the 2d case. We can use [Frenzel and Pompe's](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.99.204101)
+modification of the [KSG estimator](https://arxiv.org/pdf/cond-mat/0305641) from earlier.
+
+For each point p, we calculate
+the distance \(d\) to the k-th nearest neighbor (again using the infinity norm), and then count:
+1. \(n_{x_2}\) - the number of points within a distance \(d\) from p, ignoring both the 
+\(x_1\) and \(y\) coordinates. 
+2. \(n_{x_1, x_2}\) - the number of points within a distance \(d\) from p, ignoring 
+the \(y\) coordinate.
+3. \(n_{x_2, y}\) - the number of points within a distance \(d\) from p, ignoring 
+the \(x_1\) coordinate.
+
+Even though we now have 3 hyper-rectangles to keep track of, the process is very similar to before - we're 
+basically taking a number of 2d-slices of our 3d space, and computing the mutual information
+within each slice. \(n_{x_2}\) can be thought of as \(N\), the total number of points in our 
+MI estimator; \(n_{x_1, x_2}\) is analogous to \(n{x_1}\) and \(n_{x_2, y}\) is analogous to
+\(n_{y}\). 
+
+So, the formula is:
+
+\[
+        I(X_1;Y|X_2) \approx \psi(k) - \frac{1}{N} \sum_{i=0}^N \psi(n_{x2}) - \psi(n_{x_1,x_2}) - \psi(n_{x_2,y}) 
+\]
+
+So, conditional mutual information is high if for each slice of \(X_2\), we have high mutual information between
+\(X_1\) and \(Y\).
+
+*(The nearest-neighbor hypercube in the 3d plots might look a little squashed. This is just a plotting
+artifact, because the variance of our function is much larger in the z-direction than x or y. The cube is
+still a cube, we just have a squashed z-direction.)*
+
+One important test we defined earlier is being able to distinguish between a random variable that is 
+*in distribution*, but not actually correlated to the signal, and a correlated variable with the same
+distribution. For example we could define an unrelated variable \(Q\) with \(X_1\text{'s}\) distribution:
+
+\[
+            Q \sim \mathcal{U}(0, 20) \\
+\]
+
+Does conditional mutual information distinguish between these two cases?
 
 <div id="3d-plot-2"></div>
-<div id="mi-text-2"></div>
+<code id="mi-text-2"></code>
+
+Recall that conditional mutual information \(I(X_1;Y|X_2)\) becomes equivalent to mutual information \(I(X_1;Y)\) if 
+the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y\). In this case, we know that \(Q\) is
+uncorrelated, and so \(I(X_1;Y|Q)\) should equal the value of \(I(X_1;Y)\) we calculated in the previous section. 
+While the value is close, it's not an exact match. This is likely an issue of finite sample sizes, and should
+improve as the number of points sampled increases. 
+
+At the very least, we appear to get a much stronger result (~1.5) when calculating \(I(X_1;Y|X_2)\) vs
+the ~0.3 we get with \(I(X_1;Y|Q)\). 
+
+Recall, also, that conditional mutual information is not symmetric. Since \(Q\) carries no information
+about \(Y\), we should be able to swap the order of signals and get back a result of 0. I.e.
+\(I(Q;Y|X_1) = I(Q;Y) = 0\). 
+
+If we run this through our estimator, we do in fact get back 0:
+
+<code id="mi-text-q2"></code>
+
+
+Finally, we should consider what happens when \(X_1\) and \(X_2\) carry the same information. They don't
+have to be identical signals, provided the transformation is bijective, and in fact we can show this by calculating
+
+\[
+    I(X_1;Y|X_1^2)
+\]
+
+That is, we just take \(X_1\) and square it to get our second signal. This carries no extra information over \(X_1\),
+but certainly looks quite different. Will the conditional mutual information algorithm be able to pick this up?
+
 
 <div id="3d-plot-3"></div>
-<div id="mi-text-3"></div>
+<code id="mi-text-3"></code>
 
+Not a problem! In fact, this plot gives us a clear example of what \(X_1\) and \(X_2\) carrying the same
+information looks like. Just like earlier where thin, sharp lines meant high mutual information, the same
+shapes on the x1-x2 plane implies zero conditional mutual information.
 
 <script type="module">
 import {get_2d_mi_chart, get_3d_mi_chart} from "./mi_charts.js";
@@ -984,72 +1163,28 @@ let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math
 //
 import {mutual_information, partial_mutual_information} from "./knn.js";
 spawn_plot("2d-hero-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, z[i]]), 5));
-document.getElementById("mi-text-2d").textContent = mutual_information(x.map((x, i) => [x, z[i]]));
+document.getElementById("mi-text-2d").textContent = `Estimated I(X1;Y) = ${mutual_information(x.map((x, i) => [x, z[i]]))}`;
+// 
+spawn_plot("2d-hero-plot-x2", (id) => get_2d_mi_chart(id, y.map((xi, i) => [xi, z[i]]), 5));
+document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${mutual_information(y.map((x, i) => [x, z[i]]))}`;
 // 
 spawn_plot("3d-plot", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[i], z[i]]), 5));
-document.getElementById("mi-text").textContent = partial_mutual_information(x, z, y);
+document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${partial_mutual_information(x, z, y)}`;
 //
 spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5));
-document.getElementById("mi-text-2").textContent = partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]));
+document.getElementById("mi-text-2").textContent = `Estimated I(X1;Y|Q) = ${partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]))}`;
+document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X1) = ${partial_mutual_information(y.map((_, i) => y[(i+1)%y.length]), z, x)}`;
 //
 spawn_plot("3d-plot-3", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, xi**2, z[i]]), 5));
-document.getElementById("mi-text-3").textContent = partial_mutual_information(x, z, x.map((x) => x**2));
+document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${partial_mutual_information(x, z, x.map((x) => x**2))}`;
 </script>
 
+# Conclusion
 
-### Why does this work?
+Well done for making it all this way! If you, like me, started this article without a solid grasp on what information
+entropy actually is, I hope you now have an intuitive feeling for not just what it represents, but why it might be useful. 
 
-- We're calculating the average across all our sample points. Entropy is the expected value 
-across all our points. By only placing bins in points where our samples fall, the average of our
-bins should approximate the expected value of our probability distribution.
-
-
-# Kullback-Leibler Divergence
-
-
-# Graveyard
-
-
-## Key Concept 1: Mutual Information
-
-An information theory concept that seems quite promising is the [Mutual Information](https://en.wikipedia.org/wiki/Mutual_information),
-\(I(X;Y)\). *(In our particular case, we might be interested in something like \(I(f;X)\), \(I(f;Y)\).)*
-
-It describes how much information we learn about \(X\) if we know the value of \(Y\).
-
-Mutual information has many definitions, some of which are given below:
-
-\[
-\begin{align}
-    I(X;Y) &\equiv H(X) - H(X | Y) \\
-           &\equiv H(X) + H(Y) - H(X,Y) \\
-\end{align}
-\]
-
-The first definition says that Mutual Information is the entropy of \(X\) minus
-the entropy of \(X | Y\). \(X | Y\) is the conditional entropy of X given Y. If that 
-description means nothing to you, play around with the plot below. 
-
-Conditional entropy has two helpful properties: 
-1. \(H(Y|X) = 0\) if and only if knowing X tells us the exact value of Y.
-2. \(H(Y|X) = H(Y)\) if and only if \(Y\) and \(X\) are independent random variables.
-
-Visually, we can plot the conditional *distribution* \(Y|X\) and from it qualitatively
-assess the entropy:
-1. If \(H(Y|X) = 0\), the plot of \(Y|X\) will be a "thin" line, where each value of \(Y\)
-maps exactly to a single value of \(X\).
-2. If \(H(Y|X) = H(Y)\), the spread of \(Y\) is uniform across all \(X\). In other words,
-we should get a cloud of points with constant density from left to right, and (potentially)
-changing density as we go up or down.
-
-!!!! Conditional Distribution Plot !!!!!
-
-The second definition says that Mutual Information is the entropy of \(X\) plus 
-the entropy of \(Y\) minus the entropy of \(X, Y\). \(X, Y\) is the *joint distribution*
-of \(X\) and \(Y\), and can be visualized below.
-
-!!!! Joint Distribution Plot !!!!!
-
-The Joint Distribution
-
-
+More than that, I hope you've been able to see how even quite involved information theory measures like *conditional
+mutual information* can be explained geometrically. If a few of the concepts haven't quite clicked - that's ok! Come back
+in a few days when you've had some time to think about it, play around with the plots again, and try and understand
+*why* a given plot has high or low entropy, mutual information, or partial mutual information.
