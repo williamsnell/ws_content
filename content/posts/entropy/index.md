@@ -21,10 +21,10 @@ color = "" #color from the theme settings
 <link href="./charts.css" rel="stylesheet">
 
 Information theory - and in particular, entropy - can be quite an intimidating topic.
-It doesn't have to be. If you can develop some key intuitions for the topic, you can
-learn and use entropy!
+It doesn't have to be. If you can develop some key intuitions for the topic, a lot of the concepts
+become a lot simpler than they might initially seem.
 
-There are three main sections to this article. If you already have a solid grasp on one of them, feel
+There are three main sections to this article. If you already have a solid grasp on any of them, feel
 free to skip ahead! Each section should hopefully be a bit of fun, though, so don't feel obliged to.
 
 # Table of Contents
@@ -854,14 +854,18 @@ as possible. One way to do that very effectively is to have \(Y\) be a linear fu
 Indeed, this gives us a very high mutual information score.
 
 <div id="very-linear-plot"></div>
-<div id="linear-text"></div>
+<code id="linear-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi);
 spawn_plot("very-linear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("linear-text").textContent = ` Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+//
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("linear-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 
 But mutual information does not **require** linearity. For example, the 
@@ -883,14 +887,18 @@ Y &= \left\{ \begin{array}{ll}
 \]
 
 <div id="very-nonlinear-plot"></div>
-<div id="very-nonlinear-text"></div>
+<code id="very-nonlinear-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
 spawn_plot("very-nonlinear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("very-nonlinear-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+//
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("very-nonlinear-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 
 Mutual information is subtle, though. Just because \(y\) might be a 
@@ -906,14 +914,18 @@ Y &= \sin(X) \\
 
 
 <div id="sine-plot"></div>
-<div id="sine-text"></div>
+<code id="sine-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = x.map((xi) => Math.sin(xi));
 spawn_plot("sine-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("sine-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+//
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("sine-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 
 Notice how the samples for \(n_y\) come from multiple different cycles of
@@ -946,8 +958,11 @@ import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = Array(2000).fill(0).map((_) => Math.random() * 20);
 spawn_plot("uncorrelated-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("uncorrelated-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("uncorrelated-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 
 Like we said earlier, it's clear that neither \(n_x\) nor \(n_y\) are capturing anywhere close to the full
@@ -1168,20 +1183,51 @@ let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math
 //
 import {mutual_information, partial_mutual_information} from "./knn.js";
 spawn_plot("2d-hero-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, z[i]]), 5));
-document.getElementById("mi-text-2d").textContent = `Estimated I(X1;Y) = ${mutual_information(x.map((x, i) => [x, z[i]]))}`;
+;
 // 
 spawn_plot("2d-hero-plot-x2", (id) => get_2d_mi_chart(id, y.map((xi, i) => [xi, z[i]]), 5));
-document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${mutual_information(y.map((x, i) => [x, z[i]]))}`;
 // 
 spawn_plot("3d-plot", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[i], z[i]]), 5));
-document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${partial_mutual_information(x, z, y)}`;
 //
 spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5));
-document.getElementById("mi-text-2").textContent = `Estimated I(X1;Y|Q) = ${partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]))}`;
-document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X1) = ${partial_mutual_information(y.map((_, i) => y[(i+1)%y.length]), z, x)}`;
 //
 spawn_plot("3d-plot-3", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, xi**2, z[i]]), 5));
-document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${partial_mutual_information(x, z, x.map((x) => x**2))}`;
+
+let queue = [
+    [["MI", x.map((x, i) => [x, z[i]]), 5],
+    (e) => {document.getElementById("mi-text-2d").textContent = `Estimated I(X1;Y) = ${e.data}`;}],
+    [["MI", y.map((x, i) => [x, z[i]]), 5],
+    (e) => {document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${e.data}`;}],
+    [["PMI", x, y, z, 5], 
+    (e) => {document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${e.data}`;}],
+    [["PMI", x, z, y.map((_, i) => y[(i+1)%y.length]), 5],
+    (e) => {document.getElementById("mi-text-2").textContent = `Estimated I(X1;Y|Q) = ${e.data}`;}],
+    [["PMI", y.map((_, i) => y[(i+1)%y.length]), z, x, 5],
+    (e) => {document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X1) = ${e.data}`;}],
+    [["PMI", x, z, x.map((x) => x**2), 5],
+    (e) => {document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${e.data}`;}]
+];
+const worker = new Worker("worker.js", { type: "module" });
+
+let i = 0;
+
+worker.onmessage = (e) => {
+    // call the most recent callback
+    queue[i][1](e);  
+
+    i += 1;
+    if (i > queue.length) {
+        // exit the loop
+        worker.onmessage = () => {};
+    } else {
+        // send the next job
+        worker.postMessage(queue[i][0]);
+    }
+}
+
+worker.postMessage(queue[0][0]);
+
+
 </script>
 
 # Conclusion
