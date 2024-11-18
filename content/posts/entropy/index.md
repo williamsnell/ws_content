@@ -287,7 +287,7 @@ samples from \(X_1\), \(X_2\), and \(Y\). We define these signals as such:
 \[
 \begin{align}
             X_1 &\sim \mathcal{U}(0, 20) \\
-            X_2 &\sim \mathcal{U}(-10, 10) \\
+            X_2 &\sim \mathcal{U}(-5, 5) \\
             Y &= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
 \end{align}
 \]
@@ -1008,7 +1008,7 @@ Finally, let's look at our 3 signals from much earlier in the article. Recall,
 \[
 \begin{align}
             X_1 &\sim \mathcal{U}(0, 20) \\
-            X_2 &\sim \mathcal{U}(-10, 10) \\
+            X_2 &\sim \mathcal{U}(-5, 5) \\
             Y &= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
 \end{align}
 \]
@@ -1182,8 +1182,8 @@ shapes on the x1-x2 plane imply zero conditional mutual information.
 
 <script type="module">
 import {get_2d_mi_chart, get_3d_mi_chart} from "./mi_charts.js";
-let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
-let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 15);
+let x = Array(10_000).fill(0).map((_) => Math.random() * 20);
+let y = Array(10_000).fill(0).map((_) => (Math.random() - 0.5) * 10);
 let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
 //
 import {mutual_information, partial_mutual_information} from "./knn.js";

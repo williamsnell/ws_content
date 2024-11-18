@@ -236,7 +236,7 @@ samples from \(X_1\), \(X_2\), and \(Y\). We define these signals as such:&lt;/p
 \[
 \begin{align}
             X_1 &amp;\sim \mathcal{U}(0, 20) \\
-            X_2 &amp;\sim \mathcal{U}(-10, 10) \\
+            X_2 &amp;\sim \mathcal{U}(-5, 5) \\
             Y &amp;= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
 \end{align}
 \]&lt;p&gt;Where \(\mathcal{U}(a, b)\) denotes a uniform distribution between a and b.&lt;/p&gt;
@@ -780,7 +780,7 @@ are evenly distributed, and then counting the area in each constant-width strip.
 \[
 \begin{align}
             X_1 &amp;\sim \mathcal{U}(0, 20) \\
-            X_2 &amp;\sim \mathcal{U}(-10, 10) \\
+            X_2 &amp;\sim \mathcal{U}(-5, 5) \\
             Y &amp;= \sin(X_1) \sin(X_2)\;X_1\;X_2\\
 \end{align}
 \]&lt;p&gt;We can calculate the mutual information between \(X_1\) and \(Y\):&lt;/p&gt;
@@ -898,8 +898,8 @@ information looks like. Just like earlier where thin, sharp lines meant high mut
 shapes on the x1-x2 plane imply zero conditional mutual information.&lt;/p&gt;
 &lt;script type=&#34;module&#34;&gt;
 import {get_2d_mi_chart, get_3d_mi_chart} from &#34;./mi_charts.js&#34;;
-let x = Array(10_000).fill(0).map((_) =&gt; Math.random() * 15);
-let y = Array(10_000).fill(0).map((_) =&gt; (Math.random() - 0.5) * 15);
+let x = Array(10_000).fill(0).map((_) =&gt; Math.random() * 20);
+let y = Array(10_000).fill(0).map((_) =&gt; (Math.random() - 0.5) * 10);
 let z = x.map((xi, i) =&gt; 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math.random() * 0.5);
 //
 import {mutual_information, partial_mutual_information} from &#34;./knn.js&#34;;
