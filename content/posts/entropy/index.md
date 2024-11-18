@@ -3,9 +3,9 @@ title = "Entropy and Information Theory"
 date = "2024-11-18T13:45:34+13:00"
 author = ""
 authorTwitter = "" #do not include @
-cover = ""
+cover = "adria-berrocal-forcada-o7PxpvonuRQ-unsplash.jpg"
 keywords = ["", ""]
-description = ""
+summary = "Learning about Information Theory can be fun! Join me as we explore what entropy and information mean, intuitively."
 showFullContent = false
 readingTime = true
 hideComments = false
@@ -19,6 +19,8 @@ color = "" #color from the theme settings
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <link href="./charts.css" rel="stylesheet">
+
+*Photo by [Adria Berrocal Forcada](https://unsplash.com/@adrianikoos?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash) *on* [unsplash](https://unsplash.com/photos/an-old-phone-is-hanging-on-a-wall-o7PxpvonuRQ?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash)*
 
 Information theory - and in particular, entropy - can be quite an intimidating topic.
 It doesn't have to be. If you can develop some key intuitions for the topic, a lot of the concepts

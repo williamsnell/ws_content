@@ -13,19 +13,7 @@
       <pubDate>Mon, 18 Nov 2024 13:45:34 +1300</pubDate>
       
       <guid>https://willsnell.com/posts/entropy/</guid>
-      <description>&lt;script src=&#34;./mi_charts.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;./knn.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;./observer.js&#34;&gt;&lt;/script&gt;
-&lt;script src=&#34;https://cdn.plot.ly/plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;link rel=&#34;preconnect&#34; href=&#34;https://fonts.googleapis.com&#34;&gt;
-&lt;link rel=&#34;preconnect&#34; href=&#34;https://fonts.gstatic.com&#34; crossorigin&gt;
-&lt;link href=&#34;https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&amp;display=swap&#34; rel=&#34;stylesheet&#34;&gt;
-&lt;link href=&#34;./charts.css&#34; rel=&#34;stylesheet&#34;&gt;
-&lt;p&gt;Information theory - and in particular, entropy - can be quite an intimidating topic.
-It doesn&amp;rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts
-become a lot simpler than they might initially seem.&lt;/p&gt;
-&lt;p&gt;There are three main sections to this article. If you already have a solid grasp on any of them, feel
-free to skip ahead! Each section should hopefully be a bit of fun, though, so don&amp;rsquo;t feel obliged to.&lt;/p&gt;</description>
+      <description>Learning about Information Theory can be fun! Join me as we explore what entropy and information mean, intuitively.</description>
       <content>&lt;script src=&#34;./mi_charts.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
 &lt;script src=&#34;./knn.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
 &lt;script src=&#34;./observer.js&#34;&gt;&lt;/script&gt;
@@ -34,6 +22,7 @@ free to skip ahead! Each section should hopefully be a bit of fun, though, so do
 &lt;link rel=&#34;preconnect&#34; href=&#34;https://fonts.gstatic.com&#34; crossorigin&gt;
 &lt;link href=&#34;https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&amp;display=swap&#34; rel=&#34;stylesheet&#34;&gt;
 &lt;link href=&#34;./charts.css&#34; rel=&#34;stylesheet&#34;&gt;
+&lt;p&gt;&lt;em&gt;Photo by &lt;a href=&#34;https://unsplash.com/@adrianikoos?utm_content=creditCopyText&amp;utm_medium=referral&amp;utm_source=unsplash&#34;&gt;Adria Berrocal Forcada&lt;/a&gt; &lt;em&gt;on&lt;/em&gt; &lt;a href=&#34;https://unsplash.com/photos/an-old-phone-is-hanging-on-a-wall-o7PxpvonuRQ?utm_content=creditCopyText&amp;utm_medium=referral&amp;utm_source=unsplash&#34;&gt;unsplash&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;Information theory - and in particular, entropy - can be quite an intimidating topic.
 It doesn&amp;rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts
 become a lot simpler than they might initially seem.&lt;/p&gt;
