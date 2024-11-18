@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   
-    <title>Entropy :: willsnell</title>
+    <title>Entropy and Information Theory :: willsnell</title>
   
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content=" Information theory - and in particular, entropy - can be quite an intimidating topic. It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, you can learn and use entropy!
-There are three main sections to this article. If you already have a solid grasp on one of them, feel free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.
+<meta name="description" content=" Information theory - and in particular, entropy - can be quite an intimidating topic. It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts become a lot simpler than they might initially seem.
+There are three main sections to this article. If you already have a solid grasp on any of them, feel free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.
 " />
 <meta name="keywords" content=", " />
 
@@ -49,9 +49,9 @@ There are three main sections to this article. If you already have a solid grasp
 
 <meta property="og:locale" content="en" />
 <meta property="og:type" content="article" />
-<meta property="og:title" content="Entropy">
-<meta property="og:description" content=" Information theory - and in particular, entropy - can be quite an intimidating topic. It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, you can learn and use entropy!
-There are three main sections to this article. If you already have a solid grasp on one of them, feel free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.
+<meta property="og:title" content="Entropy and Information Theory">
+<meta property="og:description" content=" Information theory - and in particular, entropy - can be quite an intimidating topic. It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts become a lot simpler than they might initially seem.
+There are three main sections to this article. If you already have a solid grasp on any of them, feel free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.
 " />
 <meta property="og:url" content="https://willsnell.com/posts/entropy/" />
 <meta property="og:site_name" content="willsnell" />
@@ -64,7 +64,7 @@ There are three main sections to this article. If you already have a solid grasp
 <meta property="og:image:height" content="627">
 
 
-  <meta property="article:published_time" content="2024-11-01 13:45:34 &#43;1300 NZDT" />
+  <meta property="article:published_time" content="2024-11-18 13:45:34 &#43;1300 NZDT" />
 
 
 
@@ -149,9 +149,9 @@ There are three main sections to this article. If you already have a solid grasp
     
 <article class="post">
   <h1 class="post-title">
-    <a href="https://willsnell.com/posts/entropy/">Entropy</a>
+    <a href="https://willsnell.com/posts/entropy/">Entropy and Information Theory</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-11-01</time><span class="post-reading-time">34 min read (7239 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-11-18</time><span class="post-reading-time">35 min read (7319 words)</span></div>
 
   
   
@@ -169,21 +169,20 @@ There are three main sections to this article. If you already have a solid grasp
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <link href="./charts.css" rel="stylesheet">
 <p>Information theory - and in particular, entropy - can be quite an intimidating topic.
-It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, you can
-learn and use entropy!</p>
-<p>There are three main sections to this article. If you already have a solid grasp on one of them, feel
+It doesn&rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts
+become a lot simpler than they might initially seem.</p>
+<p>There are three main sections to this article. If you already have a solid grasp on any of them, feel
 free to skip ahead! Each section should hopefully be a bit of fun, though, so don&rsquo;t feel obliged to.</p>
 <h1 id="table-of-contents">Table of Contents<a href="#table-of-contents" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <ol>
 <li><a href="/posts/entropy/#what-is-entropy">What is Entropy?</a> - If you&rsquo;re new to information theory</li>
 <li><a href="/posts/entropy/#entropy-for-continuous-numbers">Entropy for Continuous Numbers</a> - If terms like &ldquo;differential entropy&rdquo;
 aren&rsquo;t familiar.</li>
-<li><a href="/posts/entropy/#mutual-information">Mutual Information and Conditional Mutual Information</a> - Graphical depictions of
-mutual information and variants thereof, intended to build an intuition for why and how these
-measures work.</li>
+<li><a href="/posts/entropy/#mutual-information">Mutual Information and Conditional Mutual Information</a> - If you&rsquo;re interested in some
+more advanced concepts, with a focus on signal processing.</li>
 </ol>
 <h1 id="what-is-entropy">What is Entropy?<a href="#what-is-entropy" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
-<p>So let&rsquo;s dive right in&hellip; by playing the lottery!</p>
+<p>Let&rsquo;s dive right in&hellip; by playing the lottery!</p>
 <p>Each round, you get to pick one number on the ticket below:</p>
 <div style="width: 100%; margin: auto; margin-bottom: -200px;">
     <object id="ticket" type="image/svg+xml" data="lottery_ticket.svg" height="500px"></object>
@@ -410,7 +409,8 @@ an identically distributed but independent source. For example, we could define 
 with exactly the same <em>distribution</em> as \(X_1\):</p>
 \[
 Q \sim \mathcal{U}(0, 20)
-\]<p>If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure.
+\]<p>If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure. The
+christmas tree is missing!
 Whatever method we end up with, it should be able to distinguish between these
 two cases.</p>
 <div id="teaser-plot-2"></div>
@@ -505,8 +505,8 @@ approaches the integral:</p>
 Substituting in the Reimann approximation to the integral, we have:</p>
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 p(x_i) \Delta x \\
+    H(X) &= - \lim_{\Delta x \rightarrow 0} \left( \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 p(x_i) \Delta x \right) \\
 \end{align}
 \]<p>Play around with the chart below, where we carry out this exact procedure..
 You should see that as we increase the number of bins, the area under the curve, \(\int_{-\infty}^{\infty} p(x) dx\),
@@ -525,8 +525,8 @@ spawn_plot("integral", (id) => integral_chart(id));
 <p>Let&rsquo;s go back to our continous entropy formula:</p>
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
+    H(X) &= \lim_{\Delta x \rightarrow 0} \left( -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right) \right) \\
 \end{align}
 \]<p>Looking at the last term, and remembering that \(\log(a \cdot b) = \log(a) + \log(b)\), we can
 write it as:</p>
@@ -537,8 +537,8 @@ write it as:</p>
 \]<p>Substituting this into the entropy formula,</p>
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} - \sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \\
+    H(X) &= -\lim_{\Delta x \rightarrow 0} \left( \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \right) \\
          &= -\lim_{\Delta x \rightarrow 0} \left(\
             \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \sum_{i=0}^N p(x_i) \Delta x \log_2 \Delta x \right) 
 \end{align}
@@ -594,9 +594,9 @@ and love:</p>
 100% certainty. \(h(X) = 0\), however, does not have any special meaning. This is because:</li>
 <li>Differential entropy can be negative. Negative!</li>
 <li>\(h(X)\) is sensitive to scale (and therefore units). If we measured 100 people&rsquo;s heights,
-\[h_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
-\[h_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
-The differential entropy of \(h_\text{cm}\) would be <em>larger</em> than the differential entropy of \(h_\text{m}\).</li>
+\[\text{height}_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
+\[\text{height}_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
+The differential entropy of \(\text{height}_\text{cm}\) would be <em>larger</em> than the differential entropy of \(\text{height}_\text{m}\).</li>
 </ol>
 <p>One useful property differential entropy does have is <em>translational invariance</em>:
 </p>
@@ -619,8 +619,8 @@ the box containing our numbers grows or shrinks in terms of absolute number magn
 looking at the entropy formula we tried to discretize earlier:</p>
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
+    H(X) &= \lim_{\Delta x \rightarrow 0} \left( -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right) \right)\\
 \end{align}
 \]<p>The trouble really stems from the last term:</p>
 \[
@@ -662,9 +662,9 @@ distributions. With it, we&rsquo;ll build the tools we need to make sense of sig
 between two distributions. If we observe a particular event, the information we gain from that
 observation varies depending on the message was generated according to the statistics of one probability
 distribution, <em>p</em>, or a different one, <em>q</em>.</p>
-<p>In our lottery example from earlier, observing a 1 carries a lot of information. But if I was
-secretly sending you a 0 every time the number was odd, and a 1 every time it was even, the
-information content of that &ldquo;1&rdquo; message would be lower. The KL-Divergence quantifies this difference,
+<p>In our lottery example from earlier, observing a 1 carries a lot of information. But if instead
+we had agreed that I would send you a 0 every time the winning number was odd, and a 1 every time it was even, the
+information content of that &ldquo;1&rdquo; message would be lower. KL-divergence quantifies this difference,
 averaged (using \(p\)) across the whole distribution.</p>
 <h3 id="why-is-kl-divergence-an-improvement">Why is KL-Divergence an Improvement?<a href="#why-is-kl-divergence-an-improvement" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
 <p>Even though the derivation of KL-Divergence seems more mathematically sound than that of
@@ -785,14 +785,18 @@ as possible. One way to do that very effectively is to have \(Y\) be a linear fu
 \end{align}
 \]<p>Indeed, this gives us a very high mutual information score.</p>
 <div id="very-linear-plot"></div>
-<div id="linear-text"></div>
+<code id="linear-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi);
 spawn_plot("very-linear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("linear-text").textContent = ` Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+//
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("linear-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 <p>But mutual information does not <strong>require</strong> linearity. For example, the
 following very non-linear function which would flummox any linear analysis
@@ -810,14 +814,18 @@ Y &= \left\{ \begin{array}{ll}
 \right.
 \end{align}
 \]<div id="very-nonlinear-plot"></div>
-<div id="very-nonlinear-text"></div>
+<code id="very-nonlinear-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(500).fill(0).map((_) => Math.random() * 5);
 let y = x.map((xi) => xi * ( 1 + Math.floor(xi % 2) * -2));
 spawn_plot("very-nonlinear-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("very-nonlinear-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+//
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("very-nonlinear-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 <p>Mutual information is subtle, though. Just because \(y\) might be a
 function of \(x\) doesn&rsquo;t mean mutual information is maximised. Take the
@@ -828,14 +836,18 @@ X &= \mathcal{U}(0, 20) \\
 Y &= \sin(X) \\
 \end{align}
 \]<div id="sine-plot"></div>
-<div id="sine-text"></div>
+<code id="sine-text"></code>
 <script type="module">
 import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = x.map((xi) => Math.sin(xi));
 spawn_plot("sine-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("sine-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+//
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("sine-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 <p>Notice how the samples for \(n_y\) come from multiple different cycles of
 the sine wave. Also, remember that mutual information is <strong>symmetric</strong>. So,
@@ -862,8 +874,11 @@ import {get_2d_mi_chart} from "./mi_charts.js";
 let x = Array(2000).fill(0).map((_) => Math.random() * 20);
 let y = Array(2000).fill(0).map((_) => Math.random() * 20);
 spawn_plot("uncorrelated-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, y[i]]), 5));
-import {mutual_information} from "./knn.js";
-document.getElementById("uncorrelated-text").textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) => [x, y[i]]))}`;
+const worker = new Worker("./worker.js", { type: "module"} );
+worker.onmessage = (e) => {
+    document.getElementById("uncorrelated-text").textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage(["MI", x.map((x, i) => [x, y[i]]), 5]);
 </script>
 <p>Like we said earlier, it&rsquo;s clear that neither \(n_x\) nor \(n_y\) are capturing anywhere close to the full
 \(N\) points in the x-y plane. However, because \(x\) and \(y\) are uncorrelated, the amount of points
@@ -937,9 +952,9 @@ carries information \(X_2\) does not, we need to go deeper.</p>
 <h1 id="conditional-mutual-information">Conditional Mutual Information<a href="#conditional-mutual-information" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <p>There are a lot of extensions of mutual information to more variables. For our example,
 we&rsquo;re interested in the <a href="https://en.wikipedia.org/wiki/Conditional_mutual_information">Conditional Mutual Information</a>.</p>
-<p>Although it&rsquo;s typically written as \(I(X;Y|Z)\), we&rsquo;ll use the terminology \(I(X_1;Y|X_2)\). This way, all our
-inputs are X&rsquo;s, and our output is Y.</p>
-<p>Conditional mutual information tells us how much of the mutual information \(I(X_1;Y\) between
+<p>Although it&rsquo;s typically written as \(I(X;Y|Z)\), we&rsquo;ll use the terminology \(I(X_1;Y|X_2)\). This way, we write the
+inputs the same we&rsquo;ll use them in our signal processing example.</p>
+<p>Conditional mutual information tells us how much of the mutual information \(I(X_1;Y)\) between
 \(X_1\) and \(Y\) is <em>not</em> found in \(X_2\). In other words, if \(I(X_2;Y) > 0\), we know
 that \(X_2\) and \(Y\) share some information; if \(I(X_1;Y|X_2) = 0\), we then know that
 all the information \(X_2\) told us about \(Y\) could have been learned by observing
@@ -990,12 +1005,15 @@ distribution. For example we could define an unrelated variable \(Q\) with \(X_1
 <div id="3d-plot-2"></div>
 <code id="mi-text-2"></code>
 <p>Recall that conditional mutual information \(I(X_1;Y|X_2)\) becomes equivalent to mutual information \(I(X_1;Y)\) if
-the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y\). In this case, we know that \(Q\) is
-uncorrelated, and so \(I(X_1;Y|Q)\) should equal the value of \(I(X_1;Y)\) we calculated in the previous section.
+the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y.\) In this case, we know that \(Q\) is
+uncorrelated, and so \(I(X_2;Y|Q)\) should equal the value of \(I(X_2;Y)\) we calculated in the previous section.
 While the value is close, it&rsquo;s not an exact match. This is likely an issue of finite sample sizes, and should
 improve as the number of points sampled increases.</p>
-<p>At the very least, we appear to get a much stronger result (~1.5) when calculating \(I(X_1;Y|X_2)\) vs
-the ~0.3 we get with \(I(X_1;Y|Q)\).</p>
+<p>At the very least, we appear to get a much stronger (~1.0) result when calculating \(I(X_1;Y|X_2)\) vs
+the ~0.3 we get with \(I(X_2;Y|Q)\). Visualizing why this is the case,
+we can see that for each \(n_{x_2}\), we highlight a bunch of noise where we
+would be seeing a christmas tree if \(Q\) was swapped for \(X_1\). <em>(These exact numbers vary a lot with the exact points
+sampled, since all the estimated mutual information scores are calculated dynamically on your device.)</em></p>
 <p>Recall, also, that conditional mutual information is not symmetric. Since \(Q\) carries no information
 about \(Y\), we should be able to swap the order of signals and get back a result of 0. I.e.
 \(I(Q;Y|X_1) = I(Q;Y) = 0\).</p>
@@ -1011,7 +1029,7 @@ but certainly looks quite different. Will the conditional mutual information alg
 <code id="mi-text-3"></code>
 <p>Not a problem! In fact, this plot gives us a clear example of what \(X_1\) and \(X_2\) carrying the same
 information looks like. Just like earlier where thin, sharp lines meant high mutual information, the same
-shapes on the x1-x2 plane implies zero conditional mutual information.</p>
+shapes on the x1-x2 plane imply zero conditional mutual information.</p>
 <script type="module">
 import {get_2d_mi_chart, get_3d_mi_chart} from "./mi_charts.js";
 let x = Array(10_000).fill(0).map((_) => Math.random() * 15);
@@ -1020,20 +1038,51 @@ let z = x.map((xi, i) => 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + Math
 //
 import {mutual_information, partial_mutual_information} from "./knn.js";
 spawn_plot("2d-hero-plot", (id) => get_2d_mi_chart(id, x.map((xi, i) => [xi, z[i]]), 5));
-document.getElementById("mi-text-2d").textContent = `Estimated I(X1;Y) = ${mutual_information(x.map((x, i) => [x, z[i]]))}`;
+;
 // 
 spawn_plot("2d-hero-plot-x2", (id) => get_2d_mi_chart(id, y.map((xi, i) => [xi, z[i]]), 5));
-document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${mutual_information(y.map((x, i) => [x, z[i]]))}`;
 // 
 spawn_plot("3d-plot", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[i], z[i]]), 5));
-document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${partial_mutual_information(x, z, y)}`;
 //
-spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5));
-document.getElementById("mi-text-2").textContent = `Estimated I(X1;Y|Q) = ${partial_mutual_information(x, z, y.map((_, i) => y[(i+1)%y.length]))}`;
-document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X1) = ${partial_mutual_information(y.map((_, i) => y[(i+1)%y.length]), z, x)}`;
+spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [x[(i + 1) % x.length], y[i], z[i]]), 5));
 //
 spawn_plot("3d-plot-3", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, xi**2, z[i]]), 5));
-document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${partial_mutual_information(x, z, x.map((x) => x**2))}`;
+
+let queue = [
+    [["MI", x.map((x, i) => [x, z[i]]), 5],
+    (e) => {document.getElementById("mi-text-2d").textContent = `Estimated I(X1;Y) = ${e.data}`;}],
+    [["MI", y.map((x, i) => [x, z[i]]), 5],
+    (e) => {document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${e.data}`;}],
+    [["PMI", x, y, z, 5], 
+    (e) => {document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${e.data}`;}],
+    [["PMI", y, z, x.map((_, i) => x[(i+1)%x.length]), 5],
+    (e) => {document.getElementById("mi-text-2").textContent = `Estimated I(X2;Y|Q) = ${e.data}`;}],
+    [["PMI", y.map((_, i) => x[(i+1)%x.length]), z, y, 5],
+    (e) => {document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X2) = ${e.data}`;}],
+    [["PMI", x, z, x.map((x) => x**2), 5],
+    (e) => {document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${e.data}`;}]
+];
+const worker = new Worker("worker.js", { type: "module" });
+
+let i = 0;
+
+worker.onmessage = (e) => {
+    // call the most recent callback
+    queue[i][1](e);  
+
+    i += 1;
+    if (i > queue.length) {
+        // exit the loop
+        worker.onmessage = () => {};
+    } else {
+        // send the next job
+        worker.postMessage(queue[i][0]);
+    }
+}
+
+worker.postMessage(queue[0][0]);
+
+
 </script>
 <h1 id="conclusion">Conclusion<a href="#conclusion" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <p>Well done for making it all this way! If you, like me, started this article without a solid grasp on what information

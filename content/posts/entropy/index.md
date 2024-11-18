@@ -1,6 +1,6 @@
 +++
-title = "Entropy"
-date = "2024-11-01T13:45:34+13:00"
+title = "Entropy and Information Theory"
+date = "2024-11-18T13:45:34+13:00"
 author = ""
 authorTwitter = "" #do not include @
 cover = ""
@@ -32,14 +32,12 @@ free to skip ahead! Each section should hopefully be a bit of fun, though, so do
 1. [What is Entropy?](#what-is-entropy) - If you're new to information theory
 2. [Entropy for Continuous Numbers](#entropy-for-continuous-numbers) - If terms like "differential entropy"
 aren't familiar.
-3. [Mutual Information and Conditional Mutual Information](#mutual-information) - Graphical depictions of 
-mutual information and variants thereof, intended to build an intuition for why and how these
-measures work.
-
+3. [Mutual Information and Conditional Mutual Information](#mutual-information) - If you're interested in some
+more advanced concepts, with a focus on signal processing.
 
 # What is Entropy?
 
-So let's dive right in... by playing the lottery!
+Let's dive right in... by playing the lottery!
 
 Each round, you get to pick one number on the ticket below:
 
@@ -342,7 +340,8 @@ with exactly the same *distribution* as \(X_1\):
 Q \sim \mathcal{U}(0, 20)
 \]
 
-If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure. 
+If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure. The
+christmas tree is missing!
 Whatever method we end up with, it should be able to distinguish between these
 two cases.
 
@@ -467,8 +466,8 @@ Substituting in the Reimann approximation to the integral, we have:
 
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 p(x_i) \Delta x \\
+    H(X) &= - \lim_{\Delta x \rightarrow 0} \left( \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 p(x_i) \Delta x \right) \\
 \end{align}
 \]
 
@@ -497,8 +496,8 @@ Let's go back to our continous entropy formula:
 
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
+    H(X) &= \lim_{\Delta x \rightarrow 0} \left( -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right) \right) \\
 \end{align}
 \]
 
@@ -515,8 +514,8 @@ Substituting this into the entropy formula,
 
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} - \sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \\
+    H(X) &= -\lim_{\Delta x \rightarrow 0} \left( \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \right) \\
          &= -\lim_{\Delta x \rightarrow 0} \left(\
             \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \sum_{i=0}^N p(x_i) \Delta x \log_2 \Delta x \right) 
 \end{align}
@@ -588,9 +587,9 @@ and love:
 100% certainty. \(h(X) = 0\), however, does not have any special meaning. This is because:
 2. Differential entropy can be negative. Negative!
 3. \(h(X)\) is sensitive to scale (and therefore units). If we measured 100 people's heights,
-    \[h_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
-    \[h_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\] 
-    The differential entropy of \(h_\text{cm}\) would be *larger* than the differential entropy of \(h_\text{m}\).
+    \[\text{height}_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
+    \[\text{height}_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\] 
+    The differential entropy of \(\text{height}_\text{cm}\) would be *larger* than the differential entropy of \(\text{height}_\text{m}\).
 
 One useful property differential entropy does have is *translational invariance*:
 \[
@@ -622,8 +621,8 @@ looking at the entropy formula we tried to discretize earlier:
 
 \[
 \begin{align}
-    H(X) &= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
+    H(X) &= \lim_{\Delta x \rightarrow 0} \left( -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right) \right)\\
 \end{align}
 \]
 
@@ -691,9 +690,9 @@ between two distributions. If we observe a particular event, the information we 
 observation varies depending on the message was generated according to the statistics of one probability
 distribution, *p*, or a different one, *q*. 
 
-In our lottery example from earlier, observing a 1 carries a lot of information. But if I was 
-secretly sending you a 0 every time the number was odd, and a 1 every time it was even, the 
-information content of that "1" message would be lower. The KL-Divergence quantifies this difference,
+In our lottery example from earlier, observing a 1 carries a lot of information. But if instead
+we had agreed that I would send you a 0 every time the winning number was odd, and a 1 every time it was even, the 
+information content of that "1" message would be lower. KL-divergence quantifies this difference,
 averaged (using \(p\)) across the whole distribution.
 
 ### Why is KL-Divergence an Improvement?
@@ -1066,10 +1065,10 @@ carries information \(X_2\) does not, we need to go deeper.
 There are a lot of extensions of mutual information to more variables. For our example,
 we're interested in the [Conditional Mutual Information](https://en.wikipedia.org/wiki/Conditional_mutual_information).
 
-Although it's typically written as \(I(X;Y|Z)\), we'll use the terminology \(I(X_1;Y|X_2)\). This way, all our 
-inputs are X's, and our output is Y. 
+Although it's typically written as \(I(X;Y|Z)\), we'll use the terminology \(I(X_1;Y|X_2)\). This way, we write the 
+inputs the same we'll use them in our signal processing example.
 
-Conditional mutual information tells us how much of the mutual information \(I(X_1;Y\) between 
+Conditional mutual information tells us how much of the mutual information \(I(X_1;Y)\) between 
 \(X_1\) and \(Y\) is *not* found in \(X_2\). In other words, if \(I(X_2;Y) > 0\), we know
 that \(X_2\) and \(Y\) share some information; if \(I(X_1;Y|X_2) = 0\), we then know that
 all the information \(X_2\) told us about \(Y\) could have been learned by observing
@@ -1140,13 +1139,19 @@ Does conditional mutual information distinguish between these two cases?
 <code id="mi-text-2"></code>
 
 Recall that conditional mutual information \(I(X_1;Y|X_2)\) becomes equivalent to mutual information \(I(X_1;Y)\) if 
-the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y\). In this case, we know that \(Q\) is
-uncorrelated, and so \(I(X_1;Y|Q)\) should equal the value of \(I(X_1;Y)\) we calculated in the previous section. 
+the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y.\) In this case, we know that \(Q\) is
+uncorrelated, and so \(I(X_2;Y|Q)\) should equal the value of \(I(X_2;Y)\) we calculated in the previous section. 
 While the value is close, it's not an exact match. This is likely an issue of finite sample sizes, and should
 improve as the number of points sampled increases. 
 
-At the very least, we appear to get a much stronger result (~1.5) when calculating \(I(X_1;Y|X_2)\) vs
-the ~0.3 we get with \(I(X_1;Y|Q)\). 
+At the very least, we appear to get a much stronger (~1.0) result when calculating \(I(X_1;Y|X_2)\) vs
+the ~0.3 we get with \(I(X_2;Y|Q)\). Visualizing why this is the case, 
+we can see that for each \(n_{x_2}\), we highlight a bunch of noise where we 
+would be seeing a christmas tree if \(Q\) was swapped for \(X_1\). *(These exact numbers vary a lot with the exact points 
+sampled, since all the estimated mutual information scores are calculated dynamically on your device.)*
+
+
+
 
 Recall, also, that conditional mutual information is not symmetric. Since \(Q\) carries no information
 about \(Y\), we should be able to swap the order of signals and get back a result of 0. I.e.
@@ -1173,7 +1178,7 @@ but certainly looks quite different. Will the conditional mutual information alg
 
 Not a problem! In fact, this plot gives us a clear example of what \(X_1\) and \(X_2\) carrying the same
 information looks like. Just like earlier where thin, sharp lines meant high mutual information, the same
-shapes on the x1-x2 plane implies zero conditional mutual information.
+shapes on the x1-x2 plane imply zero conditional mutual information.
 
 <script type="module">
 import {get_2d_mi_chart, get_3d_mi_chart} from "./mi_charts.js";
@@ -1189,7 +1194,7 @@ spawn_plot("2d-hero-plot-x2", (id) => get_2d_mi_chart(id, y.map((xi, i) => [xi, 
 // 
 spawn_plot("3d-plot", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[i], z[i]]), 5));
 //
-spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, y[(i + 1) % y.length], z[i]]), 5));
+spawn_plot("3d-plot-2", (id) => get_3d_mi_chart(id, x.map((xi, i) => [x[(i + 1) % x.length], y[i], z[i]]), 5));
 //
 spawn_plot("3d-plot-3", (id) => get_3d_mi_chart(id, x.map((xi, i) => [xi, xi**2, z[i]]), 5));
 
@@ -1200,10 +1205,10 @@ let queue = [
     (e) => {document.getElementById("mi-text-2d-x2").textContent = `Estimated I(X2;Y) = ${e.data}`;}],
     [["PMI", x, y, z, 5], 
     (e) => {document.getElementById("mi-text").textContent = `Estimated I(X1;Y|X2) = ${e.data}`;}],
-    [["PMI", x, z, y.map((_, i) => y[(i+1)%y.length]), 5],
-    (e) => {document.getElementById("mi-text-2").textContent = `Estimated I(X1;Y|Q) = ${e.data}`;}],
-    [["PMI", y.map((_, i) => y[(i+1)%y.length]), z, x, 5],
-    (e) => {document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X1) = ${e.data}`;}],
+    [["PMI", y, z, x.map((_, i) => x[(i+1)%x.length]), 5],
+    (e) => {document.getElementById("mi-text-2").textContent = `Estimated I(X2;Y|Q) = ${e.data}`;}],
+    [["PMI", y.map((_, i) => x[(i+1)%x.length]), z, y, 5],
+    (e) => {document.getElementById("mi-text-q2").textContent = `Estimated I(Q;Y|X2) = ${e.data}`;}],
     [["PMI", x, z, x.map((x) => x**2), 5],
     (e) => {document.getElementById("mi-text-3").textContent = `Estimated I(X1;Y|X1^2) = ${e.data}`;}]
 ];

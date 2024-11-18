@@ -277,7 +277,6 @@ export function integral_chart(id, divergence=false) {
             history[history.length - 1].d = Array(y.length).fill(0).reduce((partial_sum, _, i) => partial_sum + dx * y[i] * Math.log2(y[i] / y2[i]), 0);
         }
 
-        history.sort((a, b) => a.n - b.n);
 
         text_elem.textContent = `$$
         \\begin{align}
@@ -285,6 +284,8 @@ export function integral_chart(id, divergence=false) {
         \\int_{-\\infty}^{\\infty} p(x) dx &\\approx ${history[history.length - 1].p.toPrecision(6)} \\\\
         H(X) &\\approx ${history[history.length - 1].h.toFixed(3)} \\\\
         \\end{align}$$`;
+
+        history.sort((a, b) => a.n - b.n);
 
         if (divergence) {
             text_elem.textContent += `$$D_{KL} (p || q) = ${

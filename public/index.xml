@@ -6,11 +6,11 @@
     <description>Recent content on willsnell</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 01 Nov 2024 13:45:34 +1300</lastBuildDate><atom:link href="https://willsnell.com/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 18 Nov 2024 13:45:34 +1300</lastBuildDate><atom:link href="https://willsnell.com/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Entropy</title>
+      <title>Entropy and Information Theory</title>
       <link>https://willsnell.com/posts/entropy/</link>
-      <pubDate>Fri, 01 Nov 2024 13:45:34 +1300</pubDate>
+      <pubDate>Mon, 18 Nov 2024 13:45:34 +1300</pubDate>
       
       <guid>https://willsnell.com/posts/entropy/</guid>
       <description>&lt;script src=&#34;./mi_charts.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
@@ -22,9 +22,9 @@
 &lt;link href=&#34;https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&amp;display=swap&#34; rel=&#34;stylesheet&#34;&gt;
 &lt;link href=&#34;./charts.css&#34; rel=&#34;stylesheet&#34;&gt;
 &lt;p&gt;Information theory - and in particular, entropy - can be quite an intimidating topic.
-It doesn&amp;rsquo;t have to be. If you can develop some key intuitions for the topic, you can
-learn and use entropy!&lt;/p&gt;
-&lt;p&gt;There are three main sections to this article. If you already have a solid grasp on one of them, feel
+It doesn&amp;rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts
+become a lot simpler than they might initially seem.&lt;/p&gt;
+&lt;p&gt;There are three main sections to this article. If you already have a solid grasp on any of them, feel
 free to skip ahead! Each section should hopefully be a bit of fun, though, so don&amp;rsquo;t feel obliged to.&lt;/p&gt;</description>
       <content>&lt;script src=&#34;./mi_charts.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
 &lt;script src=&#34;./knn.js&#34; type=&#34;module&#34;&gt;&lt;/script&gt;
@@ -35,21 +35,20 @@ free to skip ahead! Each section should hopefully be a bit of fun, though, so do
 &lt;link href=&#34;https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&amp;display=swap&#34; rel=&#34;stylesheet&#34;&gt;
 &lt;link href=&#34;./charts.css&#34; rel=&#34;stylesheet&#34;&gt;
 &lt;p&gt;Information theory - and in particular, entropy - can be quite an intimidating topic.
-It doesn&amp;rsquo;t have to be. If you can develop some key intuitions for the topic, you can
-learn and use entropy!&lt;/p&gt;
-&lt;p&gt;There are three main sections to this article. If you already have a solid grasp on one of them, feel
+It doesn&amp;rsquo;t have to be. If you can develop some key intuitions for the topic, a lot of the concepts
+become a lot simpler than they might initially seem.&lt;/p&gt;
+&lt;p&gt;There are three main sections to this article. If you already have a solid grasp on any of them, feel
 free to skip ahead! Each section should hopefully be a bit of fun, though, so don&amp;rsquo;t feel obliged to.&lt;/p&gt;
 &lt;h1 id=&#34;table-of-contents&#34;&gt;Table of Contents&lt;/h1&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;a href=&#34;https://willsnell.com/posts/entropy/#what-is-entropy&#34;&gt;What is Entropy?&lt;/a&gt; - If you&amp;rsquo;re new to information theory&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://willsnell.com/posts/entropy/#entropy-for-continuous-numbers&#34;&gt;Entropy for Continuous Numbers&lt;/a&gt; - If terms like &amp;ldquo;differential entropy&amp;rdquo;
 aren&amp;rsquo;t familiar.&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://willsnell.com/posts/entropy/#mutual-information&#34;&gt;Mutual Information and Conditional Mutual Information&lt;/a&gt; - Graphical depictions of
-mutual information and variants thereof, intended to build an intuition for why and how these
-measures work.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://willsnell.com/posts/entropy/#mutual-information&#34;&gt;Mutual Information and Conditional Mutual Information&lt;/a&gt; - If you&amp;rsquo;re interested in some
+more advanced concepts, with a focus on signal processing.&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h1 id=&#34;what-is-entropy&#34;&gt;What is Entropy?&lt;/h1&gt;
-&lt;p&gt;So let&amp;rsquo;s dive right in&amp;hellip; by playing the lottery!&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s dive right in&amp;hellip; by playing the lottery!&lt;/p&gt;
 &lt;p&gt;Each round, you get to pick one number on the ticket below:&lt;/p&gt;
 &lt;div style=&#34;width: 100%; margin: auto; margin-bottom: -200px;&#34;&gt;
     &lt;object id=&#34;ticket&#34; type=&#34;image/svg+xml&#34; data=&#34;lottery_ticket.svg&#34; height=&#34;500px&#34;&gt;&lt;/object&gt;
@@ -276,7 +275,8 @@ an identically distributed but independent source. For example, we could define 
 with exactly the same &lt;em&gt;distribution&lt;/em&gt; as \(X_1\):&lt;/p&gt;
 \[
 Q \sim \mathcal{U}(0, 20)
-\]&lt;p&gt;If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure.
+\]&lt;p&gt;If we were to plot \(Q\) instead of \(X_1\), we get a plot with much less structure. The
+christmas tree is missing!
 Whatever method we end up with, it should be able to distinguish between these
 two cases.&lt;/p&gt;
 &lt;div id=&#34;teaser-plot-2&#34;&gt;&lt;/div&gt;
@@ -371,8 +371,8 @@ approaches the integral:&lt;/p&gt;
 Substituting in the Reimann approximation to the integral, we have:&lt;/p&gt;
 \[
 \begin{align}
-    H(X) &amp;= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 p(x_i) \Delta x \\
+    H(X) &amp;= - \lim_{\Delta x \rightarrow 0} \left( \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 p(x_i) \Delta x \right) \\
 \end{align}
 \]&lt;p&gt;Play around with the chart below, where we carry out this exact procedure..
 You should see that as we increase the number of bins, the area under the curve, \(\int_{-\infty}^{\infty} p(x) dx\),
@@ -391,8 +391,8 @@ spawn_plot(&#34;integral&#34;, (id) =&gt; integral_chart(id));
 &lt;p&gt;Let&amp;rsquo;s go back to our continous entropy formula:&lt;/p&gt;
 \[
 \begin{align}
-    H(X) &amp;= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
+    H(X) &amp;= \lim_{\Delta x \rightarrow 0} \left( -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right) \right) \\
 \end{align}
 \]&lt;p&gt;Looking at the last term, and remembering that \(\log(a \cdot b) = \log(a) + \log(b)\), we can
 write it as:&lt;/p&gt;
@@ -403,8 +403,8 @@ write it as:&lt;/p&gt;
 \]&lt;p&gt;Substituting this into the entropy formula,&lt;/p&gt;
 \[
 \begin{align}
-    H(X) &amp;= \lim_{\Delta x \rightarrow 0} - \sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \\
+    H(X) &amp;= -\lim_{\Delta x \rightarrow 0} \left( \sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \left( \log_2 p(x_i) + \log_2 \Delta_x \right) \right) \\
          &amp;= -\lim_{\Delta x \rightarrow 0} \left(\
             \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \sum_{i=0}^N p(x_i) \Delta x \log_2 \Delta x \right) 
 \end{align}
@@ -460,9 +460,9 @@ and love:&lt;/p&gt;
 100% certainty. \(h(X) = 0\), however, does not have any special meaning. This is because:&lt;/li&gt;
 &lt;li&gt;Differential entropy can be negative. Negative!&lt;/li&gt;
 &lt;li&gt;\(h(X)\) is sensitive to scale (and therefore units). If we measured 100 people&amp;rsquo;s heights,
-\[h_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
-\[h_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
-The differential entropy of \(h_\text{cm}\) would be &lt;em&gt;larger&lt;/em&gt; than the differential entropy of \(h_\text{m}\).&lt;/li&gt;
+\[\text{height}_\text{cm} = [167\text{cm}, 185\text{cm}, ...]\] Then we converted the measurements to metres:
+\[\text{height}_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
+The differential entropy of \(\text{height}_\text{cm}\) would be &lt;em&gt;larger&lt;/em&gt; than the differential entropy of \(\text{height}_\text{m}\).&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;One useful property differential entropy does have is &lt;em&gt;translational invariance&lt;/em&gt;:
 &lt;/p&gt;
@@ -485,8 +485,8 @@ the box containing our numbers grows or shrinks in terms of absolute number magn
 looking at the entropy formula we tried to discretize earlier:&lt;/p&gt;
 \[
 \begin{align}
-    H(X) &amp;= \lim_{\Delta x \rightarrow 0} -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
-    \log_2 \left( p(x_i) \Delta x \right)\\
+    H(X) &amp;= \lim_{\Delta x \rightarrow 0} \left( -\sum_{i = 0}^{N} p(x_i) \Delta x\:\
+    \log_2 \left( p(x_i) \Delta x \right) \right)\\
 \end{align}
 \]&lt;p&gt;The trouble really stems from the last term:&lt;/p&gt;
 \[
@@ -528,9 +528,9 @@ distributions. With it, we&amp;rsquo;ll build the tools we need to make sense of
 between two distributions. If we observe a particular event, the information we gain from that
 observation varies depending on the message was generated according to the statistics of one probability
 distribution, &lt;em&gt;p&lt;/em&gt;, or a different one, &lt;em&gt;q&lt;/em&gt;.&lt;/p&gt;
-&lt;p&gt;In our lottery example from earlier, observing a 1 carries a lot of information. But if I was
-secretly sending you a 0 every time the number was odd, and a 1 every time it was even, the
-information content of that &amp;ldquo;1&amp;rdquo; message would be lower. The KL-Divergence quantifies this difference,
+&lt;p&gt;In our lottery example from earlier, observing a 1 carries a lot of information. But if instead
+we had agreed that I would send you a 0 every time the winning number was odd, and a 1 every time it was even, the
+information content of that &amp;ldquo;1&amp;rdquo; message would be lower. KL-divergence quantifies this difference,
 averaged (using \(p\)) across the whole distribution.&lt;/p&gt;
 &lt;h3 id=&#34;why-is-kl-divergence-an-improvement&#34;&gt;Why is KL-Divergence an Improvement?&lt;/h3&gt;
 &lt;p&gt;Even though the derivation of KL-Divergence seems more mathematically sound than that of
@@ -651,14 +651,18 @@ as possible. One way to do that very effectively is to have \(Y\) be a linear fu
 \end{align}
 \]&lt;p&gt;Indeed, this gives us a very high mutual information score.&lt;/p&gt;
 &lt;div id=&#34;very-linear-plot&#34;&gt;&lt;/div&gt;
-&lt;div id=&#34;linear-text&#34;&gt;&lt;/div&gt;
+&lt;code id=&#34;linear-text&#34;&gt;&lt;/code&gt;
 &lt;script type=&#34;module&#34;&gt;
 import {get_2d_mi_chart} from &#34;./mi_charts.js&#34;;
 let x = Array(500).fill(0).map((_) =&gt; Math.random() * 5);
 let y = x.map((xi) =&gt; xi);
 spawn_plot(&#34;very-linear-plot&#34;, (id) =&gt; get_2d_mi_chart(id, x.map((xi, i) =&gt; [xi, y[i]]), 5));
-import {mutual_information} from &#34;./knn.js&#34;;
-document.getElementById(&#34;linear-text&#34;).textContent = ` Estimated Mutual Information = ${mutual_information(x.map((x, i) =&gt; [x, y[i]]))}`;
+//
+const worker = new Worker(&#34;./worker.js&#34;, { type: &#34;module&#34;} );
+worker.onmessage = (e) =&gt; {
+    document.getElementById(&#34;linear-text&#34;).textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage([&#34;MI&#34;, x.map((x, i) =&gt; [x, y[i]]), 5]);
 &lt;/script&gt;
 &lt;p&gt;But mutual information does not &lt;strong&gt;require&lt;/strong&gt; linearity. For example, the
 following very non-linear function which would flummox any linear analysis
@@ -676,14 +680,18 @@ Y &amp;= \left\{ \begin{array}{ll}
 \right.
 \end{align}
 \]&lt;div id=&#34;very-nonlinear-plot&#34;&gt;&lt;/div&gt;
-&lt;div id=&#34;very-nonlinear-text&#34;&gt;&lt;/div&gt;
+&lt;code id=&#34;very-nonlinear-text&#34;&gt;&lt;/code&gt;
 &lt;script type=&#34;module&#34;&gt;
 import {get_2d_mi_chart} from &#34;./mi_charts.js&#34;;
 let x = Array(500).fill(0).map((_) =&gt; Math.random() * 5);
 let y = x.map((xi) =&gt; xi * ( 1 + Math.floor(xi % 2) * -2));
 spawn_plot(&#34;very-nonlinear-plot&#34;, (id) =&gt; get_2d_mi_chart(id, x.map((xi, i) =&gt; [xi, y[i]]), 5));
-import {mutual_information} from &#34;./knn.js&#34;;
-document.getElementById(&#34;very-nonlinear-text&#34;).textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) =&gt; [x, y[i]]))}`;
+//
+const worker = new Worker(&#34;./worker.js&#34;, { type: &#34;module&#34;} );
+worker.onmessage = (e) =&gt; {
+    document.getElementById(&#34;very-nonlinear-text&#34;).textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage([&#34;MI&#34;, x.map((x, i) =&gt; [x, y[i]]), 5]);
 &lt;/script&gt;
 &lt;p&gt;Mutual information is subtle, though. Just because \(y\) might be a
 function of \(x\) doesn&amp;rsquo;t mean mutual information is maximised. Take the
@@ -694,14 +702,18 @@ X &amp;= \mathcal{U}(0, 20) \\
 Y &amp;= \sin(X) \\
 \end{align}
 \]&lt;div id=&#34;sine-plot&#34;&gt;&lt;/div&gt;
-&lt;div id=&#34;sine-text&#34;&gt;&lt;/div&gt;
+&lt;code id=&#34;sine-text&#34;&gt;&lt;/code&gt;
 &lt;script type=&#34;module&#34;&gt;
 import {get_2d_mi_chart} from &#34;./mi_charts.js&#34;;
 let x = Array(2000).fill(0).map((_) =&gt; Math.random() * 20);
 let y = x.map((xi) =&gt; Math.sin(xi));
 spawn_plot(&#34;sine-plot&#34;, (id) =&gt; get_2d_mi_chart(id, x.map((xi, i) =&gt; [xi, y[i]]), 5));
-import {mutual_information} from &#34;./knn.js&#34;;
-document.getElementById(&#34;sine-text&#34;).textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) =&gt; [x, y[i]]))}`;
+//
+const worker = new Worker(&#34;./worker.js&#34;, { type: &#34;module&#34;} );
+worker.onmessage = (e) =&gt; {
+    document.getElementById(&#34;sine-text&#34;).textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage([&#34;MI&#34;, x.map((x, i) =&gt; [x, y[i]]), 5]);
 &lt;/script&gt;
 &lt;p&gt;Notice how the samples for \(n_y\) come from multiple different cycles of
 the sine wave. Also, remember that mutual information is &lt;strong&gt;symmetric&lt;/strong&gt;. So,
@@ -728,8 +740,11 @@ import {get_2d_mi_chart} from &#34;./mi_charts.js&#34;;
 let x = Array(2000).fill(0).map((_) =&gt; Math.random() * 20);
 let y = Array(2000).fill(0).map((_) =&gt; Math.random() * 20);
 spawn_plot(&#34;uncorrelated-plot&#34;, (id) =&gt; get_2d_mi_chart(id, x.map((xi, i) =&gt; [xi, y[i]]), 5));
-import {mutual_information} from &#34;./knn.js&#34;;
-document.getElementById(&#34;uncorrelated-text&#34;).textContent = `Estimated Mutual Information = ${mutual_information(x.map((x, i) =&gt; [x, y[i]]))}`;
+const worker = new Worker(&#34;./worker.js&#34;, { type: &#34;module&#34;} );
+worker.onmessage = (e) =&gt; {
+    document.getElementById(&#34;uncorrelated-text&#34;).textContent = `Estimated Mutual Information = ${e.data}`;
+};
+worker.postMessage([&#34;MI&#34;, x.map((x, i) =&gt; [x, y[i]]), 5]);
 &lt;/script&gt;
 &lt;p&gt;Like we said earlier, it&amp;rsquo;s clear that neither \(n_x\) nor \(n_y\) are capturing anywhere close to the full
 \(N\) points in the x-y plane. However, because \(x\) and \(y\) are uncorrelated, the amount of points
@@ -803,9 +818,9 @@ carries information \(X_2\) does not, we need to go deeper.&lt;/p&gt;
 &lt;h1 id=&#34;conditional-mutual-information&#34;&gt;Conditional Mutual Information&lt;/h1&gt;
 &lt;p&gt;There are a lot of extensions of mutual information to more variables. For our example,
 we&amp;rsquo;re interested in the &lt;a href=&#34;https://en.wikipedia.org/wiki/Conditional_mutual_information&#34;&gt;Conditional Mutual Information&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Although it&amp;rsquo;s typically written as \(I(X;Y|Z)\), we&amp;rsquo;ll use the terminology \(I(X_1;Y|X_2)\). This way, all our
-inputs are X&amp;rsquo;s, and our output is Y.&lt;/p&gt;
-&lt;p&gt;Conditional mutual information tells us how much of the mutual information \(I(X_1;Y\) between
+&lt;p&gt;Although it&amp;rsquo;s typically written as \(I(X;Y|Z)\), we&amp;rsquo;ll use the terminology \(I(X_1;Y|X_2)\). This way, we write the
+inputs the same we&amp;rsquo;ll use them in our signal processing example.&lt;/p&gt;
+&lt;p&gt;Conditional mutual information tells us how much of the mutual information \(I(X_1;Y)\) between
 \(X_1\) and \(Y\) is &lt;em&gt;not&lt;/em&gt; found in \(X_2\). In other words, if \(I(X_2;Y) &gt; 0\), we know
 that \(X_2\) and \(Y\) share some information; if \(I(X_1;Y|X_2) = 0\), we then know that
 all the information \(X_2\) told us about \(Y\) could have been learned by observing
@@ -856,12 +871,15 @@ distribution. For example we could define an unrelated variable \(Q\) with \(X_1
 &lt;div id=&#34;3d-plot-2&#34;&gt;&lt;/div&gt;
 &lt;code id=&#34;mi-text-2&#34;&gt;&lt;/code&gt;
 &lt;p&gt;Recall that conditional mutual information \(I(X_1;Y|X_2)\) becomes equivalent to mutual information \(I(X_1;Y)\) if
-the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y\). In this case, we know that \(Q\) is
-uncorrelated, and so \(I(X_1;Y|Q)\) should equal the value of \(I(X_1;Y)\) we calculated in the previous section.
+the conditioning variable, \(X_2\), is uncorrelated to \(X_1\) and \(Y.\) In this case, we know that \(Q\) is
+uncorrelated, and so \(I(X_2;Y|Q)\) should equal the value of \(I(X_2;Y)\) we calculated in the previous section.
 While the value is close, it&amp;rsquo;s not an exact match. This is likely an issue of finite sample sizes, and should
 improve as the number of points sampled increases.&lt;/p&gt;
-&lt;p&gt;At the very least, we appear to get a much stronger result (~1.5) when calculating \(I(X_1;Y|X_2)\) vs
-the ~0.3 we get with \(I(X_1;Y|Q)\).&lt;/p&gt;
+&lt;p&gt;At the very least, we appear to get a much stronger (~1.0) result when calculating \(I(X_1;Y|X_2)\) vs
+the ~0.3 we get with \(I(X_2;Y|Q)\). Visualizing why this is the case,
+we can see that for each \(n_{x_2}\), we highlight a bunch of noise where we
+would be seeing a christmas tree if \(Q\) was swapped for \(X_1\). &lt;em&gt;(These exact numbers vary a lot with the exact points
+sampled, since all the estimated mutual information scores are calculated dynamically on your device.)&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;Recall, also, that conditional mutual information is not symmetric. Since \(Q\) carries no information
 about \(Y\), we should be able to swap the order of signals and get back a result of 0. I.e.
 \(I(Q;Y|X_1) = I(Q;Y) = 0\).&lt;/p&gt;
@@ -877,7 +895,7 @@ but certainly looks quite different. Will the conditional mutual information alg
 &lt;code id=&#34;mi-text-3&#34;&gt;&lt;/code&gt;
 &lt;p&gt;Not a problem! In fact, this plot gives us a clear example of what \(X_1\) and \(X_2\) carrying the same
 information looks like. Just like earlier where thin, sharp lines meant high mutual information, the same
-shapes on the x1-x2 plane implies zero conditional mutual information.&lt;/p&gt;
+shapes on the x1-x2 plane imply zero conditional mutual information.&lt;/p&gt;
 &lt;script type=&#34;module&#34;&gt;
 import {get_2d_mi_chart, get_3d_mi_chart} from &#34;./mi_charts.js&#34;;
 let x = Array(10_000).fill(0).map((_) =&gt; Math.random() * 15);
@@ -886,20 +904,51 @@ let z = x.map((xi, i) =&gt; 0.25 * Math.sin(xi) * Math.sin(y[i]) * xi * y[i] + M
 //
 import {mutual_information, partial_mutual_information} from &#34;./knn.js&#34;;
 spawn_plot(&#34;2d-hero-plot&#34;, (id) =&gt; get_2d_mi_chart(id, x.map((xi, i) =&gt; [xi, z[i]]), 5));
-document.getElementById(&#34;mi-text-2d&#34;).textContent = `Estimated I(X1;Y) = ${mutual_information(x.map((x, i) =&gt; [x, z[i]]))}`;
+;
 // 
 spawn_plot(&#34;2d-hero-plot-x2&#34;, (id) =&gt; get_2d_mi_chart(id, y.map((xi, i) =&gt; [xi, z[i]]), 5));
-document.getElementById(&#34;mi-text-2d-x2&#34;).textContent = `Estimated I(X2;Y) = ${mutual_information(y.map((x, i) =&gt; [x, z[i]]))}`;
 // 
 spawn_plot(&#34;3d-plot&#34;, (id) =&gt; get_3d_mi_chart(id, x.map((xi, i) =&gt; [xi, y[i], z[i]]), 5));
-document.getElementById(&#34;mi-text&#34;).textContent = `Estimated I(X1;Y|X2) = ${partial_mutual_information(x, z, y)}`;
 //
-spawn_plot(&#34;3d-plot-2&#34;, (id) =&gt; get_3d_mi_chart(id, x.map((xi, i) =&gt; [xi, y[(i + 1) % y.length], z[i]]), 5));
-document.getElementById(&#34;mi-text-2&#34;).textContent = `Estimated I(X1;Y|Q) = ${partial_mutual_information(x, z, y.map((_, i) =&gt; y[(i+1)%y.length]))}`;
-document.getElementById(&#34;mi-text-q2&#34;).textContent = `Estimated I(Q;Y|X1) = ${partial_mutual_information(y.map((_, i) =&gt; y[(i+1)%y.length]), z, x)}`;
+spawn_plot(&#34;3d-plot-2&#34;, (id) =&gt; get_3d_mi_chart(id, x.map((xi, i) =&gt; [x[(i + 1) % x.length], y[i], z[i]]), 5));
 //
 spawn_plot(&#34;3d-plot-3&#34;, (id) =&gt; get_3d_mi_chart(id, x.map((xi, i) =&gt; [xi, xi**2, z[i]]), 5));
-document.getElementById(&#34;mi-text-3&#34;).textContent = `Estimated I(X1;Y|X1^2) = ${partial_mutual_information(x, z, x.map((x) =&gt; x**2))}`;
+
+let queue = [
+    [[&#34;MI&#34;, x.map((x, i) =&gt; [x, z[i]]), 5],
+    (e) =&gt; {document.getElementById(&#34;mi-text-2d&#34;).textContent = `Estimated I(X1;Y) = ${e.data}`;}],
+    [[&#34;MI&#34;, y.map((x, i) =&gt; [x, z[i]]), 5],
+    (e) =&gt; {document.getElementById(&#34;mi-text-2d-x2&#34;).textContent = `Estimated I(X2;Y) = ${e.data}`;}],
+    [[&#34;PMI&#34;, x, y, z, 5], 
+    (e) =&gt; {document.getElementById(&#34;mi-text&#34;).textContent = `Estimated I(X1;Y|X2) = ${e.data}`;}],
+    [[&#34;PMI&#34;, y, z, x.map((_, i) =&gt; x[(i+1)%x.length]), 5],
+    (e) =&gt; {document.getElementById(&#34;mi-text-2&#34;).textContent = `Estimated I(X2;Y|Q) = ${e.data}`;}],
+    [[&#34;PMI&#34;, y.map((_, i) =&gt; x[(i+1)%x.length]), z, y, 5],
+    (e) =&gt; {document.getElementById(&#34;mi-text-q2&#34;).textContent = `Estimated I(Q;Y|X2) = ${e.data}`;}],
+    [[&#34;PMI&#34;, x, z, x.map((x) =&gt; x**2), 5],
+    (e) =&gt; {document.getElementById(&#34;mi-text-3&#34;).textContent = `Estimated I(X1;Y|X1^2) = ${e.data}`;}]
+];
+const worker = new Worker(&#34;worker.js&#34;, { type: &#34;module&#34; });
+
+let i = 0;
+
+worker.onmessage = (e) =&gt; {
+    // call the most recent callback
+    queue[i][1](e);  
+
+    i += 1;
+    if (i &gt; queue.length) {
+        // exit the loop
+        worker.onmessage = () =&gt; {};
+    } else {
+        // send the next job
+        worker.postMessage(queue[i][0]);
+    }
+}
+
+worker.postMessage(queue[0][0]);
+
+
 &lt;/script&gt;
 &lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
 &lt;p&gt;Well done for making it all this way! If you, like me, started this article without a solid grasp on what information
@@ -3873,6 +3922,1053 @@ function get_vector_widget(vector, id, start_dims=0, start_offset=0, num_selecte
 get_vector_widget(Array.from({length: 1000}, (v, i) =&gt; i), &#39;vector&#39;, 0, 0, 1);
 
 &lt;/script&gt;
+</content>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://willsnell.com/drafts/test/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://willsnell.com/drafts/test/</guid>
+      <description>&lt;!DOCTYPE html&gt;
+&lt;head&gt;
+&lt;script src=&#34;./plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&#34;plot&#34; style=&#34;width: 1000px; height: 600px;&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;benchmark&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;module&#34;&gt;
+import digamma from &#39;https://cdn.jsdelivr.net/gh/stdlib-js/math-base-special-digamma@esm/index.mjs&#39;;
+// generate points
+class Node {
+    constructor(val, less_than, greater_than) {
+        this.val = val;
+        this.less_than = less_than;
+        this.greater_than = greater_than;
+    }
+}
+
+class KDTree {
+    constructor(points) {
+        this.n_dimensions = points[0].length;
+        this.tree = this.build_tree(points, 0, this.n_dimensions);
+    }
+    build_tree(points, dim, n_dims) {
+        if (points.length == 1) {
+            return new Node(points[0], null, null);
+        }
+        // sort a subset of the points
+        const n_subset = Math.min(points.length, Math.min(200, Math.max(10, parseInt(points.length / 10))));
+        //const n_subset = points.length;
+        // assume the area is homogeneous, so we can
+        // just pick the first n_subset points.
+        let subset = points.slice(0, Math.min(points.length, n_subset)).map((x, i) =&gt; x.concat([i]));
+        subset.sort((a, b) =&gt; a[dim] - b[dim]);
+        let midpoint = subset[parseInt(subset.length / 2)][subset[0].length - 1];
+        let median = points[midpoint];
+        let median_elem = median[dim];
+        // Remove the median so we don&#39;t count it twice.
+        points = points.slice(0, midpoint).concat(points.slice(midpoint + 1));
+        
+        let next_dim = (dim + 1) % n_dims;
+
+        let points_leq = points.filter((x) =&gt; x[dim] &lt;= median_elem);
+        let points_gt = points.filter((x) =&gt; x[dim] &gt; median_elem);
+
+        let less_than, greater_than;
+        
+        if (points_leq.length &gt; 0) {
+            less_than = this.build_tree(points_leq, next_dim, n_dims);
+        }
+        if (points_gt.length &gt; 0) {
+            greater_than = this.build_tree(points_gt, next_dim, n_dims);
+        }
+
+        return new Node(median, less_than, greater_than);
+    }
+
+    knn(point, k, return_dist=false) {
+        let closest_points = []; // [[distance, *point]]
+        let n_dimensions = this.n_dimensions;
+
+        function distance(x, y, norm=Math.inf) {
+            if (norm == Math.inf) {
+                return Math.max(...x.map((x, i) =&gt; Math.abs(x - y[i])));
+            }
+            return x.reduce((partial_sum, x, i) =&gt; partial_sum + (x-y[i])**norm, 0);
+        }
+
+        // find the point where the 
+
+        function find_closest(node, dim=0) {
+            let match = node.val;
+
+            let gt = point[dim] &gt; node.val[dim];
+
+            if (node.greater_than &amp;&amp; gt) {
+                find_closest(node.greater_than, (dim + 1) % n_dimensions);
+            } else if (node.less_than &amp;&amp; !gt) {
+                find_closest(node.less_than, (dim + 1) % n_dimensions);
+            }
+
+            // At this point, we&#39;ve greedily explored on the 
+            // &#34;best&#34; side of the tree.
+                let dist = distance(point, match);
+
+            if (closest_points.length &lt; k) {
+                closest_points.push([dist].concat(match));
+            } else if (dist &lt; closest_points[0][0]) {
+                closest_points[0] = [dist].concat(match);
+            }
+            closest_points.sort((a, b) =&gt; b[0] - a[0]);
+
+            // Check if the distance to the splitting plane
+            // is less than the distance to the furthest
+            // neighbor.
+            if (closest_points[0][0] &gt; distance([point[dim]], [node.val[dim]]) || closest_points.length &lt; k) {
+                // If so, traverse the opposite tree to last time.
+                    if (node.greater_than &amp;&amp; !gt) {
+                        find_closest(node.greater_than, (dim + 1) % n_dimensions);
+                    } else if (node.less_than &amp;&amp; gt) {
+                        find_closest(node.less_than, (dim + 1) % n_dimensions);
+                    }
+            }
+
+            return node.val;
+        }
+
+        find_closest(this.tree);
+        if (return_dist) {
+            return [closest_points.map((x) =&gt; x.slice(1)), closest_points.map((x) =&gt; x[0])];
+        }
+        return closest_points.map((x) =&gt; x.slice(1));
+    }
+
+    /* Count the number of points bounded
+    * by some range.
+    *  bounds is an array of [d_min, d_max].
+    *      e.g. for 3D, [[x_min, x_max], [y_min, y_max], [z_min, z_max]]
+    */ 
+    find_bounded(bounds) {
+        let points = [];
+        let n_dims = this.n_dimensions;
+
+        function recursively_bound(node, depth=0) {
+            let dim = depth % n_dims;
+
+            let splitting_plane = node.val[dim];
+            let [left_bound, right_bound] = bounds[dim];
+
+            let lt = left_bound &lt;= splitting_plane;
+            let gt = right_bound &gt; splitting_plane;
+
+            if (lt &amp;&amp; gt) {
+                // Check if the current point is bounded
+                // on all sides
+                let bounded = true;
+                for (let i = 0; i &lt; bounds.length; i++) {
+                    if (bounds[i][0] &gt; node.val[i] || bounds[i][1] &lt;= node.val[i]) {
+                        bounded = false;
+                        break;
+                    }
+                }
+                if (bounded) { points.push(node.val) };
+
+                // Continue refining on both sides.
+                node.less_than ? recursively_bound(node.less_than, depth+1) : null;
+                node.greater_than ? recursively_bound(node.greater_than, depth+1) : null;
+            } else if (lt) {
+                // bounding box is entirely on the 
+                // less-than side of the tree
+                node.less_than ? recursively_bound(node.less_than, depth + 1) : null;
+            } else if (gt) {
+                // bounding box is entirely on the greater-than
+                // side of the tree.
+               node.greater_than ? recursively_bound(node.greater_than, depth + 1) : null; 
+            }
+        }
+        recursively_bound(this.tree);
+        return points;
+    }
+}
+
+// From https://stackoverflow.com/questions/27659675/get-next-smallest-nearest-number-to-a-decimal
+function get_epsilon(n) {
+  return Math.max( Number.MIN_VALUE, 2 ** Math.floor( Math.log2( n ) ) * Number.EPSILON ) 
+}
+
+function normalize(points) {
+    let out = Array(points.length).fill(0).map(() =&gt; new Array(points[0].length).fill(0));
+
+    for (let dim = 0; dim &lt; points[0].length; dim++) {
+        let mean = points.reduce((partial_sum, x) =&gt; partial_sum + x[dim], 0) / points.length;
+        let centred = points.map((x) =&gt; x[dim] - mean);
+        let std = (centred.reduce((partial_sum, x) =&gt; partial_sum + x**2, 0) / points.length)**0.5;
+        for (let i = 0; i &lt; points.length; i++) {
+            out[i][dim] =  centred[i] / std;
+        }
+    }
+
+    return out;
+}
+
+
+// As per https://arxiv.org/pdf/cond-mat/0305641 
+function mutual_information(x_points, y_points, k=3) {
+    // normalize points
+    x_points = normalize(x_points);
+    y_points = normalize(y_points);
+
+    let xy_points = x_points.map((x, i) =&gt; [...x, ...y_points[i]]);
+    let xy_tree = new KDTree(xy_points);
+
+    let x_tree = new KDTree(x_points);
+    let y_tree = new KDTree(y_points);
+
+    let mean_psi_nx_ny = xy_points.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = xy_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            // n_x, n_y = (length - 1) because we will always find the search point, and 
+            // need to ignore it.
+            let x_bounds = x_points[0].map((_, i) =&gt; [x[i] - bound_length, x[i] + bound_length]);
+            let y_bounds = y_points[0].map((_, i) =&gt; [x[x_bounds.length + i] - bound_length, x[x_bounds.length + i] + bound_length]);
+            let n_x = x_tree.find_bounded(x_bounds).length - 1;
+            let n_y = y_tree.find_bounded(y_bounds).length - 1;
+            return partial_sum + (digamma(n_x + 1) + digamma(n_y + 1));
+        },
+    0) / x_points.length;
+
+    return digamma(k) - mean_psi_nx_ny + digamma(x_points.length);
+}
+
+/* Estimate the Mutual Information of a collection
+   of signals.
+
+   x_points: An [n x m] dimensional array, with
+             m unique signals and n samples.
+
+   returns: I(X1, X2, ... Xm)
+
+*/ 
+function mutual_information_n(x_points, k=3) {
+    let joint_samples = normalize(x_points);
+
+    let m = x_points[0].length;
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+
+    let marginal_trees = [];
+
+    for (let signal = 0; signal &lt; m; signal++) {
+        marginal_trees.push(new KDTree(joint_samples.map((x, i) =&gt; [x[signal]])));
+    }
+
+    // Across all n_x[m], compute digamma(n_x[m] + 1), and then
+    // take the mean.
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let digamma_sum = 0;
+
+            for (let signal = 0; signal &lt; m; signal++) {
+                let bounds = [[x[signal] - bound_length, x[signal] + bound_length]];
+                // n_xm = (length - 1) because we will always find the search point, and 
+                // need to ignore it.
+                let n_xm = marginal_trees[signal].find_bounded(bounds).length - 1;
+                digamma_sum += digamma(n_xm + 1);
+            }
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
+}
+
+function partial_mutual_information(x_points, y_points, z_points, k=3) {
+    x_points = normalize(x_points.map((x) =&gt; [x]));
+    y_points = normalize(y_points.map((x) =&gt; [x]));
+    z_points = normalize(z_points.map((x) =&gt; [x]));
+
+    let joint_samples = x_points.map((x, i) =&gt; [...x, ...y_points[i], ...z_points[i]]);
+
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+    
+    let xz_tree = new KDTree(x_points.map((x, i) =&gt; [...x, ...z_points[i]]));
+    let yz_tree = new KDTree(y_points.map((y, i) =&gt; [...y, ...z_points[i]]));
+    let z_tree = new KDTree(z_points);
+
+    // Compute the mean of psi(n_xz) + psi(n_yz) - psi(n_z) 
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, point, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(point, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let x_bounds = [point[0] - bound_length, point[0] + bound_length];
+            let y_bounds = [point[1] - bound_length, point[1] + bound_length];
+            let z_bounds = [point[2] - bound_length, point[2] + bound_length];
+
+            let h_xz = digamma(xz_tree.find_bounded([x_bounds, z_bounds]).length)
+            let h_yz = digamma(yz_tree.find_bounded([y_bounds, z_bounds]).length)
+            let h_z = digamma(z_tree.find_bounded([z_bounds]).length)
+
+            let digamma_sum = h_xz + h_yz - h_z;
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) - mean_psi_nxm);
+}
+
+//////// Benchmarks /////////////////
+let tree;
+
+let n_points = 1_000;
+let x = Array(n_points).fill(0).map((x) =&gt; Math.random() * 80);
+let z = Array(n_points).fill(0).map((x) =&gt; (Math.random()) * 50);
+// let z = Array(n_points).fill(0).map((x) =&gt; Math.random());
+let y = x.map((x, i) =&gt; 0.05 * (Math.sin(x / 3) * Math.sin(z[i] / 3) * x * z[i] + Math.random() * 1));
+//let z = x.map((x, i) =&gt; (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
+//let z = x.map((x, i) =&gt; x + y[i]);
+
+
+let points = x.map((x, i) =&gt; [x, y[i], z[i]]);
+points = normalize(points);
+
+const n_repeats = 1;
+
+let start_build_tree = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    tree = new KDTree(points);
+}
+
+let xy_tree = new KDTree(x.map((x, i) =&gt; [x, y[i]]));
+let z_tree = new KDTree(z.map((z) =&gt; [z]));
+
+let build_time = (Date.now() - start_build_tree) / n_repeats;
+
+let [neighbors, dists] = tree.knn(points[0], 4, true);
+
+let k = 3;
+
+let start_knn_search = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    points.map((x) =&gt; tree.knn(x, k + 1));
+}
+
+let search_time = (Date.now() - start_knn_search) / n_repeats;
+
+
+// Test find_bounded //
+//
+//let b_points = [[1., 2., 3.], [4.,5.,6.], [7.,8.,9.], [10., 11., 12.]];
+//let bounds = [[0.99, 7.01], [2.01, 11.01], [6.01, 9.01]];
+//
+//let bounds_tree = new KDTree(b_points);
+//
+//let true_bounded = [[7, 8, 9]];
+//console.assert(bounds_tree.find_bounded(bounds).map((x, i) =&gt; x.map((xx, ii) =&gt; true_bounded[i][ii] == xx)));
+
+let bound_length = dists[0] + -get_epsilon(dists[0]);
+let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_y_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][1] - bound_length, points[0][1] + bound_length],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+
+console.log(`n_x = ${bounded_x_points.length}, n_y = ${bounded_y_points.length}, n_z = ${bounded_z_points.length}`);
+
+let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
+
+// Estimate the mutual information
+console.log(mutual_information(x.map((x) =&gt; [x]), y.map((x) =&gt; [x])));
+console.log(&#34;I(X, Y): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, y[i]])));
+console.log(&#34;I(X, Z): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(Y, Z): &#34;, mutual_information_n(y.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(X, Z | X): &#34;, partial_mutual_information(x, z, x));
+console.log(&#34;I(X, Z | Y): &#34;, partial_mutual_information(x, z, y));
+//console.log(&#34;I(X, Z): &#34;, mutual_information(x.map((x) =&gt; [x]), z.map((x) =&gt; [x])));
+console.assert(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]) == 0.9499999999999998);
+
+///////////////////////// Plots for verification ////////////////////
+
+// calculate the surface of a sphere for the nearest neighbors
+function calc_sphere(cx, cy, cz, radius, n=30) {
+    let x = [];
+    let y = [];
+    let z = [];
+    // Create a hemisphere
+    for (let i = 0; i &lt; 2 * Math.PI; i += 2 * Math.PI / n) {
+        for (let j = 0; j &lt; Math.PI; j += 2 * Math.PI / n) {
+            let cj = Math.cos(j);
+            x.push(cx + radius * Math.sin(i) * cj);
+            y.push(cy + radius * Math.cos(i) * cj);
+            z.push(cz + radius * Math.sin(j));
+        }
+    }
+
+    // Return the two hemispheres
+    return [[x, y, z], [x, y, z.map((z) =&gt; 2 * cz -z)]];
+}
+
+function cube(cx, cy, cz, edge_length) {
+    let l = edge_length;
+    return {
+        x: [cx - l, cx - l,  cx + l, cx + l, cx - l, cx - l, cx + l, cx + l],
+        y: [cy - l, cy + l, cy + l, cy - l, cy - l, cy + l, cy + l, cy - l],
+        z: [cz - l, cz - l, cz - l, cz - l, cz + l, cz + l, cz + l, cz + l],
+        i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+        j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+        k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+    }
+}
+
+// let [[sx, sy, sz], [sx2, sy2, sz2]] = calc_sphere(points[0][0], points[0][1], points[0][2], dists[0]**0.5);
+let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
+surf.opacity = 0.1;
+surf.color = &#34;blue&#34;;
+surf.type = &#34;mesh3d&#34;;
+
+Plotly.newPlot(&#39;plot&#39;, [
+    {
+        x: points.map((x) =&gt; x[0]), 
+        y: points.map((x) =&gt; x[1]), 
+        z: points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 0.5,
+            color: &#34;#061623&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    surf,
+    {
+        x: bounded_x_points.map((x) =&gt; x[0]),
+        y: bounded_x_points.map((x) =&gt; x[1]),
+        z: bounded_x_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E15554&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_y_points.map((x) =&gt; x[0]),
+        y: bounded_y_points.map((x) =&gt; x[1]),
+        z: bounded_y_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E1BC29&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_z_points.map((x) =&gt; x[0]),
+        y: bounded_z_points.map((x) =&gt; x[1]),
+        z: bounded_z_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#3BB273&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: neighbors.map((x) =&gt; x[0]),
+        y: neighbors.map((x) =&gt; x[1]),
+        z: neighbors.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 3,
+            color: &#34;#7768AE&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: [points[0][0]],
+        y: [points[0][1]],
+        z: [points[0][2]],
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 5,
+            color: &#34;#0D1321&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+],
+    {
+        width: 1200,
+        height: 600,
+        margin: {t: 0, l: 0, r: 0, b: 0},
+        xaxis: {
+            scaleanchor: &#39;y&#39;
+        },
+        zaxis: {
+            scaleanchor: &#39;z&#39;
+        },
+        scene: {
+            camera: {
+                projection: {
+                    type: &#34;orthographic&#34;,
+                }
+            }
+        },
+    }
+);
+document.getElementById(&#39;benchmark&#39;).textContent = `
+Build: ${build_time}ms
+KNN-search: ${search_time}ms
+`;
+
+&lt;/script&gt;
+
+&lt;/body&gt;</description>
+      <content>&lt;!DOCTYPE html&gt;
+&lt;head&gt;
+&lt;script src=&#34;./plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&#34;plot&#34; style=&#34;width: 1000px; height: 600px;&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;benchmark&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;module&#34;&gt;
+import digamma from &#39;https://cdn.jsdelivr.net/gh/stdlib-js/math-base-special-digamma@esm/index.mjs&#39;;
+// generate points
+class Node {
+    constructor(val, less_than, greater_than) {
+        this.val = val;
+        this.less_than = less_than;
+        this.greater_than = greater_than;
+    }
+}
+
+class KDTree {
+    constructor(points) {
+        this.n_dimensions = points[0].length;
+        this.tree = this.build_tree(points, 0, this.n_dimensions);
+    }
+    build_tree(points, dim, n_dims) {
+        if (points.length == 1) {
+            return new Node(points[0], null, null);
+        }
+        // sort a subset of the points
+        const n_subset = Math.min(points.length, Math.min(200, Math.max(10, parseInt(points.length / 10))));
+        //const n_subset = points.length;
+        // assume the area is homogeneous, so we can
+        // just pick the first n_subset points.
+        let subset = points.slice(0, Math.min(points.length, n_subset)).map((x, i) =&gt; x.concat([i]));
+        subset.sort((a, b) =&gt; a[dim] - b[dim]);
+        let midpoint = subset[parseInt(subset.length / 2)][subset[0].length - 1];
+        let median = points[midpoint];
+        let median_elem = median[dim];
+        // Remove the median so we don&#39;t count it twice.
+        points = points.slice(0, midpoint).concat(points.slice(midpoint + 1));
+        
+        let next_dim = (dim + 1) % n_dims;
+
+        let points_leq = points.filter((x) =&gt; x[dim] &lt;= median_elem);
+        let points_gt = points.filter((x) =&gt; x[dim] &gt; median_elem);
+
+        let less_than, greater_than;
+        
+        if (points_leq.length &gt; 0) {
+            less_than = this.build_tree(points_leq, next_dim, n_dims);
+        }
+        if (points_gt.length &gt; 0) {
+            greater_than = this.build_tree(points_gt, next_dim, n_dims);
+        }
+
+        return new Node(median, less_than, greater_than);
+    }
+
+    knn(point, k, return_dist=false) {
+        let closest_points = []; // [[distance, *point]]
+        let n_dimensions = this.n_dimensions;
+
+        function distance(x, y, norm=Math.inf) {
+            if (norm == Math.inf) {
+                return Math.max(...x.map((x, i) =&gt; Math.abs(x - y[i])));
+            }
+            return x.reduce((partial_sum, x, i) =&gt; partial_sum + (x-y[i])**norm, 0);
+        }
+
+        // find the point where the 
+
+        function find_closest(node, dim=0) {
+            let match = node.val;
+
+            let gt = point[dim] &gt; node.val[dim];
+
+            if (node.greater_than &amp;&amp; gt) {
+                find_closest(node.greater_than, (dim + 1) % n_dimensions);
+            } else if (node.less_than &amp;&amp; !gt) {
+                find_closest(node.less_than, (dim + 1) % n_dimensions);
+            }
+
+            // At this point, we&#39;ve greedily explored on the 
+            // &#34;best&#34; side of the tree.
+                let dist = distance(point, match);
+
+            if (closest_points.length &lt; k) {
+                closest_points.push([dist].concat(match));
+            } else if (dist &lt; closest_points[0][0]) {
+                closest_points[0] = [dist].concat(match);
+            }
+            closest_points.sort((a, b) =&gt; b[0] - a[0]);
+
+            // Check if the distance to the splitting plane
+            // is less than the distance to the furthest
+            // neighbor.
+            if (closest_points[0][0] &gt; distance([point[dim]], [node.val[dim]]) || closest_points.length &lt; k) {
+                // If so, traverse the opposite tree to last time.
+                    if (node.greater_than &amp;&amp; !gt) {
+                        find_closest(node.greater_than, (dim + 1) % n_dimensions);
+                    } else if (node.less_than &amp;&amp; gt) {
+                        find_closest(node.less_than, (dim + 1) % n_dimensions);
+                    }
+            }
+
+            return node.val;
+        }
+
+        find_closest(this.tree);
+        if (return_dist) {
+            return [closest_points.map((x) =&gt; x.slice(1)), closest_points.map((x) =&gt; x[0])];
+        }
+        return closest_points.map((x) =&gt; x.slice(1));
+    }
+
+    /* Count the number of points bounded
+    * by some range.
+    *  bounds is an array of [d_min, d_max].
+    *      e.g. for 3D, [[x_min, x_max], [y_min, y_max], [z_min, z_max]]
+    */ 
+    find_bounded(bounds) {
+        let points = [];
+        let n_dims = this.n_dimensions;
+
+        function recursively_bound(node, depth=0) {
+            let dim = depth % n_dims;
+
+            let splitting_plane = node.val[dim];
+            let [left_bound, right_bound] = bounds[dim];
+
+            let lt = left_bound &lt;= splitting_plane;
+            let gt = right_bound &gt; splitting_plane;
+
+            if (lt &amp;&amp; gt) {
+                // Check if the current point is bounded
+                // on all sides
+                let bounded = true;
+                for (let i = 0; i &lt; bounds.length; i++) {
+                    if (bounds[i][0] &gt; node.val[i] || bounds[i][1] &lt;= node.val[i]) {
+                        bounded = false;
+                        break;
+                    }
+                }
+                if (bounded) { points.push(node.val) };
+
+                // Continue refining on both sides.
+                node.less_than ? recursively_bound(node.less_than, depth+1) : null;
+                node.greater_than ? recursively_bound(node.greater_than, depth+1) : null;
+            } else if (lt) {
+                // bounding box is entirely on the 
+                // less-than side of the tree
+                node.less_than ? recursively_bound(node.less_than, depth + 1) : null;
+            } else if (gt) {
+                // bounding box is entirely on the greater-than
+                // side of the tree.
+               node.greater_than ? recursively_bound(node.greater_than, depth + 1) : null; 
+            }
+        }
+        recursively_bound(this.tree);
+        return points;
+    }
+}
+
+// From https://stackoverflow.com/questions/27659675/get-next-smallest-nearest-number-to-a-decimal
+function get_epsilon(n) {
+  return Math.max( Number.MIN_VALUE, 2 ** Math.floor( Math.log2( n ) ) * Number.EPSILON ) 
+}
+
+function normalize(points) {
+    let out = Array(points.length).fill(0).map(() =&gt; new Array(points[0].length).fill(0));
+
+    for (let dim = 0; dim &lt; points[0].length; dim++) {
+        let mean = points.reduce((partial_sum, x) =&gt; partial_sum + x[dim], 0) / points.length;
+        let centred = points.map((x) =&gt; x[dim] - mean);
+        let std = (centred.reduce((partial_sum, x) =&gt; partial_sum + x**2, 0) / points.length)**0.5;
+        for (let i = 0; i &lt; points.length; i++) {
+            out[i][dim] =  centred[i] / std;
+        }
+    }
+
+    return out;
+}
+
+
+// As per https://arxiv.org/pdf/cond-mat/0305641 
+function mutual_information(x_points, y_points, k=3) {
+    // normalize points
+    x_points = normalize(x_points);
+    y_points = normalize(y_points);
+
+    let xy_points = x_points.map((x, i) =&gt; [...x, ...y_points[i]]);
+    let xy_tree = new KDTree(xy_points);
+
+    let x_tree = new KDTree(x_points);
+    let y_tree = new KDTree(y_points);
+
+    let mean_psi_nx_ny = xy_points.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = xy_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            // n_x, n_y = (length - 1) because we will always find the search point, and 
+            // need to ignore it.
+            let x_bounds = x_points[0].map((_, i) =&gt; [x[i] - bound_length, x[i] + bound_length]);
+            let y_bounds = y_points[0].map((_, i) =&gt; [x[x_bounds.length + i] - bound_length, x[x_bounds.length + i] + bound_length]);
+            let n_x = x_tree.find_bounded(x_bounds).length - 1;
+            let n_y = y_tree.find_bounded(y_bounds).length - 1;
+            return partial_sum + (digamma(n_x + 1) + digamma(n_y + 1));
+        },
+    0) / x_points.length;
+
+    return digamma(k) - mean_psi_nx_ny + digamma(x_points.length);
+}
+
+/* Estimate the Mutual Information of a collection
+   of signals.
+
+   x_points: An [n x m] dimensional array, with
+             m unique signals and n samples.
+
+   returns: I(X1, X2, ... Xm)
+
+*/ 
+function mutual_information_n(x_points, k=3) {
+    let joint_samples = normalize(x_points);
+
+    let m = x_points[0].length;
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+
+    let marginal_trees = [];
+
+    for (let signal = 0; signal &lt; m; signal++) {
+        marginal_trees.push(new KDTree(joint_samples.map((x, i) =&gt; [x[signal]])));
+    }
+
+    // Across all n_x[m], compute digamma(n_x[m] + 1), and then
+    // take the mean.
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let digamma_sum = 0;
+
+            for (let signal = 0; signal &lt; m; signal++) {
+                let bounds = [[x[signal] - bound_length, x[signal] + bound_length]];
+                // n_xm = (length - 1) because we will always find the search point, and 
+                // need to ignore it.
+                let n_xm = marginal_trees[signal].find_bounded(bounds).length - 1;
+                digamma_sum += digamma(n_xm + 1);
+            }
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
+}
+
+function partial_mutual_information(x_points, y_points, z_points, k=3) {
+    x_points = normalize(x_points.map((x) =&gt; [x]));
+    y_points = normalize(y_points.map((x) =&gt; [x]));
+    z_points = normalize(z_points.map((x) =&gt; [x]));
+
+    let joint_samples = x_points.map((x, i) =&gt; [...x, ...y_points[i], ...z_points[i]]);
+
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+    
+    let xz_tree = new KDTree(x_points.map((x, i) =&gt; [...x, ...z_points[i]]));
+    let yz_tree = new KDTree(y_points.map((y, i) =&gt; [...y, ...z_points[i]]));
+    let z_tree = new KDTree(z_points);
+
+    // Compute the mean of psi(n_xz) + psi(n_yz) - psi(n_z) 
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, point, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(point, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let x_bounds = [point[0] - bound_length, point[0] + bound_length];
+            let y_bounds = [point[1] - bound_length, point[1] + bound_length];
+            let z_bounds = [point[2] - bound_length, point[2] + bound_length];
+
+            let h_xz = digamma(xz_tree.find_bounded([x_bounds, z_bounds]).length)
+            let h_yz = digamma(yz_tree.find_bounded([y_bounds, z_bounds]).length)
+            let h_z = digamma(z_tree.find_bounded([z_bounds]).length)
+
+            let digamma_sum = h_xz + h_yz - h_z;
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) - mean_psi_nxm);
+}
+
+//////// Benchmarks /////////////////
+let tree;
+
+let n_points = 1_000;
+let x = Array(n_points).fill(0).map((x) =&gt; Math.random() * 80);
+let z = Array(n_points).fill(0).map((x) =&gt; (Math.random()) * 50);
+// let z = Array(n_points).fill(0).map((x) =&gt; Math.random());
+let y = x.map((x, i) =&gt; 0.05 * (Math.sin(x / 3) * Math.sin(z[i] / 3) * x * z[i] + Math.random() * 1));
+//let z = x.map((x, i) =&gt; (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
+//let z = x.map((x, i) =&gt; x + y[i]);
+
+
+let points = x.map((x, i) =&gt; [x, y[i], z[i]]);
+points = normalize(points);
+
+const n_repeats = 1;
+
+let start_build_tree = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    tree = new KDTree(points);
+}
+
+let xy_tree = new KDTree(x.map((x, i) =&gt; [x, y[i]]));
+let z_tree = new KDTree(z.map((z) =&gt; [z]));
+
+let build_time = (Date.now() - start_build_tree) / n_repeats;
+
+let [neighbors, dists] = tree.knn(points[0], 4, true);
+
+let k = 3;
+
+let start_knn_search = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    points.map((x) =&gt; tree.knn(x, k + 1));
+}
+
+let search_time = (Date.now() - start_knn_search) / n_repeats;
+
+
+// Test find_bounded //
+//
+//let b_points = [[1., 2., 3.], [4.,5.,6.], [7.,8.,9.], [10., 11., 12.]];
+//let bounds = [[0.99, 7.01], [2.01, 11.01], [6.01, 9.01]];
+//
+//let bounds_tree = new KDTree(b_points);
+//
+//let true_bounded = [[7, 8, 9]];
+//console.assert(bounds_tree.find_bounded(bounds).map((x, i) =&gt; x.map((xx, ii) =&gt; true_bounded[i][ii] == xx)));
+
+let bound_length = dists[0] + -get_epsilon(dists[0]);
+let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_y_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][1] - bound_length, points[0][1] + bound_length],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+
+console.log(`n_x = ${bounded_x_points.length}, n_y = ${bounded_y_points.length}, n_z = ${bounded_z_points.length}`);
+
+let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
+
+// Estimate the mutual information
+console.log(mutual_information(x.map((x) =&gt; [x]), y.map((x) =&gt; [x])));
+console.log(&#34;I(X, Y): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, y[i]])));
+console.log(&#34;I(X, Z): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(Y, Z): &#34;, mutual_information_n(y.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(X, Z | X): &#34;, partial_mutual_information(x, z, x));
+console.log(&#34;I(X, Z | Y): &#34;, partial_mutual_information(x, z, y));
+//console.log(&#34;I(X, Z): &#34;, mutual_information(x.map((x) =&gt; [x]), z.map((x) =&gt; [x])));
+console.assert(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]) == 0.9499999999999998);
+
+///////////////////////// Plots for verification ////////////////////
+
+// calculate the surface of a sphere for the nearest neighbors
+function calc_sphere(cx, cy, cz, radius, n=30) {
+    let x = [];
+    let y = [];
+    let z = [];
+    // Create a hemisphere
+    for (let i = 0; i &lt; 2 * Math.PI; i += 2 * Math.PI / n) {
+        for (let j = 0; j &lt; Math.PI; j += 2 * Math.PI / n) {
+            let cj = Math.cos(j);
+            x.push(cx + radius * Math.sin(i) * cj);
+            y.push(cy + radius * Math.cos(i) * cj);
+            z.push(cz + radius * Math.sin(j));
+        }
+    }
+
+    // Return the two hemispheres
+    return [[x, y, z], [x, y, z.map((z) =&gt; 2 * cz -z)]];
+}
+
+function cube(cx, cy, cz, edge_length) {
+    let l = edge_length;
+    return {
+        x: [cx - l, cx - l,  cx + l, cx + l, cx - l, cx - l, cx + l, cx + l],
+        y: [cy - l, cy + l, cy + l, cy - l, cy - l, cy + l, cy + l, cy - l],
+        z: [cz - l, cz - l, cz - l, cz - l, cz + l, cz + l, cz + l, cz + l],
+        i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+        j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+        k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+    }
+}
+
+// let [[sx, sy, sz], [sx2, sy2, sz2]] = calc_sphere(points[0][0], points[0][1], points[0][2], dists[0]**0.5);
+let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
+surf.opacity = 0.1;
+surf.color = &#34;blue&#34;;
+surf.type = &#34;mesh3d&#34;;
+
+Plotly.newPlot(&#39;plot&#39;, [
+    {
+        x: points.map((x) =&gt; x[0]), 
+        y: points.map((x) =&gt; x[1]), 
+        z: points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 0.5,
+            color: &#34;#061623&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    surf,
+    {
+        x: bounded_x_points.map((x) =&gt; x[0]),
+        y: bounded_x_points.map((x) =&gt; x[1]),
+        z: bounded_x_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E15554&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_y_points.map((x) =&gt; x[0]),
+        y: bounded_y_points.map((x) =&gt; x[1]),
+        z: bounded_y_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E1BC29&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_z_points.map((x) =&gt; x[0]),
+        y: bounded_z_points.map((x) =&gt; x[1]),
+        z: bounded_z_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#3BB273&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: neighbors.map((x) =&gt; x[0]),
+        y: neighbors.map((x) =&gt; x[1]),
+        z: neighbors.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 3,
+            color: &#34;#7768AE&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: [points[0][0]],
+        y: [points[0][1]],
+        z: [points[0][2]],
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 5,
+            color: &#34;#0D1321&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+],
+    {
+        width: 1200,
+        height: 600,
+        margin: {t: 0, l: 0, r: 0, b: 0},
+        xaxis: {
+            scaleanchor: &#39;y&#39;
+        },
+        zaxis: {
+            scaleanchor: &#39;z&#39;
+        },
+        scene: {
+            camera: {
+                projection: {
+                    type: &#34;orthographic&#34;,
+                }
+            }
+        },
+    }
+);
+document.getElementById(&#39;benchmark&#39;).textContent = `
+Build: ${build_time}ms
+KNN-search: ${search_time}ms
+`;
+
+&lt;/script&gt;
+
+&lt;/body&gt;
 </content>
     </item>
     

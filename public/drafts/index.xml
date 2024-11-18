@@ -1330,5 +1330,1052 @@ get_vector_widget(Array.from({length: 1000}, (v, i) =&gt; i), &#39;vector&#39;, 
 </content>
     </item>
     
+    <item>
+      <title></title>
+      <link>https://willsnell.com/drafts/test/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://willsnell.com/drafts/test/</guid>
+      <description>&lt;!DOCTYPE html&gt;
+&lt;head&gt;
+&lt;script src=&#34;./plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&#34;plot&#34; style=&#34;width: 1000px; height: 600px;&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;benchmark&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;module&#34;&gt;
+import digamma from &#39;https://cdn.jsdelivr.net/gh/stdlib-js/math-base-special-digamma@esm/index.mjs&#39;;
+// generate points
+class Node {
+    constructor(val, less_than, greater_than) {
+        this.val = val;
+        this.less_than = less_than;
+        this.greater_than = greater_than;
+    }
+}
+
+class KDTree {
+    constructor(points) {
+        this.n_dimensions = points[0].length;
+        this.tree = this.build_tree(points, 0, this.n_dimensions);
+    }
+    build_tree(points, dim, n_dims) {
+        if (points.length == 1) {
+            return new Node(points[0], null, null);
+        }
+        // sort a subset of the points
+        const n_subset = Math.min(points.length, Math.min(200, Math.max(10, parseInt(points.length / 10))));
+        //const n_subset = points.length;
+        // assume the area is homogeneous, so we can
+        // just pick the first n_subset points.
+        let subset = points.slice(0, Math.min(points.length, n_subset)).map((x, i) =&gt; x.concat([i]));
+        subset.sort((a, b) =&gt; a[dim] - b[dim]);
+        let midpoint = subset[parseInt(subset.length / 2)][subset[0].length - 1];
+        let median = points[midpoint];
+        let median_elem = median[dim];
+        // Remove the median so we don&#39;t count it twice.
+        points = points.slice(0, midpoint).concat(points.slice(midpoint + 1));
+        
+        let next_dim = (dim + 1) % n_dims;
+
+        let points_leq = points.filter((x) =&gt; x[dim] &lt;= median_elem);
+        let points_gt = points.filter((x) =&gt; x[dim] &gt; median_elem);
+
+        let less_than, greater_than;
+        
+        if (points_leq.length &gt; 0) {
+            less_than = this.build_tree(points_leq, next_dim, n_dims);
+        }
+        if (points_gt.length &gt; 0) {
+            greater_than = this.build_tree(points_gt, next_dim, n_dims);
+        }
+
+        return new Node(median, less_than, greater_than);
+    }
+
+    knn(point, k, return_dist=false) {
+        let closest_points = []; // [[distance, *point]]
+        let n_dimensions = this.n_dimensions;
+
+        function distance(x, y, norm=Math.inf) {
+            if (norm == Math.inf) {
+                return Math.max(...x.map((x, i) =&gt; Math.abs(x - y[i])));
+            }
+            return x.reduce((partial_sum, x, i) =&gt; partial_sum + (x-y[i])**norm, 0);
+        }
+
+        // find the point where the 
+
+        function find_closest(node, dim=0) {
+            let match = node.val;
+
+            let gt = point[dim] &gt; node.val[dim];
+
+            if (node.greater_than &amp;&amp; gt) {
+                find_closest(node.greater_than, (dim + 1) % n_dimensions);
+            } else if (node.less_than &amp;&amp; !gt) {
+                find_closest(node.less_than, (dim + 1) % n_dimensions);
+            }
+
+            // At this point, we&#39;ve greedily explored on the 
+            // &#34;best&#34; side of the tree.
+                let dist = distance(point, match);
+
+            if (closest_points.length &lt; k) {
+                closest_points.push([dist].concat(match));
+            } else if (dist &lt; closest_points[0][0]) {
+                closest_points[0] = [dist].concat(match);
+            }
+            closest_points.sort((a, b) =&gt; b[0] - a[0]);
+
+            // Check if the distance to the splitting plane
+            // is less than the distance to the furthest
+            // neighbor.
+            if (closest_points[0][0] &gt; distance([point[dim]], [node.val[dim]]) || closest_points.length &lt; k) {
+                // If so, traverse the opposite tree to last time.
+                    if (node.greater_than &amp;&amp; !gt) {
+                        find_closest(node.greater_than, (dim + 1) % n_dimensions);
+                    } else if (node.less_than &amp;&amp; gt) {
+                        find_closest(node.less_than, (dim + 1) % n_dimensions);
+                    }
+            }
+
+            return node.val;
+        }
+
+        find_closest(this.tree);
+        if (return_dist) {
+            return [closest_points.map((x) =&gt; x.slice(1)), closest_points.map((x) =&gt; x[0])];
+        }
+        return closest_points.map((x) =&gt; x.slice(1));
+    }
+
+    /* Count the number of points bounded
+    * by some range.
+    *  bounds is an array of [d_min, d_max].
+    *      e.g. for 3D, [[x_min, x_max], [y_min, y_max], [z_min, z_max]]
+    */ 
+    find_bounded(bounds) {
+        let points = [];
+        let n_dims = this.n_dimensions;
+
+        function recursively_bound(node, depth=0) {
+            let dim = depth % n_dims;
+
+            let splitting_plane = node.val[dim];
+            let [left_bound, right_bound] = bounds[dim];
+
+            let lt = left_bound &lt;= splitting_plane;
+            let gt = right_bound &gt; splitting_plane;
+
+            if (lt &amp;&amp; gt) {
+                // Check if the current point is bounded
+                // on all sides
+                let bounded = true;
+                for (let i = 0; i &lt; bounds.length; i++) {
+                    if (bounds[i][0] &gt; node.val[i] || bounds[i][1] &lt;= node.val[i]) {
+                        bounded = false;
+                        break;
+                    }
+                }
+                if (bounded) { points.push(node.val) };
+
+                // Continue refining on both sides.
+                node.less_than ? recursively_bound(node.less_than, depth+1) : null;
+                node.greater_than ? recursively_bound(node.greater_than, depth+1) : null;
+            } else if (lt) {
+                // bounding box is entirely on the 
+                // less-than side of the tree
+                node.less_than ? recursively_bound(node.less_than, depth + 1) : null;
+            } else if (gt) {
+                // bounding box is entirely on the greater-than
+                // side of the tree.
+               node.greater_than ? recursively_bound(node.greater_than, depth + 1) : null; 
+            }
+        }
+        recursively_bound(this.tree);
+        return points;
+    }
+}
+
+// From https://stackoverflow.com/questions/27659675/get-next-smallest-nearest-number-to-a-decimal
+function get_epsilon(n) {
+  return Math.max( Number.MIN_VALUE, 2 ** Math.floor( Math.log2( n ) ) * Number.EPSILON ) 
+}
+
+function normalize(points) {
+    let out = Array(points.length).fill(0).map(() =&gt; new Array(points[0].length).fill(0));
+
+    for (let dim = 0; dim &lt; points[0].length; dim++) {
+        let mean = points.reduce((partial_sum, x) =&gt; partial_sum + x[dim], 0) / points.length;
+        let centred = points.map((x) =&gt; x[dim] - mean);
+        let std = (centred.reduce((partial_sum, x) =&gt; partial_sum + x**2, 0) / points.length)**0.5;
+        for (let i = 0; i &lt; points.length; i++) {
+            out[i][dim] =  centred[i] / std;
+        }
+    }
+
+    return out;
+}
+
+
+// As per https://arxiv.org/pdf/cond-mat/0305641 
+function mutual_information(x_points, y_points, k=3) {
+    // normalize points
+    x_points = normalize(x_points);
+    y_points = normalize(y_points);
+
+    let xy_points = x_points.map((x, i) =&gt; [...x, ...y_points[i]]);
+    let xy_tree = new KDTree(xy_points);
+
+    let x_tree = new KDTree(x_points);
+    let y_tree = new KDTree(y_points);
+
+    let mean_psi_nx_ny = xy_points.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = xy_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            // n_x, n_y = (length - 1) because we will always find the search point, and 
+            // need to ignore it.
+            let x_bounds = x_points[0].map((_, i) =&gt; [x[i] - bound_length, x[i] + bound_length]);
+            let y_bounds = y_points[0].map((_, i) =&gt; [x[x_bounds.length + i] - bound_length, x[x_bounds.length + i] + bound_length]);
+            let n_x = x_tree.find_bounded(x_bounds).length - 1;
+            let n_y = y_tree.find_bounded(y_bounds).length - 1;
+            return partial_sum + (digamma(n_x + 1) + digamma(n_y + 1));
+        },
+    0) / x_points.length;
+
+    return digamma(k) - mean_psi_nx_ny + digamma(x_points.length);
+}
+
+/* Estimate the Mutual Information of a collection
+   of signals.
+
+   x_points: An [n x m] dimensional array, with
+             m unique signals and n samples.
+
+   returns: I(X1, X2, ... Xm)
+
+*/ 
+function mutual_information_n(x_points, k=3) {
+    let joint_samples = normalize(x_points);
+
+    let m = x_points[0].length;
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+
+    let marginal_trees = [];
+
+    for (let signal = 0; signal &lt; m; signal++) {
+        marginal_trees.push(new KDTree(joint_samples.map((x, i) =&gt; [x[signal]])));
+    }
+
+    // Across all n_x[m], compute digamma(n_x[m] + 1), and then
+    // take the mean.
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let digamma_sum = 0;
+
+            for (let signal = 0; signal &lt; m; signal++) {
+                let bounds = [[x[signal] - bound_length, x[signal] + bound_length]];
+                // n_xm = (length - 1) because we will always find the search point, and 
+                // need to ignore it.
+                let n_xm = marginal_trees[signal].find_bounded(bounds).length - 1;
+                digamma_sum += digamma(n_xm + 1);
+            }
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
+}
+
+function partial_mutual_information(x_points, y_points, z_points, k=3) {
+    x_points = normalize(x_points.map((x) =&gt; [x]));
+    y_points = normalize(y_points.map((x) =&gt; [x]));
+    z_points = normalize(z_points.map((x) =&gt; [x]));
+
+    let joint_samples = x_points.map((x, i) =&gt; [...x, ...y_points[i], ...z_points[i]]);
+
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+    
+    let xz_tree = new KDTree(x_points.map((x, i) =&gt; [...x, ...z_points[i]]));
+    let yz_tree = new KDTree(y_points.map((y, i) =&gt; [...y, ...z_points[i]]));
+    let z_tree = new KDTree(z_points);
+
+    // Compute the mean of psi(n_xz) + psi(n_yz) - psi(n_z) 
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, point, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(point, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let x_bounds = [point[0] - bound_length, point[0] + bound_length];
+            let y_bounds = [point[1] - bound_length, point[1] + bound_length];
+            let z_bounds = [point[2] - bound_length, point[2] + bound_length];
+
+            let h_xz = digamma(xz_tree.find_bounded([x_bounds, z_bounds]).length)
+            let h_yz = digamma(yz_tree.find_bounded([y_bounds, z_bounds]).length)
+            let h_z = digamma(z_tree.find_bounded([z_bounds]).length)
+
+            let digamma_sum = h_xz + h_yz - h_z;
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) - mean_psi_nxm);
+}
+
+//////// Benchmarks /////////////////
+let tree;
+
+let n_points = 1_000;
+let x = Array(n_points).fill(0).map((x) =&gt; Math.random() * 80);
+let z = Array(n_points).fill(0).map((x) =&gt; (Math.random()) * 50);
+// let z = Array(n_points).fill(0).map((x) =&gt; Math.random());
+let y = x.map((x, i) =&gt; 0.05 * (Math.sin(x / 3) * Math.sin(z[i] / 3) * x * z[i] + Math.random() * 1));
+//let z = x.map((x, i) =&gt; (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
+//let z = x.map((x, i) =&gt; x + y[i]);
+
+
+let points = x.map((x, i) =&gt; [x, y[i], z[i]]);
+points = normalize(points);
+
+const n_repeats = 1;
+
+let start_build_tree = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    tree = new KDTree(points);
+}
+
+let xy_tree = new KDTree(x.map((x, i) =&gt; [x, y[i]]));
+let z_tree = new KDTree(z.map((z) =&gt; [z]));
+
+let build_time = (Date.now() - start_build_tree) / n_repeats;
+
+let [neighbors, dists] = tree.knn(points[0], 4, true);
+
+let k = 3;
+
+let start_knn_search = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    points.map((x) =&gt; tree.knn(x, k + 1));
+}
+
+let search_time = (Date.now() - start_knn_search) / n_repeats;
+
+
+// Test find_bounded //
+//
+//let b_points = [[1., 2., 3.], [4.,5.,6.], [7.,8.,9.], [10., 11., 12.]];
+//let bounds = [[0.99, 7.01], [2.01, 11.01], [6.01, 9.01]];
+//
+//let bounds_tree = new KDTree(b_points);
+//
+//let true_bounded = [[7, 8, 9]];
+//console.assert(bounds_tree.find_bounded(bounds).map((x, i) =&gt; x.map((xx, ii) =&gt; true_bounded[i][ii] == xx)));
+
+let bound_length = dists[0] + -get_epsilon(dists[0]);
+let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_y_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][1] - bound_length, points[0][1] + bound_length],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+
+console.log(`n_x = ${bounded_x_points.length}, n_y = ${bounded_y_points.length}, n_z = ${bounded_z_points.length}`);
+
+let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
+
+// Estimate the mutual information
+console.log(mutual_information(x.map((x) =&gt; [x]), y.map((x) =&gt; [x])));
+console.log(&#34;I(X, Y): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, y[i]])));
+console.log(&#34;I(X, Z): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(Y, Z): &#34;, mutual_information_n(y.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(X, Z | X): &#34;, partial_mutual_information(x, z, x));
+console.log(&#34;I(X, Z | Y): &#34;, partial_mutual_information(x, z, y));
+//console.log(&#34;I(X, Z): &#34;, mutual_information(x.map((x) =&gt; [x]), z.map((x) =&gt; [x])));
+console.assert(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]) == 0.9499999999999998);
+
+///////////////////////// Plots for verification ////////////////////
+
+// calculate the surface of a sphere for the nearest neighbors
+function calc_sphere(cx, cy, cz, radius, n=30) {
+    let x = [];
+    let y = [];
+    let z = [];
+    // Create a hemisphere
+    for (let i = 0; i &lt; 2 * Math.PI; i += 2 * Math.PI / n) {
+        for (let j = 0; j &lt; Math.PI; j += 2 * Math.PI / n) {
+            let cj = Math.cos(j);
+            x.push(cx + radius * Math.sin(i) * cj);
+            y.push(cy + radius * Math.cos(i) * cj);
+            z.push(cz + radius * Math.sin(j));
+        }
+    }
+
+    // Return the two hemispheres
+    return [[x, y, z], [x, y, z.map((z) =&gt; 2 * cz -z)]];
+}
+
+function cube(cx, cy, cz, edge_length) {
+    let l = edge_length;
+    return {
+        x: [cx - l, cx - l,  cx + l, cx + l, cx - l, cx - l, cx + l, cx + l],
+        y: [cy - l, cy + l, cy + l, cy - l, cy - l, cy + l, cy + l, cy - l],
+        z: [cz - l, cz - l, cz - l, cz - l, cz + l, cz + l, cz + l, cz + l],
+        i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+        j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+        k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+    }
+}
+
+// let [[sx, sy, sz], [sx2, sy2, sz2]] = calc_sphere(points[0][0], points[0][1], points[0][2], dists[0]**0.5);
+let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
+surf.opacity = 0.1;
+surf.color = &#34;blue&#34;;
+surf.type = &#34;mesh3d&#34;;
+
+Plotly.newPlot(&#39;plot&#39;, [
+    {
+        x: points.map((x) =&gt; x[0]), 
+        y: points.map((x) =&gt; x[1]), 
+        z: points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 0.5,
+            color: &#34;#061623&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    surf,
+    {
+        x: bounded_x_points.map((x) =&gt; x[0]),
+        y: bounded_x_points.map((x) =&gt; x[1]),
+        z: bounded_x_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E15554&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_y_points.map((x) =&gt; x[0]),
+        y: bounded_y_points.map((x) =&gt; x[1]),
+        z: bounded_y_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E1BC29&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_z_points.map((x) =&gt; x[0]),
+        y: bounded_z_points.map((x) =&gt; x[1]),
+        z: bounded_z_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#3BB273&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: neighbors.map((x) =&gt; x[0]),
+        y: neighbors.map((x) =&gt; x[1]),
+        z: neighbors.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 3,
+            color: &#34;#7768AE&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: [points[0][0]],
+        y: [points[0][1]],
+        z: [points[0][2]],
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 5,
+            color: &#34;#0D1321&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+],
+    {
+        width: 1200,
+        height: 600,
+        margin: {t: 0, l: 0, r: 0, b: 0},
+        xaxis: {
+            scaleanchor: &#39;y&#39;
+        },
+        zaxis: {
+            scaleanchor: &#39;z&#39;
+        },
+        scene: {
+            camera: {
+                projection: {
+                    type: &#34;orthographic&#34;,
+                }
+            }
+        },
+    }
+);
+document.getElementById(&#39;benchmark&#39;).textContent = `
+Build: ${build_time}ms
+KNN-search: ${search_time}ms
+`;
+
+&lt;/script&gt;
+
+&lt;/body&gt;</description>
+      <content>&lt;!DOCTYPE html&gt;
+&lt;head&gt;
+&lt;script src=&#34;./plotly-2.32.0.min.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&#34;plot&#34; style=&#34;width: 1000px; height: 600px;&#34;&gt;&lt;/div&gt;
+&lt;div id=&#34;benchmark&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;module&#34;&gt;
+import digamma from &#39;https://cdn.jsdelivr.net/gh/stdlib-js/math-base-special-digamma@esm/index.mjs&#39;;
+// generate points
+class Node {
+    constructor(val, less_than, greater_than) {
+        this.val = val;
+        this.less_than = less_than;
+        this.greater_than = greater_than;
+    }
+}
+
+class KDTree {
+    constructor(points) {
+        this.n_dimensions = points[0].length;
+        this.tree = this.build_tree(points, 0, this.n_dimensions);
+    }
+    build_tree(points, dim, n_dims) {
+        if (points.length == 1) {
+            return new Node(points[0], null, null);
+        }
+        // sort a subset of the points
+        const n_subset = Math.min(points.length, Math.min(200, Math.max(10, parseInt(points.length / 10))));
+        //const n_subset = points.length;
+        // assume the area is homogeneous, so we can
+        // just pick the first n_subset points.
+        let subset = points.slice(0, Math.min(points.length, n_subset)).map((x, i) =&gt; x.concat([i]));
+        subset.sort((a, b) =&gt; a[dim] - b[dim]);
+        let midpoint = subset[parseInt(subset.length / 2)][subset[0].length - 1];
+        let median = points[midpoint];
+        let median_elem = median[dim];
+        // Remove the median so we don&#39;t count it twice.
+        points = points.slice(0, midpoint).concat(points.slice(midpoint + 1));
+        
+        let next_dim = (dim + 1) % n_dims;
+
+        let points_leq = points.filter((x) =&gt; x[dim] &lt;= median_elem);
+        let points_gt = points.filter((x) =&gt; x[dim] &gt; median_elem);
+
+        let less_than, greater_than;
+        
+        if (points_leq.length &gt; 0) {
+            less_than = this.build_tree(points_leq, next_dim, n_dims);
+        }
+        if (points_gt.length &gt; 0) {
+            greater_than = this.build_tree(points_gt, next_dim, n_dims);
+        }
+
+        return new Node(median, less_than, greater_than);
+    }
+
+    knn(point, k, return_dist=false) {
+        let closest_points = []; // [[distance, *point]]
+        let n_dimensions = this.n_dimensions;
+
+        function distance(x, y, norm=Math.inf) {
+            if (norm == Math.inf) {
+                return Math.max(...x.map((x, i) =&gt; Math.abs(x - y[i])));
+            }
+            return x.reduce((partial_sum, x, i) =&gt; partial_sum + (x-y[i])**norm, 0);
+        }
+
+        // find the point where the 
+
+        function find_closest(node, dim=0) {
+            let match = node.val;
+
+            let gt = point[dim] &gt; node.val[dim];
+
+            if (node.greater_than &amp;&amp; gt) {
+                find_closest(node.greater_than, (dim + 1) % n_dimensions);
+            } else if (node.less_than &amp;&amp; !gt) {
+                find_closest(node.less_than, (dim + 1) % n_dimensions);
+            }
+
+            // At this point, we&#39;ve greedily explored on the 
+            // &#34;best&#34; side of the tree.
+                let dist = distance(point, match);
+
+            if (closest_points.length &lt; k) {
+                closest_points.push([dist].concat(match));
+            } else if (dist &lt; closest_points[0][0]) {
+                closest_points[0] = [dist].concat(match);
+            }
+            closest_points.sort((a, b) =&gt; b[0] - a[0]);
+
+            // Check if the distance to the splitting plane
+            // is less than the distance to the furthest
+            // neighbor.
+            if (closest_points[0][0] &gt; distance([point[dim]], [node.val[dim]]) || closest_points.length &lt; k) {
+                // If so, traverse the opposite tree to last time.
+                    if (node.greater_than &amp;&amp; !gt) {
+                        find_closest(node.greater_than, (dim + 1) % n_dimensions);
+                    } else if (node.less_than &amp;&amp; gt) {
+                        find_closest(node.less_than, (dim + 1) % n_dimensions);
+                    }
+            }
+
+            return node.val;
+        }
+
+        find_closest(this.tree);
+        if (return_dist) {
+            return [closest_points.map((x) =&gt; x.slice(1)), closest_points.map((x) =&gt; x[0])];
+        }
+        return closest_points.map((x) =&gt; x.slice(1));
+    }
+
+    /* Count the number of points bounded
+    * by some range.
+    *  bounds is an array of [d_min, d_max].
+    *      e.g. for 3D, [[x_min, x_max], [y_min, y_max], [z_min, z_max]]
+    */ 
+    find_bounded(bounds) {
+        let points = [];
+        let n_dims = this.n_dimensions;
+
+        function recursively_bound(node, depth=0) {
+            let dim = depth % n_dims;
+
+            let splitting_plane = node.val[dim];
+            let [left_bound, right_bound] = bounds[dim];
+
+            let lt = left_bound &lt;= splitting_plane;
+            let gt = right_bound &gt; splitting_plane;
+
+            if (lt &amp;&amp; gt) {
+                // Check if the current point is bounded
+                // on all sides
+                let bounded = true;
+                for (let i = 0; i &lt; bounds.length; i++) {
+                    if (bounds[i][0] &gt; node.val[i] || bounds[i][1] &lt;= node.val[i]) {
+                        bounded = false;
+                        break;
+                    }
+                }
+                if (bounded) { points.push(node.val) };
+
+                // Continue refining on both sides.
+                node.less_than ? recursively_bound(node.less_than, depth+1) : null;
+                node.greater_than ? recursively_bound(node.greater_than, depth+1) : null;
+            } else if (lt) {
+                // bounding box is entirely on the 
+                // less-than side of the tree
+                node.less_than ? recursively_bound(node.less_than, depth + 1) : null;
+            } else if (gt) {
+                // bounding box is entirely on the greater-than
+                // side of the tree.
+               node.greater_than ? recursively_bound(node.greater_than, depth + 1) : null; 
+            }
+        }
+        recursively_bound(this.tree);
+        return points;
+    }
+}
+
+// From https://stackoverflow.com/questions/27659675/get-next-smallest-nearest-number-to-a-decimal
+function get_epsilon(n) {
+  return Math.max( Number.MIN_VALUE, 2 ** Math.floor( Math.log2( n ) ) * Number.EPSILON ) 
+}
+
+function normalize(points) {
+    let out = Array(points.length).fill(0).map(() =&gt; new Array(points[0].length).fill(0));
+
+    for (let dim = 0; dim &lt; points[0].length; dim++) {
+        let mean = points.reduce((partial_sum, x) =&gt; partial_sum + x[dim], 0) / points.length;
+        let centred = points.map((x) =&gt; x[dim] - mean);
+        let std = (centred.reduce((partial_sum, x) =&gt; partial_sum + x**2, 0) / points.length)**0.5;
+        for (let i = 0; i &lt; points.length; i++) {
+            out[i][dim] =  centred[i] / std;
+        }
+    }
+
+    return out;
+}
+
+
+// As per https://arxiv.org/pdf/cond-mat/0305641 
+function mutual_information(x_points, y_points, k=3) {
+    // normalize points
+    x_points = normalize(x_points);
+    y_points = normalize(y_points);
+
+    let xy_points = x_points.map((x, i) =&gt; [...x, ...y_points[i]]);
+    let xy_tree = new KDTree(xy_points);
+
+    let x_tree = new KDTree(x_points);
+    let y_tree = new KDTree(y_points);
+
+    let mean_psi_nx_ny = xy_points.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = xy_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            // n_x, n_y = (length - 1) because we will always find the search point, and 
+            // need to ignore it.
+            let x_bounds = x_points[0].map((_, i) =&gt; [x[i] - bound_length, x[i] + bound_length]);
+            let y_bounds = y_points[0].map((_, i) =&gt; [x[x_bounds.length + i] - bound_length, x[x_bounds.length + i] + bound_length]);
+            let n_x = x_tree.find_bounded(x_bounds).length - 1;
+            let n_y = y_tree.find_bounded(y_bounds).length - 1;
+            return partial_sum + (digamma(n_x + 1) + digamma(n_y + 1));
+        },
+    0) / x_points.length;
+
+    return digamma(k) - mean_psi_nx_ny + digamma(x_points.length);
+}
+
+/* Estimate the Mutual Information of a collection
+   of signals.
+
+   x_points: An [n x m] dimensional array, with
+             m unique signals and n samples.
+
+   returns: I(X1, X2, ... Xm)
+
+*/ 
+function mutual_information_n(x_points, k=3) {
+    let joint_samples = normalize(x_points);
+
+    let m = x_points[0].length;
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+
+    let marginal_trees = [];
+
+    for (let signal = 0; signal &lt; m; signal++) {
+        marginal_trees.push(new KDTree(joint_samples.map((x, i) =&gt; [x[signal]])));
+    }
+
+    // Across all n_x[m], compute digamma(n_x[m] + 1), and then
+    // take the mean.
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, x, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(x, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let digamma_sum = 0;
+
+            for (let signal = 0; signal &lt; m; signal++) {
+                let bounds = [[x[signal] - bound_length, x[signal] + bound_length]];
+                // n_xm = (length - 1) because we will always find the search point, and 
+                // need to ignore it.
+                let n_xm = marginal_trees[signal].find_bounded(bounds).length - 1;
+                digamma_sum += digamma(n_xm + 1);
+            }
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) + (m - 1) * digamma(n_samples) - mean_psi_nxm);
+}
+
+function partial_mutual_information(x_points, y_points, z_points, k=3) {
+    x_points = normalize(x_points.map((x) =&gt; [x]));
+    y_points = normalize(y_points.map((x) =&gt; [x]));
+    z_points = normalize(z_points.map((x) =&gt; [x]));
+
+    let joint_samples = x_points.map((x, i) =&gt; [...x, ...y_points[i], ...z_points[i]]);
+
+    let n_samples = x_points.length;
+
+    let joint_tree = new KDTree(joint_samples);
+    
+    let xz_tree = new KDTree(x_points.map((x, i) =&gt; [...x, ...z_points[i]]));
+    let yz_tree = new KDTree(y_points.map((y, i) =&gt; [...y, ...z_points[i]]));
+    let z_tree = new KDTree(z_points);
+
+    // Compute the mean of psi(n_xz) + psi(n_yz) - psi(n_z) 
+    let mean_psi_nxm = joint_samples.reduce((partial_sum, point, i) =&gt; 
+    {
+            // We find k + 1 neighbors because the first neighbor is the point itself.
+            let [neighbors, dists] = joint_tree.knn(point, k + 1, true);
+            // We add an offset because we don&#39;t want a point on the wall of our hypercube
+            // to be caught by our hyper rectangles.
+            let bound_length = dists[0] - get_epsilon(dists[0]);
+
+            let x_bounds = [point[0] - bound_length, point[0] + bound_length];
+            let y_bounds = [point[1] - bound_length, point[1] + bound_length];
+            let z_bounds = [point[2] - bound_length, point[2] + bound_length];
+
+            let h_xz = digamma(xz_tree.find_bounded([x_bounds, z_bounds]).length)
+            let h_yz = digamma(yz_tree.find_bounded([y_bounds, z_bounds]).length)
+            let h_z = digamma(z_tree.find_bounded([z_bounds]).length)
+
+            let digamma_sum = h_xz + h_yz - h_z;
+
+            return partial_sum + digamma_sum;
+        },
+    0) / x_points.length;
+
+    return Math.max(0, digamma(k) - mean_psi_nxm);
+}
+
+//////// Benchmarks /////////////////
+let tree;
+
+let n_points = 1_000;
+let x = Array(n_points).fill(0).map((x) =&gt; Math.random() * 80);
+let z = Array(n_points).fill(0).map((x) =&gt; (Math.random()) * 50);
+// let z = Array(n_points).fill(0).map((x) =&gt; Math.random());
+let y = x.map((x, i) =&gt; 0.05 * (Math.sin(x / 3) * Math.sin(z[i] / 3) * x * z[i] + Math.random() * 1));
+//let z = x.map((x, i) =&gt; (x + y[i]) * (-1 + Math.floor((x / 4) %2) * 2));
+//let z = x.map((x, i) =&gt; x + y[i]);
+
+
+let points = x.map((x, i) =&gt; [x, y[i], z[i]]);
+points = normalize(points);
+
+const n_repeats = 1;
+
+let start_build_tree = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    tree = new KDTree(points);
+}
+
+let xy_tree = new KDTree(x.map((x, i) =&gt; [x, y[i]]));
+let z_tree = new KDTree(z.map((z) =&gt; [z]));
+
+let build_time = (Date.now() - start_build_tree) / n_repeats;
+
+let [neighbors, dists] = tree.knn(points[0], 4, true);
+
+let k = 3;
+
+let start_knn_search = Date.now();
+for (let i = 0; i &lt; n_repeats; i++) {
+    points.map((x) =&gt; tree.knn(x, k + 1));
+}
+
+let search_time = (Date.now() - start_knn_search) / n_repeats;
+
+
+// Test find_bounded //
+//
+//let b_points = [[1., 2., 3.], [4.,5.,6.], [7.,8.,9.], [10., 11., 12.]];
+//let bounds = [[0.99, 7.01], [2.01, 11.01], [6.01, 9.01]];
+//
+//let bounds_tree = new KDTree(b_points);
+//
+//let true_bounded = [[7, 8, 9]];
+//console.assert(bounds_tree.find_bounded(bounds).map((x, i) =&gt; x.map((xx, ii) =&gt; true_bounded[i][ii] == xx)));
+
+let bound_length = dists[0] + -get_epsilon(dists[0]);
+let bounded_x_points = tree.find_bounded([[points[0][0] - bound_length, points[0][0] + bound_length], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_y_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][1] - bound_length, points[0][1] + bound_length],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+let bounded_z_points = tree.find_bounded([[Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY], 
+                                          [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+                                          [points[0][2] - bound_length, points[0][2] + bound_length]]);
+
+
+console.log(`n_x = ${bounded_x_points.length}, n_y = ${bounded_y_points.length}, n_z = ${bounded_z_points.length}`);
+
+let inf_bounds = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
+
+// Estimate the mutual information
+console.log(mutual_information(x.map((x) =&gt; [x]), y.map((x) =&gt; [x])));
+console.log(&#34;I(X, Y): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, y[i]])));
+console.log(&#34;I(X, Z): &#34;, mutual_information_n(x.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(Y, Z): &#34;, mutual_information_n(y.map((x, i) =&gt; [x, z[i]])));
+console.log(&#34;I(X, Z | X): &#34;, partial_mutual_information(x, z, x));
+console.log(&#34;I(X, Z | Y): &#34;, partial_mutual_information(x, z, y));
+//console.log(&#34;I(X, Z): &#34;, mutual_information(x.map((x) =&gt; [x]), z.map((x) =&gt; [x])));
+console.assert(mutual_information([[1],[2],[3],[4],[5],[6],[7]], [[1],[2],[3],[4],[5],[6],[7]]) == 0.9499999999999998);
+
+///////////////////////// Plots for verification ////////////////////
+
+// calculate the surface of a sphere for the nearest neighbors
+function calc_sphere(cx, cy, cz, radius, n=30) {
+    let x = [];
+    let y = [];
+    let z = [];
+    // Create a hemisphere
+    for (let i = 0; i &lt; 2 * Math.PI; i += 2 * Math.PI / n) {
+        for (let j = 0; j &lt; Math.PI; j += 2 * Math.PI / n) {
+            let cj = Math.cos(j);
+            x.push(cx + radius * Math.sin(i) * cj);
+            y.push(cy + radius * Math.cos(i) * cj);
+            z.push(cz + radius * Math.sin(j));
+        }
+    }
+
+    // Return the two hemispheres
+    return [[x, y, z], [x, y, z.map((z) =&gt; 2 * cz -z)]];
+}
+
+function cube(cx, cy, cz, edge_length) {
+    let l = edge_length;
+    return {
+        x: [cx - l, cx - l,  cx + l, cx + l, cx - l, cx - l, cx + l, cx + l],
+        y: [cy - l, cy + l, cy + l, cy - l, cy - l, cy + l, cy + l, cy - l],
+        z: [cz - l, cz - l, cz - l, cz - l, cz + l, cz + l, cz + l, cz + l],
+        i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+        j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+        k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+    }
+}
+
+// let [[sx, sy, sz], [sx2, sy2, sz2]] = calc_sphere(points[0][0], points[0][1], points[0][2], dists[0]**0.5);
+let surf = cube(points[0][0], points[0][1], points[0][2], dists[0]);
+surf.opacity = 0.1;
+surf.color = &#34;blue&#34;;
+surf.type = &#34;mesh3d&#34;;
+
+Plotly.newPlot(&#39;plot&#39;, [
+    {
+        x: points.map((x) =&gt; x[0]), 
+        y: points.map((x) =&gt; x[1]), 
+        z: points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 0.5,
+            color: &#34;#061623&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    surf,
+    {
+        x: bounded_x_points.map((x) =&gt; x[0]),
+        y: bounded_x_points.map((x) =&gt; x[1]),
+        z: bounded_x_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E15554&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_y_points.map((x) =&gt; x[0]),
+        y: bounded_y_points.map((x) =&gt; x[1]),
+        z: bounded_y_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#E1BC29&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: bounded_z_points.map((x) =&gt; x[0]),
+        y: bounded_z_points.map((x) =&gt; x[1]),
+        z: bounded_z_points.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 2,
+            color: &#34;#3BB273&#34;
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: neighbors.map((x) =&gt; x[0]),
+        y: neighbors.map((x) =&gt; x[1]),
+        z: neighbors.map((x) =&gt; x[2]),
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 3,
+            color: &#34;#7768AE&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+    {
+        x: [points[0][0]],
+        y: [points[0][1]],
+        z: [points[0][2]],
+        mode: &#39;markers&#39;,
+        marker: {
+            size: 5,
+            color: &#34;#0D1321&#34;,
+        },
+        type: &#39;scatter3d&#39;,
+    },
+],
+    {
+        width: 1200,
+        height: 600,
+        margin: {t: 0, l: 0, r: 0, b: 0},
+        xaxis: {
+            scaleanchor: &#39;y&#39;
+        },
+        zaxis: {
+            scaleanchor: &#39;z&#39;
+        },
+        scene: {
+            camera: {
+                projection: {
+                    type: &#34;orthographic&#34;,
+                }
+            }
+        },
+    }
+);
+document.getElementById(&#39;benchmark&#39;).textContent = `
+Build: ${build_time}ms
+KNN-search: ${search_time}ms
+`;
+
+&lt;/script&gt;
+
+&lt;/body&gt;
+</content>
+    </item>
+    
   </channel>
 </rss>
