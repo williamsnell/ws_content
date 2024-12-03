@@ -149,7 +149,7 @@
   <h1 class="post-title">
     <a href="https://willsnell.com/posts/entropy/">Entropy and Information Theory</a>
   </h1>
-  <div class="post-meta"><time class="post-date">2024-11-18</time><span class="post-reading-time">35 min read (7326 words)</span></div>
+  <div class="post-meta"><time class="post-date">2024-11-18</time><span class="post-reading-time">34 min read (7216 words)</span></div>
 
   
   
@@ -269,13 +269,9 @@ We just multiply the <em>information</em> of each message by the <em>likelihood<
 the results of the lottery:</p>
 \[
         H(\text{Lottery}) = P(\text{win}) I(\text{win}) + P(\text{lose}) I(\text{lose}) \\
-\]<p>Remember from before, that:
-</p>
-\[
+\]\[
                     I(x)  = \log_2{\frac{1}{P(x)}} = -\log_2{P(x)} \\
-\]<p>Therefore,
-</p>
-\[
+\]\[
 H(\text{Lottery}) = -P(\text{win}) \log_2{P(\text{win})} \\
                     - P(\text{lose}) \log_2{P(\text{lose})}
 \]<p>We know that \(P(\text{win}) = \frac{1}{20}\) and \(P(\text{lose}) = \frac{19}{20}\), so
@@ -552,11 +548,7 @@ Because \(\log_2 \Delta x\) is a constant, we can bring it out to the front of t
     H(X) &= -\lim_{\Delta x \rightarrow 0} \left(\
             \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \log_2 \Delta x \sum_{i=0}^N p(x_i) \Delta x \right) 
 \end{align}
-\]<p>But wait! Remembering our Riemann sum approximation, and remembering that the integral of the probability
-density function from \((-\infty, \infty)\) must equal 1,
-we have:
-</p>
-\[
+\]\[
 \begin{align}
         p(x) \Delta x &\approx \int_x^{x + \Delta x} p(x) dx \\
     \lim_{\Delta x \rightarrow 0} \sum_{i=0}^N  p(x_i) \Delta x &= 1 \\
@@ -601,8 +593,6 @@ and love:</p>
 \[\text{height}_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
 The differential entropy of \(\text{height}_\text{cm}\) would be <em>larger</em> than the differential entropy of \(\text{height}_\text{m}\).</li>
 </ol>
-<p>One useful property differential entropy does have is <em>translational invariance</em>:
-</p>
 \[
         h(X + c) = h(X)
 \]<p>So, with our normal distribution, we can shift the mean wherever we like and keep the same differential
@@ -719,11 +709,6 @@ and we blow up the KL-divergence to infinity (recall, mutual information is a sp
 <h1 id="k-nearest-neighbors">K-Nearest Neighbors<a href="#k-nearest-neighbors" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
 <p>Instead, we&rsquo;ll use K-Nearest-Neighbors (KNN). This technique can be used for a number of problems, although we&rsquo;ll
 use it to estimate the mutual information directly (as per <a href="https://arxiv.org/pdf/cond-mat/0305641">Kraskov, Stögbauer, and Grassberger</a>).</p>
-<p>K-nearest-neighbors can be thought of as a &ldquo;dynamic binning&rdquo; method - it only runs calculations in areas
-where samples have actually fallen. Before we dive into the maths, lets have a play around with it. In this plot,
-we sample from a uniform distribution on the x axis, and feed samples of x through the sine function - before
-adding some noise - to get y.
-</p>
 \[
 \begin{align}
 X = \mathcal{U}(0, 5) \\
@@ -896,8 +881,6 @@ the number of points captured in a wide strip of height 1 (or a tall
 strip of width 1) should be \(\sqrt{N}\). In other words, if the orange square
 that holds our K nearest neighbors held 1 point, we should expect \(n_x\) and \(n_y\)
 to both hold \(\sqrt{N}\) points in this uncorrelated case.</p>
-<p>Earlier, we established that:
-</p>
 \[
     \psi(n) \approx 2 \cdot \psi(\sqrt{n})
 \]<p>Also, we know our equation for mutual information is:</p>
@@ -1101,10 +1084,17 @@ in a few days when you&rsquo;ve had some time to think about it, play around wit
     
 <div class="pagination">
     <div class="pagination__title">
-        <span class="pagination__title-h">Read other posts</span>
+        <span class="pagination__title-h"></span>
         <hr />
     </div>
     <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="https://willsnell.com/posts/trigrams/">
+                <span class="button__icon">←</span>
+                <span class="button__text">Trigrams</span>
+            </a>
+        </span>
         
         
         <span class="button next">

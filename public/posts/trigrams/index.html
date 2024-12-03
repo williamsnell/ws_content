@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>Trigrams :: willsnell</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content=" This post is converted from a Jupyter Notebook. To view the original interactive version, check out the Colab notebook.
+Monthly Algorithmic Challenge (November 2024): Trigrams Last week, I worked through the monthly Mechanistic Interpretability challenge from Callum McDougall&rsquo;s ARENA course.
+(A huge shoutout to Callum and the entire ARENA team for all the work they do!)
+The challenge was to interpret how a simple neural net - in this case, a 1 layer 1 head transformer (with MLP) - solves a problem. The problem at hand was to predict the next token in a sequence of random tokens. As the model was trained with cross-entropy loss, training on a completely random dataset would lead the model to always uniformly predict all tokens in the vocabulary.
+" />
+<meta name="keywords" content="" />
+
+  <meta name="robots" content="noodp" />
+
+<link rel="canonical" href="https://willsnell.com/posts/trigrams/" />
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="https://willsnell.com/styles.css">
+
+
+
+
+
+
+
+  <link rel="shortcut icon" href="https://willsnell.com/img/theme-colors/orange.png">
+  <link rel="apple-touch-icon" href="https://willsnell.com/img/theme-colors/orange.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Trigrams">
+<meta property="og:description" content=" This post is converted from a Jupyter Notebook. To view the original interactive version, check out the Colab notebook.
+Monthly Algorithmic Challenge (November 2024): Trigrams Last week, I worked through the monthly Mechanistic Interpretability challenge from Callum McDougall&rsquo;s ARENA course.
+(A huge shoutout to Callum and the entire ARENA team for all the work they do!)
+The challenge was to interpret how a simple neural net - in this case, a 1 layer 1 head transformer (with MLP) - solves a problem. The problem at hand was to predict the next token in a sequence of random tokens. As the model was trained with cross-entropy loss, training on a completely random dataset would lead the model to always uniformly predict all tokens in the vocabulary.
+" />
+<meta property="og:url" content="https://willsnell.com/posts/trigrams/" />
+<meta property="og:site_name" content="willsnell" />
+
+  
+  
+    
+  
+  <meta property="og:image" content="https://willsnell.com/posts/trigrams/cover.png">
+
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+
+
+  <meta property="article:published_time" content="2024-12-04 10:26:20 &#43;1300 NZDT" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      displayMath: [['\\[', '\\]'], ['$$', '$$']],  
+      inlineMath: [['\\(', '\\)']]                  
+    }
+  };
+</script>
+
+
+  
+
+</head>
+<body class="orange">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    will_snell
+  </div>
+</a>
+
+    </div>
+    
+      <ul class="menu menu--mobile">
+  <li class="menu__trigger">Menu&nbsp;▾</li>
+  <li>
+    <ul class="menu__dropdown">
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+      
+    </ul>
+  </li>
+</ul>
+
+    
+    
+  </div>
+  
+    <nav class="navigation-menu">
+  <ul class="navigation-menu__inner menu--desktop">
+    
+      
+        
+          <li><a href="/about" >About</a></li>
+        
+      
+      
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<article class="post">
+  <h1 class="post-title">
+    <a href="https://willsnell.com/posts/trigrams/">Trigrams</a>
+  </h1>
+  <div class="post-meta"><time class="post-date">2024-12-04</time></div>
+
+  
+  
+  <img src="/posts/trigrams/cover.png"
+    class="post-cover"
+    alt="Trigrams"
+    title="Cover Image" />
+
+
+  
+
+  <div class="post-content"><div>
+        <blockquote>
+<p>This post is converted from a Jupyter Notebook. To view the original interactive version, check out the
+<a href="https://colab.research.google.com/drive/161EE2W98h_mpphESWv_mPtbv__MZP8jV?usp=sharing">Colab notebook.</a></p>
+</blockquote>
+<h1 id="monthly-algorithmic-challenge-november-2024-trigrams">Monthly Algorithmic Challenge (November 2024): Trigrams<a href="#monthly-algorithmic-challenge-november-2024-trigrams" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Last week, I worked through the monthly Mechanistic Interpretability challenge from <a href="https://arena3-chapter1-transformer-interp.streamlit.app/Monthly_Algorithmic_Problems">Callum McDougall&rsquo;s ARENA course</a>.</p>
+<p><em>(A huge shoutout to Callum and the entire ARENA team for all the work they do!)</em></p>
+<p>The challenge was to interpret how a simple neural net - in this case, a 1 layer 1 head transformer (with MLP) - solves a problem.
+The problem at hand was to predict the next token in a sequence of random tokens. As the model was trained with cross-entropy
+loss, training on a completely random dataset would lead the model to always uniformly predict all tokens in the vocabulary.</p>
+<p><em>However</em>, inserted randomly throughout the dataset were <strong>trigrams</strong>, sequences of 3 tokens which always followed the pattern</p>
+<p><code>trigram[0], trigram[1]</code> =&gt; <code>trigram[2].</code></p>
+<p>For example, for a trigram <code>(1, 2, 3)</code> and the sequence <code>5 74 38 12 52 1 2</code>, we know for certain the next token is <code>3</code>.</p>
+<p>Consequently, we expect the model to develop ways of detecting the presence of trigrams, determining <em>which</em> trigram is present, retrieving the correct completion, and writing to the output to confidently predict the correct completion token. The mechanisms the model learns to do this are explored below.</p>
+<p>My work starts from <a href="/posts/trigrams/#misc-tools">&ldquo;Misc Tools&rdquo;</a> onwards.</p>
+<p>If you&rsquo;re comfortable with Jupyter Notebooks/Google Colab, I&rsquo;d recommend reading through the
+interactive version of this page, linked as a Google Colab notebook, <a href="https://colab.research.google.com/drive/161EE2W98h_mpphESWv_mPtbv__MZP8jV?usp=sharing">here.</a></p>
+<h1 id="beginning-of-attempt">Beginning of Attempt<a href="#beginning-of-attempt" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<h1 id="misc-tools">Misc Tools<a href="#misc-tools" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_trigram_positions</span>(dataset: BigramDataset) <span style="color:#f92672">-&gt;</span> Tuple[
+</span></span><span style="display:flex;"><span>Float[Tensor, <span style="color:#e6db74">&#34;n_trigram_occurences&#34;</span>], Float[Tensor, <span style="color:#e6db74">&#34;n_trigram_occurences&#34;</span>]]:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Return the batch and sequence positions of trigrams
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    for the tokens in a dataset.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Do a 2-wide sliding window</span>
+</span></span><span style="display:flex;"><span>    pairs <span style="color:#f92672">=</span> dataset<span style="color:#f92672">.</span>toks<span style="color:#f92672">.</span>unfold(dimension<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, step<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    patterns <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>tensor([[trigram[<span style="color:#ae81ff">0</span>], trigram[<span style="color:#ae81ff">1</span>]] <span style="color:#66d9ef">for</span> trigram <span style="color:#f92672">in</span> dataset<span style="color:#f92672">.</span>trigrams], device<span style="color:#f92672">=</span>device)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Match all pairs against all patterns.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># &#39;matches&#39; gives the position where a particular trigram matches.</span>
+</span></span><span style="display:flex;"><span>    matches <span style="color:#f92672">=</span> (pairs<span style="color:#f92672">.</span>unsqueeze(<span style="color:#ae81ff">2</span>) <span style="color:#f92672">==</span> patterns<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, len(patterns), <span style="color:#ae81ff">2</span>))<span style="color:#f92672">.</span>all(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>) <span style="color:#75715e"># [batch, seq - 1, num_patterns]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># trigram_pos gives the starting position of *any* valid trigram.</span>
+</span></span><span style="display:flex;"><span>    batch_idx, seq_idx <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>where(matches<span style="color:#f92672">.</span>any(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> batch_idx, seq_idx
+</span></span></code></pre></div><h1 id="attention-patterns">Attention Patterns<a href="#attention-patterns" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>The first thing to probe is the attention head. To figure out what algorithm/s it might be implementing, we want to plot a number of different batches against the attention patterns.</p>
+<p>In particular, we add two markers to the plot:</p>
+<ol>
+<li>A ✓ to indicate the model made a correct prediction of the next token,
+based on this sequence position.</li>
+<li>A highlighted horizontal bar, indicating the presence of the first two elements (trigram[0] and trigram[1]) of a trigram.</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>batch_idx, seq_idx <span style="color:#f92672">=</span> get_trigram_positions(dataset)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">visualize_attn</span>(batch<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>):
+</span></span><span style="display:flex;"><span>    trigrams <span style="color:#f92672">=</span> seq_idx[batch_idx <span style="color:#f92672">==</span> batch]
+</span></span><span style="display:flex;"><span>    attn <span style="color:#f92672">=</span> cache[<span style="color:#e6db74">&#39;blocks.0.attn.hook_pattern&#39;</span>][batch, <span style="color:#ae81ff">0</span>] <span style="color:#75715e"># select batch, head = 0 -&gt; [q_seq, k_seq]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    bound <span style="color:#f92672">=</span> max(attn<span style="color:#f92672">.</span>min()<span style="color:#f92672">.</span>abs(), attn<span style="color:#f92672">.</span>max()<span style="color:#f92672">.</span>abs())
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{</span>batch<span style="color:#e6db74">=}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>imshow(attn<span style="color:#f92672">.</span>cpu(), vmin<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, vmax<span style="color:#f92672">=</span>bound, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Blues&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Key&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Query&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Visualize if the model makes a correct prediction</span>
+</span></span><span style="display:flex;"><span>    correct_predictions <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>where(logits[batch, :<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> dataset<span style="color:#f92672">.</span>toks[batch, <span style="color:#ae81ff">1</span>:])[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot([<span style="color:#ae81ff">0.5</span>] <span style="color:#f92672">*</span> len(correct_predictions), correct_predictions<span style="color:#f92672">.</span>cpu(), <span style="color:#e6db74">&#34;g&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;&#39;</span>, marker<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;$✓$&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Highlight places where trigrams are present (in the query direction).</span>
+</span></span><span style="display:flex;"><span>    mask <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>zeros_like(attn, device<span style="color:#f92672">=</span>device)
+</span></span><span style="display:flex;"><span>    mask[trigrams] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    mask[trigrams <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>imshow(mask<span style="color:#f92672">.</span>cpu(), alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.05</span>, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;gray&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>show()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># interact(visualize_attn, batch=(0, logits.shape[0] - 1, 1))</span>
+</span></span><span style="display:flex;"><span>visualize_attn(batch<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_6_0.png"></p>
+<p>From the plot, we can see a few interesting things:</p>
+<ul>
+<li>
+<p>Firstly, by default the head attends to the current sequence position. We can probably think of this as a &rsquo;no-op'.</p>
+</li>
+<li>
+<p>Secondly, most of the time when a trigram is present, the query key for <code>trigram[1]</code> will attend strongly (&gt;0.9) to <code>trigram[0]</code>. Less frequently, the head will split attention between <code>trigram[1]</code> and <code>trigram[0]</code> roughly evenly, and ignore everything else.</p>
+</li>
+<li>
+<p>Thirdly, for some trigrams, the model makes a correct prediction of <code>trigram[2]</code> but only attends to <code>trigram[1]</code>.</p>
+</li>
+<li>
+<p>Finally, the model occasionally makes correct predictions when no trigrams are present, which is just the result of a lucky guess.</p>
+</li>
+</ul>
+<p>Point one makes sense: the model doesn&rsquo;t need to know anything about the previous token if it is just going to make a guess (in the case of no trigram).
+Point two also makes some sense: the residual stream for <code>trigram[1]</code> always contains information about <code>trigram[1]</code>. For the unembeddings or the MLP later on to make a correct guess, however, the residual stream also needs some information about <code>trigram[0]</code>, and the only way it can get this is by attending to the previous token.</p>
+<p>What&rsquo;s perhaps counter-intuitive is that sometimes the model makes correct predictions in the presence of a trigram without attending to <code>trigram[0]</code> at all!</p>
+<p>To get a better understanding of what&rsquo;s going on, let&rsquo;s break apart the attention mechanism into position-based and token-based - that is, projecting the <code>W_pos</code> and <code>W_E</code> matrices into the attention space.</p>
+<p>Below, we plot these two components for the tokens in each batch, all pre-softmax.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">mask_trigrams</span>(attn, batch<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Show a highlighted area over the query-sequence
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    positions where `trigram[0], trigram[1]` are
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    present. &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    trigrams <span style="color:#f92672">=</span> seq_idx[batch_idx <span style="color:#f92672">==</span> batch]
+</span></span><span style="display:flex;"><span>    mask <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>zeros_like(attn[batch], device<span style="color:#f92672">=</span>device)
+</span></span><span style="display:flex;"><span>    mask[trigrams] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    mask[trigrams <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>imshow(mask<span style="color:#f92672">.</span>cpu(), alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.05</span>, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;gray&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>batch <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">plot_tok_pos</span>(batch):
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;&#34;&#34;Plot the attention head contributions from token embeddings
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  and positional embeddings, separately.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Positional embedding only</span>
+</span></span><span style="display:flex;"><span>  q_pos <span style="color:#f92672">=</span> (cache[<span style="color:#e6db74">&#39;pos_embed&#39;</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_Q[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_Q[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>  k_pos <span style="color:#f92672">=</span> (cache[<span style="color:#e6db74">&#39;pos_embed&#39;</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_K[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_K[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>  attn_pos <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>einsum(q_pos, k_pos, <span style="color:#e6db74">&#34;... qseq dhead, ... kseq dhead -&gt; ... qseq kseq&#34;</span>)<span style="color:#75715e">#.masked_fill_(t.triu(t.ones(q_pos.shape[-2], q_pos.shape[-2]).bool(), diagonal=1), -t.inf)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">8</span>))
+</span></span><span style="display:flex;"><span>  plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Positional Embeddings&#34;</span>)
+</span></span><span style="display:flex;"><span>  f <span style="color:#f92672">=</span> ax<span style="color:#f92672">.</span>imshow(attn_pos[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>cpu(), cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;inferno&#34;</span>)
+</span></span><span style="display:flex;"><span>  plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span><span style="display:flex;"><span>  mask_trigrams(attn_pos, batch)
+</span></span><span style="display:flex;"><span>  ax<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Query&#34;</span>)
+</span></span><span style="display:flex;"><span>  ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Key&#34;</span>)
+</span></span><span style="display:flex;"><span>  plt<span style="color:#f92672">.</span>show()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Token only, no positional embeddings</span>
+</span></span><span style="display:flex;"><span>  q_tok <span style="color:#f92672">=</span> (cache[<span style="color:#e6db74">&#39;hook_embed&#39;</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_Q[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_Q[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>  k_tok <span style="color:#f92672">=</span> (cache[<span style="color:#e6db74">&#39;hook_embed&#39;</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_K[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_K[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>  attn_tok <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>einsum(q_tok, k_tok, <span style="color:#e6db74">&#34;... qseq dhead, ... kseq dhead -&gt; ... qseq kseq&#34;</span>)<span style="color:#f92672">.</span>masked_fill_(t<span style="color:#f92672">.</span>triu(t<span style="color:#f92672">.</span>ones(q_tok<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], q_tok<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], device<span style="color:#f92672">=</span>device)<span style="color:#f92672">.</span>bool(), diagonal<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>), <span style="color:#f92672">-</span>t<span style="color:#f92672">.</span>inf)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">8</span>))
+</span></span><span style="display:flex;"><span>  plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Token Embeddings&#34;</span>)
+</span></span><span style="display:flex;"><span>  f <span style="color:#f92672">=</span> ax<span style="color:#f92672">.</span>imshow(attn_tok[batch]<span style="color:#f92672">.</span>cpu(), cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;inferno&#34;</span>)
+</span></span><span style="display:flex;"><span>  plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span><span style="display:flex;"><span>  ax<span style="color:#f92672">.</span>set_xticks(np<span style="color:#f92672">.</span>arange(dataset<span style="color:#f92672">.</span>toks<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]), dataset<span style="color:#f92672">.</span>toks[batch]<span style="color:#f92672">.</span>cpu()<span style="color:#f92672">.</span>numpy(), rotation<span style="color:#f92672">=-</span><span style="color:#ae81ff">90</span>)
+</span></span><span style="display:flex;"><span>  ax<span style="color:#f92672">.</span>set_yticks(np<span style="color:#f92672">.</span>arange(dataset<span style="color:#f92672">.</span>toks<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]), dataset<span style="color:#f92672">.</span>toks[batch]<span style="color:#f92672">.</span>cpu()<span style="color:#f92672">.</span>numpy())
+</span></span><span style="display:flex;"><span>  ax<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Query&#34;</span>)
+</span></span><span style="display:flex;"><span>  ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Key&#34;</span>)
+</span></span><span style="display:flex;"><span>  plt<span style="color:#f92672">.</span>show()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># interact(plot_tok_pos, batch=(0, logits.shape[0] - 1, 1))</span>
+</span></span><span style="display:flex;"><span>plot_tok_pos(batch<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_8_0.png"></p>
+<p><img alt="png" src="/posts/trigrams/output_8_1.png"></p>
+<h1 id="initial-hypothesis">Initial Hypothesis<a href="#initial-hypothesis" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<h2 id="token-embeddings">Token Embeddings<a href="#token-embeddings" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>The query vector is looking for a token that precedes it in a trigram.</p>
+<p>E.g. for token 47, the query vector is looking for 2, 4, or 41 (because (2, 47, 28), (4, 47, 23), and (41, 47, 3) are all valid trigrams.)</p>
+<p>The key vector indicates which token it represents. For token 41, the key vector says &ldquo;I am 41&rdquo;.</p>
+<h2 id="positional-embeddings">Positional Embeddings<a href="#positional-embeddings" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>The positional embeddings are monotonic and essentially linear based on sequence position, with higher scores for later tokens. This means that the highest attention score is, by default, always the current token.</p>
+<p>The positional embeddings for the last position of the sequence appears to be nonsense, because there is no correct prediction to learn.</p>
+<h2 id="combined-embeddings">Combined Embeddings<a href="#combined-embeddings" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Combining the two embeddings, the algorithm for detecting trigrams appears to be:</p>
+<pre><code>1. Use token embeddings to determine if a preceding token matches the current token. That is, increase attention when (key == trigram[0]) and (query == trigram[1]).
+
+2. Use positional embeddings to mask out the attention scores for all keys except the immediately previous one.
+</code></pre>
+<p>This <em>could</em> explain how the model works for almost all trigrams.</p>
+<p>The one notable exception to this are for trigrams with repeats, e.g. (72, 72, 48). In this case, the model appears to attend only to the most recent occurence of the token. Given what we suspect about how this model&rsquo;s attention mechanism works, we shouldn&rsquo;t really expect it to do anything else.</p>
+<ul>
+<li>The monotonic nature of the learned positional embeddings mean the most recent token always gets precedence</li>
+<li>The token embeddings for two identical keys must, by definition, be identical</li>
+<li>Because softmax is translation invariant, the model can&rsquo;t just make the token-based attention score very high in the case of duplicated sequences, because only the difference between the two positions&rsquo; attention scores matters.</li>
+</ul>
+<p>How, then, does the model predict these duplicate trigrams (and it does predict them correctly!)</p>
+<p>Maybe the MLP directly implements predictions for repeated tokens? However, there&rsquo;s no mechanism for the MLP to get information about the previous token without an attention head playing ball and telling it the current token is a repeat. Since the positional embedding scheme in the single head present doesn&rsquo;t do that, there&rsquo;s really only one avenue left for the model to predict completions of duplicate-starting trigrams: fake it!</p>
+<p>Since <code>trigram[0], trigram[1]</code> always imply the same <code>trigram[2]</code>, the model can always guess the correct completion, regardless of whether the current token is a duplicate.</p>
+<p>Is this what we see?</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">10</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Predictions for &#39;X, 72 -&gt; &#39;&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">72</span>, <span style="color:#ae81ff">72</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;72, 72&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">72</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1, 72&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">74</span>, <span style="color:#ae81ff">72</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;74, 72&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">74</span>, <span style="color:#ae81ff">72</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1, 74, 72&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Token&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Probability&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>legend()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># a series of random tokens (of the same sequence length)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># that end in 54</span>
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Predictions for &#39;X, 54 -&gt; &#39;&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">54</span>, <span style="color:#ae81ff">54</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;54, 54&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">54</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1, 54&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">74</span>, <span style="color:#ae81ff">54</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;74, 54&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Token&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Probability&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>legend()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># two random tokens that are not a trigram</span>
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Random Tokens&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">32</span>, <span style="color:#ae81ff">52</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;32, 52&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">32</span>, <span style="color:#ae81ff">52</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1, 32, 52&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">31</span>, <span style="color:#ae81ff">52</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;31, 52&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>legend()
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Token&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Probability&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># two random tokens that **are** a trigram</span>
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Random Trigram&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>plot(model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">26</span>, <span style="color:#ae81ff">49</span>]]))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu())
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Token&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Probability&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_10_0.png"></p>
+<p>Above, we have four plots showing (from top left, clockwise):</p>
+<ol>
+<li>For any sequence (that isn&rsquo;t a non-repeating trigram) ending in 72, the model always makes the same prediction. That is, it (weakly) predicts the correct continuation of the (72, 72, 48) trigram.</li>
+<li>For another repeating trigram (54, 54, 67), we have the same behaviour: all sequences ending in 54 weakly predict 67 as the follow up.</li>
+<li>Picking an arbitrary non-repeating trigram (in this case, (26, 49, 22)), we see that the model very strongly predicts the correct continuation (22). This is quite different to the two preceding plots, where the prediction was closer to uniform.</li>
+<li>If we look at a number of non-trigram sequences, we can see that while predictions are fairly uniform, both sequence position and the preceding token appear to slightly tweak the exact distribution output. This is markedly different to the repeating trigrams (figures 1 and 2), which vary their predictions only based on sequence position and <em>not</em> on the preceding token.</li>
+</ol>
+<h1 id="does-token-attention-encode-trigram-starts">Does Token Attention Encode Trigram Starts?<a href="#does-token-attention-encode-trigram-starts" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>If the model is really using key-query vectors to encode <code>trigram[0], trigram[1]</code> pairs, we should be able to see that directly. Looking at the first 50 sequence positions:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>tokens <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, model<span style="color:#f92672">.</span>cfg<span style="color:#f92672">.</span>n_ctx <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>unsqueeze(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>m, c <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>run_with_cache(tokens)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Token only, no positional embeddings</span>
+</span></span><span style="display:flex;"><span>q_tok <span style="color:#f92672">=</span> (c[<span style="color:#e6db74">&#39;hook_embed&#39;</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_Q[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_Q[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>k_tok <span style="color:#f92672">=</span> (c[<span style="color:#e6db74">&#39;hook_embed&#39;</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_K[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_K[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>attn_tok <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>einsum(q_tok, k_tok, <span style="color:#e6db74">&#34;... qseq dhead, ... kseq dhead -&gt; ... qseq kseq&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">8</span>))
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>grid()
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> ax<span style="color:#f92672">.</span>imshow(attn_tok[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>softmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu(), cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Greens&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Trigram[0]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Trigram[1]&#34;</span>)
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>set_xticks(np<span style="color:#f92672">.</span>arange(dataset<span style="color:#f92672">.</span>toks<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>), tokens[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>numpy(), rotation<span style="color:#f92672">=-</span><span style="color:#ae81ff">90</span>)
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>set_yticks(np<span style="color:#f92672">.</span>arange(dataset<span style="color:#f92672">.</span>toks<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>), tokens[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>numpy())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_13_0.png"></p>
+<p>Indeed, we can read off the values of our trigram-starting pairs by:</p>
+<pre><code>1. Pick a value from the y-axis. This is the query token, and
+represents `trigram[1]`.
+2. Read from left to right, until we encounter a large value.
+3. From this highlighted square, read off the x-axis value. This is the key value that the query was looking for - i.e. `trigram[0]`.
+</code></pre>
+<p>We can compare the hotspots on this chart to the set of possible trigrams, sorted by second element (<code>trigram[1]</code>). This gives quite good agreement, once we filter out very low values.</p>
+<p>What&rsquo;s interesting is the significant variability in how intensely the model attends to different trigram pairs. It&rsquo;s possible this is a limitation of the space the model has to work with, or something else entirely.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>table <span style="color:#f92672">=</span> Table(<span style="color:#e6db74">&#34;First Element&#34;</span>)
+</span></span><span style="display:flex;"><span>table<span style="color:#f92672">.</span>add_column(<span style="color:#e6db74">&#34;Second Element&#34;</span>)
+</span></span><span style="display:flex;"><span>table<span style="color:#f92672">.</span>add_column(<span style="color:#e6db74">&#34;Third Element&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> trigram <span style="color:#f92672">in</span> sorted(dataset<span style="color:#f92672">.</span>trigrams, key<span style="color:#f92672">=</span><span style="color:#66d9ef">lambda</span> x: x[<span style="color:#ae81ff">1</span>]):
+</span></span><span style="display:flex;"><span>    table<span style="color:#f92672">.</span>add_row(str(trigram[<span style="color:#ae81ff">0</span>]), str(trigram[<span style="color:#ae81ff">1</span>]), str(trigram[<span style="color:#ae81ff">2</span>]))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>console <span style="color:#f92672">=</span> Console()
+</span></span><span style="display:flex;"><span>console<span style="color:#f92672">.</span>print(table)
+</span></span></code></pre></div><hr>
+<details>
+	<summary><b>Click to view table</b></summary>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> First Element </span>┃<span style="font-weight: bold"> Second Element </span>┃<span style="font-weight: bold"> Third Element </span>┃
+┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ 17            │ 0              │ 43            │
+│ 57            │ 0              │ 34            │
+│ 9             │ 0              │ 37            │
+│ 12            │ 0              │ 20            │
+│ 13            │ 1              │ 22            │
+│ 6             │ 1              │ 54            │
+│ 17            │ 1              │ 12            │
+│ 64            │ 1              │ 8             │
+│ 10            │ 2              │ 67            │
+│ 56            │ 2              │ 22            │
+│ 3             │ 2              │ 62            │
+│ 63            │ 2              │ 17            │
+│ 58            │ 3              │ 70            │
+│ 15            │ 4              │ 50            │
+│ 57            │ 4              │ 73            │
+│ 54            │ 4              │ 4             │
+│ 71            │ 4              │ 7             │
+│ 13            │ 4              │ 8             │
+│ 11            │ 5              │ 53            │
+│ 2             │ 5              │ 17            │
+│ 16            │ 5              │ 60            │
+│ 38            │ 5              │ 35            │
+│ 67            │ 6              │ 72            │
+│ 10            │ 7              │ 56            │
+│ 37            │ 7              │ 51            │
+│ 52            │ 8              │ 30            │
+│ 63            │ 8              │ 8             │
+│ 5             │ 8              │ 0             │
+│ 22            │ 8              │ 38            │
+│ 12            │ 9              │ 26            │
+│ 11            │ 9              │ 30            │
+│ 2             │ 9              │ 59            │
+│ 45            │ 10             │ 47            │
+│ 4             │ 10             │ 3             │
+│ 24            │ 10             │ 22            │
+│ 51            │ 10             │ 65            │
+│ 28            │ 10             │ 6             │
+│ 37            │ 11             │ 66            │
+│ 64            │ 12             │ 34            │
+│ 12            │ 12             │ 4             │
+│ 39            │ 12             │ 73            │
+│ 6             │ 13             │ 39            │
+│ 71            │ 13             │ 62            │
+│ 42            │ 13             │ 69            │
+│ 59            │ 13             │ 73            │
+│ 47            │ 13             │ 18            │
+│ 26            │ 13             │ 46            │
+│ 14            │ 13             │ 9             │
+│ 59            │ 14             │ 68            │
+│ 9             │ 14             │ 65            │
+│ 16            │ 14             │ 5             │
+│ 60            │ 14             │ 16            │
+│ 24            │ 14             │ 62            │
+│ 22            │ 15             │ 20            │
+│ 6             │ 15             │ 47            │
+│ 12            │ 15             │ 54            │
+│ 24            │ 15             │ 66            │
+│ 71            │ 15             │ 38            │
+│ 18            │ 15             │ 0             │
+│ 50            │ 16             │ 16            │
+│ 3             │ 16             │ 71            │
+│ 6             │ 17             │ 40            │
+│ 0             │ 17             │ 26            │
+│ 13            │ 17             │ 16            │
+│ 70            │ 17             │ 52            │
+│ 57            │ 18             │ 2             │
+│ 52            │ 18             │ 48            │
+│ 72            │ 19             │ 18            │
+│ 55            │ 19             │ 0             │
+│ 60            │ 19             │ 15            │
+│ 9             │ 20             │ 2             │
+│ 14            │ 20             │ 1             │
+│ 60            │ 20             │ 30            │
+│ 2             │ 20             │ 57            │
+│ 13            │ 21             │ 46            │
+│ 67            │ 21             │ 30            │
+│ 69            │ 22             │ 4             │
+│ 9             │ 22             │ 2             │
+│ 21            │ 22             │ 20            │
+│ 68            │ 22             │ 9             │
+│ 2             │ 23             │ 55            │
+│ 67            │ 23             │ 10            │
+│ 16            │ 23             │ 9             │
+│ 55            │ 23             │ 51            │
+│ 22            │ 23             │ 16            │
+│ 11            │ 23             │ 37            │
+│ 47            │ 24             │ 0             │
+│ 10            │ 24             │ 42            │
+│ 18            │ 25             │ 10            │
+│ 5             │ 25             │ 55            │
+│ 51            │ 25             │ 46            │
+│ 56            │ 25             │ 11            │
+│ 60            │ 25             │ 72            │
+│ 16            │ 25             │ 61            │
+│ 46            │ 26             │ 42            │
+│ 42            │ 26             │ 51            │
+│ 55            │ 26             │ 16            │
+│ 37            │ 26             │ 62            │
+│ 7             │ 26             │ 60            │
+│ 55            │ 27             │ 72            │
+│ 44            │ 27             │ 7             │
+│ 21            │ 27             │ 23            │
+│ 4             │ 27             │ 14            │
+│ 32            │ 28             │ 18            │
+│ 62            │ 28             │ 14            │
+│ 15            │ 28             │ 40            │
+│ 57            │ 28             │ 7             │
+│ 16            │ 28             │ 16            │
+│ 41            │ 29             │ 41            │
+│ 10            │ 29             │ 34            │
+│ 60            │ 29             │ 67            │
+│ 69            │ 30             │ 14            │
+│ 35            │ 30             │ 17            │
+│ 2             │ 30             │ 55            │
+│ 26            │ 31             │ 18            │
+│ 73            │ 32             │ 10            │
+│ 29            │ 33             │ 53            │
+│ 67            │ 33             │ 40            │
+│ 33            │ 34             │ 46            │
+│ 27            │ 34             │ 27            │
+│ 63            │ 34             │ 43            │
+│ 13            │ 35             │ 72            │
+│ 27            │ 35             │ 8             │
+│ 52            │ 35             │ 70            │
+│ 2             │ 35             │ 62            │
+│ 35            │ 36             │ 28            │
+│ 40            │ 36             │ 47            │
+│ 39            │ 36             │ 7             │
+│ 13            │ 36             │ 50            │
+│ 22            │ 37             │ 37            │
+│ 69            │ 37             │ 61            │
+│ 40            │ 37             │ 47            │
+│ 48            │ 37             │ 8             │
+│ 65            │ 37             │ 27            │
+│ 17            │ 37             │ 5             │
+│ 43            │ 38             │ 67            │
+│ 33            │ 38             │ 25            │
+│ 14            │ 38             │ 30            │
+│ 57            │ 39             │ 18            │
+│ 58            │ 39             │ 73            │
+│ 72            │ 39             │ 6             │
+│ 46            │ 39             │ 30            │
+│ 55            │ 40             │ 20            │
+│ 19            │ 40             │ 68            │
+│ 39            │ 40             │ 62            │
+│ 59            │ 40             │ 67            │
+│ 48            │ 40             │ 52            │
+│ 42            │ 40             │ 63            │
+│ 1             │ 40             │ 72            │
+│ 15            │ 41             │ 52            │
+│ 49            │ 41             │ 38            │
+│ 7             │ 42             │ 17            │
+│ 50            │ 42             │ 63            │
+│ 33            │ 42             │ 58            │
+│ 31            │ 42             │ 24            │
+│ 0             │ 42             │ 36            │
+│ 16            │ 43             │ 68            │
+│ 39            │ 43             │ 19            │
+│ 69            │ 43             │ 50            │
+│ 10            │ 43             │ 36            │
+│ 15            │ 43             │ 37            │
+│ 17            │ 44             │ 15            │
+│ 68            │ 44             │ 45            │
+│ 18            │ 44             │ 6             │
+│ 13            │ 44             │ 13            │
+│ 0             │ 44             │ 53            │
+│ 53            │ 44             │ 38            │
+│ 73            │ 44             │ 43            │
+│ 69            │ 44             │ 12            │
+│ 12            │ 45             │ 61            │
+│ 63            │ 45             │ 19            │
+│ 68            │ 45             │ 30            │
+│ 51            │ 45             │ 67            │
+│ 23            │ 46             │ 4             │
+│ 36            │ 46             │ 34            │
+│ 2             │ 46             │ 35            │
+│ 2             │ 47             │ 28            │
+│ 41            │ 47             │ 3             │
+│ 4             │ 47             │ 23            │
+│ 55            │ 48             │ 26            │
+│ 28            │ 48             │ 29            │
+│ 56            │ 49             │ 0             │
+│ 54            │ 49             │ 65            │
+│ 28            │ 49             │ 17            │
+│ 26            │ 49             │ 22            │
+│ 8             │ 49             │ 40            │
+│ 58            │ 50             │ 45            │
+│ 65            │ 50             │ 67            │
+│ 54            │ 50             │ 32            │
+│ 16            │ 50             │ 72            │
+│ 9             │ 50             │ 74            │
+│ 46            │ 51             │ 54            │
+│ 11            │ 51             │ 66            │
+│ 57            │ 51             │ 47            │
+│ 47            │ 51             │ 37            │
+│ 19            │ 52             │ 41            │
+│ 34            │ 53             │ 47            │
+│ 13            │ 53             │ 35            │
+│ 6             │ 53             │ 52            │
+│ 22            │ 53             │ 30            │
+│ 21            │ 53             │ 39            │
+│ 20            │ 54             │ 10            │
+│ 4             │ 54             │ 12            │
+│ 32            │ 54             │ 56            │
+│ 54            │ 54             │ 67            │
+│ 55            │ 54             │ 20            │
+│ 4             │ 55             │ 72            │
+│ 64            │ 55             │ 2             │
+│ 36            │ 56             │ 32            │
+│ 24            │ 56             │ 51            │
+│ 31            │ 56             │ 69            │
+│ 51            │ 56             │ 42            │
+│ 38            │ 56             │ 47            │
+│ 44            │ 56             │ 37            │
+│ 43            │ 56             │ 67            │
+│ 14            │ 56             │ 69            │
+│ 47            │ 57             │ 54            │
+│ 44            │ 57             │ 24            │
+│ 31            │ 57             │ 17            │
+│ 49            │ 58             │ 28            │
+│ 61            │ 58             │ 56            │
+│ 21            │ 58             │ 42            │
+│ 3             │ 58             │ 32            │
+│ 28            │ 60             │ 43            │
+│ 49            │ 60             │ 7             │
+│ 23            │ 60             │ 44            │
+│ 12            │ 60             │ 48            │
+│ 16            │ 60             │ 46            │
+│ 72            │ 61             │ 11            │
+│ 28            │ 61             │ 6             │
+│ 37            │ 62             │ 61            │
+│ 58            │ 62             │ 43            │
+│ 7             │ 62             │ 73            │
+│ 11            │ 63             │ 36            │
+│ 61            │ 63             │ 32            │
+│ 71            │ 63             │ 3             │
+│ 28            │ 64             │ 11            │
+│ 4             │ 64             │ 20            │
+│ 23            │ 64             │ 64            │
+│ 18            │ 64             │ 19            │
+│ 72            │ 65             │ 21            │
+│ 31            │ 65             │ 30            │
+│ 23            │ 65             │ 19            │
+│ 40            │ 66             │ 43            │
+│ 74            │ 66             │ 33            │
+│ 31            │ 66             │ 7             │
+│ 26            │ 66             │ 47            │
+│ 27            │ 66             │ 74            │
+│ 37            │ 66             │ 41            │
+│ 44            │ 67             │ 66            │
+│ 5             │ 67             │ 59            │
+│ 63            │ 67             │ 25            │
+│ 1             │ 68             │ 72            │
+│ 25            │ 68             │ 7             │
+│ 70            │ 68             │ 11            │
+│ 51            │ 69             │ 48            │
+│ 36            │ 70             │ 33            │
+│ 58            │ 70             │ 35            │
+│ 32            │ 70             │ 40            │
+│ 61            │ 70             │ 74            │
+│ 21            │ 70             │ 46            │
+│ 9             │ 71             │ 20            │
+│ 52            │ 71             │ 45            │
+│ 20            │ 71             │ 35            │
+│ 1             │ 71             │ 26            │
+│ 65            │ 71             │ 45            │
+│ 32            │ 72             │ 3             │
+│ 52            │ 72             │ 62            │
+│ 72            │ 72             │ 48            │
+│ 54            │ 72             │ 49            │
+│ 56            │ 73             │ 3             │
+│ 5             │ 73             │ 25            │
+│ 71            │ 73             │ 5             │
+│ 16            │ 74             │ 46            │
+│ 35            │ 74             │ 55            │
+│ 3             │ 74             │ 28            │
+│ 44            │ 74             │ 42            │
+└───────────────┴────────────────┴───────────────┘
+</pre>
+</details>
+<hr>
+<h1 id="testing-our-working-model">Testing our working model<a href="#testing-our-working-model" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>So far, we have a strong working theory for how the model might work.</p>
+<ol>
+<li>Use the attention mechanism to encode <code>(trigram[0], trigram[1])</code> pairs. So long as <code>trigram[0]</code> and <code>trigram[1]</code> are different numbers, the model has two modes of operation. If a trigram is detected, the attention mechanism will move some information about <code>trigram[0]</code> (via the OV-circuit) into the residual stream. If a trigram is not detected, it will move information about <code>trigram[1]</code> into the residual stream (i.e. self-attend).</li>
+<li>Based on the contents of the residual stream, predict the continuation. Theoretically this could be done purely with the unembeddings, although there will probably be practical constraints that prevent this and rely on the MLP.</li>
+</ol>
+<p>We can build this simplified model in code and see how well it predicts different trigrams (versus the actual model). Since we&rsquo;ll always predict trigrams, we&rsquo;ll fake the attention head by defining our own mid-model residual stream:</p>
+<p>\[
+x_\text{mid} = W_{OV}\:x_\text{trigram[0]} + x_\text{trigram[1]}
+\]</p>
+<p>Where \(x_\text{trigram}\) is the combination of positional and token embeddings for the two tokens. (There are biases to consider, too, but I&rsquo;ve hidden them for simplicity in the above equation.)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">simple_model</span>(trigram_0, trigram_1, print_results<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>):
+</span></span><span style="display:flex;"><span>    toks <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>tensor([[trigram_0, trigram_1]], device<span style="color:#f92672">=</span>device)
+</span></span><span style="display:flex;"><span>    embeddings <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>pos_embed(toks) <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>embed(toks)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ov_transformed <span style="color:#f92672">=</span> (embeddings[:, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_V[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_V[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]) <span style="color:#f92672">@</span> model<span style="color:#f92672">.</span>W_O[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> model<span style="color:#f92672">.</span>b_O[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    resid_mid_fake <span style="color:#f92672">=</span> ov_transformed <span style="color:#f92672">+</span> embeddings[:, <span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    prediction <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>unembed(model<span style="color:#f92672">.</span>blocks[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>mlp(resid_mid_fake) <span style="color:#f92672">+</span> resid_mid_fake)<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item()
+</span></span><span style="display:flex;"><span>    model_prediction <span style="color:#f92672">=</span> model(toks)[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> print_results:
+</span></span><span style="display:flex;"><span>      print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;-&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">30</span>)
+</span></span><span style="display:flex;"><span>      print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Trigram: (</span><span style="color:#e6db74">{</span>trigram_0<span style="color:#e6db74">}</span><span style="color:#e6db74">, </span><span style="color:#e6db74">{</span>trigram_1<span style="color:#e6db74">}</span><span style="color:#e6db74">, ...)&#34;</span>)
+</span></span><span style="display:flex;"><span>      print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Simplified Model Prediction: </span><span style="color:#e6db74">{</span>prediction<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>      print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Actual Model Prediction: </span><span style="color:#e6db74">{</span>model_prediction<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>      print(<span style="color:#e6db74">&#34;-&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">30</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> prediction, model_prediction
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>simple_model(<span style="color:#ae81ff">55</span>, <span style="color:#ae81ff">40</span>)
+</span></span><span style="display:flex;"><span>simple_model(<span style="color:#ae81ff">34</span>, <span style="color:#ae81ff">53</span>);
+</span></span></code></pre></div><pre><code>------------------------------
+Trigram: (55, 40, ...)
+Simplified Model Prediction: 20
+Actual Model Prediction: 20
+------------------------------
+
+
+------------------------------
+Trigram: (34, 53, ...)
+Simplified Model Prediction: 36
+Actual Model Prediction: 47
+------------------------------
+</code></pre>
+<p>We can see that our simplified model gets some predictions correct, but gets others wrong relative to the model - even with the full power of the mlp.</p>
+<p>We can assess our simple model&rsquo;s accuracy against all the trigrams in the dataset. For every trigram the simple model fails to predict, we&rsquo;ll also print it&rsquo;s attention pattern (i.e. attention paid to (previous_token, current_token)).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>simpl_correct <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>model_correct <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> trigram <span style="color:#f92672">in</span> dataset<span style="color:#f92672">.</span>trigrams:
+</span></span><span style="display:flex;"><span>    simpl_predict, model_predict <span style="color:#f92672">=</span> simple_model(trigram[<span style="color:#ae81ff">0</span>], trigram[<span style="color:#ae81ff">1</span>], <span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> simpl_predict <span style="color:#f92672">==</span> trigram[<span style="color:#ae81ff">2</span>]:
+</span></span><span style="display:flex;"><span>        simpl_correct <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        _, c <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>run_with_cache(t<span style="color:#f92672">.</span>tensor([[trigram[<span style="color:#ae81ff">0</span>], trigram[<span style="color:#ae81ff">1</span>]]], device<span style="color:#f92672">=</span>device))
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Trigram: </span><span style="color:#e6db74">{</span>trigram<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>        attn <span style="color:#f92672">=</span> c[<span style="color:#e6db74">&#39;blocks.0.attn.hook_pattern&#39;</span>][<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>tolist()
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Attention pattern: </span><span style="color:#e6db74">{</span>attn[<span style="color:#ae81ff">0</span>]<span style="color:#e6db74">:</span><span style="color:#e6db74">.3f</span><span style="color:#e6db74">}</span><span style="color:#e6db74">, </span><span style="color:#e6db74">{</span>attn[<span style="color:#ae81ff">1</span>]<span style="color:#e6db74">:</span><span style="color:#e6db74">.3f</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> model_predict <span style="color:#f92672">==</span> trigram[<span style="color:#ae81ff">2</span>]:
+</span></span><span style="display:flex;"><span>        model_correct <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n\n</span><span style="color:#e6db74">Simplified Model accuracy = </span><span style="color:#e6db74">{</span>simpl_correct <span style="color:#f92672">/</span> len(dataset<span style="color:#f92672">.</span>trigrams)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Model accuracy: </span><span style="color:#e6db74">{</span>model_correct <span style="color:#f92672">/</span> len(dataset<span style="color:#f92672">.</span>trigrams)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><hr>
+<details>
+<summary><b>Click to view output</b></summary>
+<pre><code>Trigram: (34, 53, 47)
+Attention pattern: 0.000, 1.000
+Trigram: (9, 14, 65)
+Attention pattern: 0.000, 1.000
+Trigram: (12, 45, 61)
+Attention pattern: 0.000, 1.000
+Trigram: (7, 42, 17)
+Attention pattern: 0.756, 0.244
+Trigram: (10, 29, 34)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 58, 42)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 49, 65)
+Attention pattern: 0.000, 1.000
+Trigram: (59, 13, 73)
+Attention pattern: 0.687, 0.313
+Trigram: (36, 56, 32)
+Attention pattern: 0.000, 1.000
+Trigram: (63, 45, 19)
+Attention pattern: 0.000, 1.000
+Trigram: (61, 63, 32)
+Attention pattern: 0.000, 1.000
+Trigram: (57, 0, 34)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 50, 32)
+Attention pattern: 0.000, 1.000
+Trigram: (47, 13, 18)
+Attention pattern: 0.680, 0.320
+Trigram: (51, 69, 48)
+Attention pattern: 0.000, 1.000
+Trigram: (24, 56, 51)
+Attention pattern: 0.000, 1.000
+Trigram: (33, 38, 25)
+Attention pattern: 0.000, 1.000
+Trigram: (48, 40, 52)
+Attention pattern: 0.000, 1.000
+Trigram: (65, 37, 27)
+Attention pattern: 0.000, 1.000
+Trigram: (23, 46, 4)
+Attention pattern: 0.002, 0.998
+Trigram: (18, 25, 10)
+Attention pattern: 0.000, 1.000
+Trigram: (50, 42, 63)
+Attention pattern: 0.000, 1.000
+Trigram: (71, 73, 5)
+Attention pattern: 0.000, 1.000
+Trigram: (11, 51, 66)
+Attention pattern: 0.000, 1.000
+Trigram: (71, 63, 3)
+Attention pattern: 0.000, 1.000
+Trigram: (73, 32, 10)
+Attention pattern: 0.000, 1.000
+Trigram: (57, 18, 2)
+Attention pattern: 0.002, 0.998
+Trigram: (21, 22, 20)
+Attention pattern: 0.000, 1.000
+Trigram: (0, 17, 26)
+Attention pattern: 0.000, 1.000
+Trigram: (70, 17, 52)
+Attention pattern: 0.000, 1.000
+Trigram: (56, 25, 11)
+Attention pattern: 0.000, 1.000
+Trigram: (16, 5, 60)
+Attention pattern: 0.000, 1.000
+Trigram: (2, 35, 62)
+Attention pattern: 0.000, 1.000
+Trigram: (26, 66, 47)
+Attention pattern: 0.000, 1.000
+Trigram: (72, 72, 48)
+Attention pattern: 0.000, 1.000
+Trigram: (12, 60, 48)
+Attention pattern: 0.000, 1.000
+Trigram: (57, 51, 47)
+Attention pattern: 0.000, 1.000
+Trigram: (26, 31, 18)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 54, 67)
+Attention pattern: 0.000, 1.000
+Trigram: (1, 71, 26)
+Attention pattern: 0.000, 1.000
+Trigram: (31, 65, 30)
+Attention pattern: 0.000, 1.000
+Trigram: (73, 44, 43)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 27, 23)
+Attention pattern: 0.000, 1.000
+Trigram: (64, 12, 34)
+Attention pattern: 0.000, 1.000
+Trigram: (28, 48, 29)
+Attention pattern: 0.000, 1.000
+Trigram: (24, 15, 66)
+Attention pattern: 0.000, 1.000
+Trigram: (69, 43, 50)
+Attention pattern: 0.000, 1.000
+Trigram: (19, 52, 41)
+Attention pattern: 0.000, 1.000
+Trigram: (60, 19, 15)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 72, 49)
+Attention pattern: 0.000, 1.000
+Trigram: (68, 22, 9)
+Attention pattern: 0.000, 1.000
+Trigram: (64, 1, 8)
+Attention pattern: 0.000, 1.000
+Trigram: (7, 26, 60)
+Attention pattern: 0.000, 1.000
+Trigram: (51, 10, 65)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 70, 46)
+Attention pattern: 0.000, 1.000
+Trigram: (64, 55, 2)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 53, 39)
+Attention pattern: 0.000, 1.000
+Trigram: (39, 12, 73)
+Attention pattern: 0.000, 1.000
+</code></pre>
+</details>
+<pre><code>Simplified Model accuracy = 0.7906137184115524
+Model accuracy: 0.9602888086642599
+</code></pre>
+<p>Evidently, our simplified attention pattern captures most - but not all - of the nuances of what the model has learned. The ~17% of failed predictions fall into two camps:</p>
+<ol>
+<li>Attention is only paid to the current token. (This is the vast majority).</li>
+<li>Some attention is paid to both the current and the previous token (this is quite rare.)</li>
+</ol>
+<p>So, we need to slightly extend our understanding of what attention does in the model:</p>
+<ol>
+<li>Attention detects <em>most</em> trigram pairs, and <em>typically</em> pays attention to the preceding token if it detects a trigram. Most of the time this is ~100% attention, but occasionally the split of (previous:current) is around 70:30.</li>
+<li>Otherwise, the attention mechanism focuses on just the current token.</li>
+</ol>
+<p>Some trigrams are still succesfully predicted, even when the attention mechanism focuses 100% on the current token. For this to work, the model must encode a <code>trigram[1] -&gt; trigram[2]</code> map and always predict the same completion, regardless of if <code>trigram[0]</code> is present - that is, the same mechanism as used for repeated trigrams.</p>
+<p>To verify this, lets take a trigram that doesn&rsquo;t excite the attention pattern out of its default state: (39, 12, 73):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Prediction (39, 12) -&gt; </span><span style="color:#e6db74">{</span>model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">39</span>, <span style="color:#ae81ff">12</span>]], device<span style="color:#f92672">=</span>device))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Prediction (15, 12) -&gt; </span><span style="color:#e6db74">{</span>model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">12</span>]], device<span style="color:#f92672">=</span>device))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Prediction (64, 12) -&gt; </span><span style="color:#e6db74">{</span>model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">64</span>, <span style="color:#ae81ff">12</span>]], device<span style="color:#f92672">=</span>device))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Prediction (12, 12) -&gt; </span><span style="color:#e6db74">{</span>model(t<span style="color:#f92672">.</span>tensor([[<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">12</span>]], device<span style="color:#f92672">=</span>device))[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><pre><code>Prediction (39, 12) -&gt; 34
+Prediction (15, 12) -&gt; 34
+Prediction (64, 12) -&gt; 34
+Prediction (12, 12) -&gt; 34
+</code></pre>
+<p>Interestingly, in this case, the model fails to predict several trigrams (12, 12, 4), and (39, 12, 73) because it always predicts the completion for (64, 12, 34).</p>
+<p>It&rsquo;s possible this is an artefact of a phase-change in learned behaviour - the model might initially predict completions based only on the most recent token,
+and only later in training learns to exploit attention to do a two-part prediction. If this is the case, perhaps some trigrams have not yet transitioned from the single-token prediction regime to the two-token regime.</p>
+<p>It&rsquo;s also interesting that the model always predicts the completion for (64, 12, 34) - a sequence it could detect with attention - and not for (12, 12, 4), a sequence it could not detect because of the duplicate 12&rsquo;s.</p>
+<p>Other uses of this attention-free mechanism make some sense: (19, 52, 41) is never going to clash with another trigram, because 52 only appears as <code>trigram[1]</code> in this single example. Still, the prediction is less confident than it could otherwise be.</p>
+<h1 id="predicting-tokens">Predicting Tokens<a href="#predicting-tokens" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>We have a fairly good grip on how the model detects trigrams. How, then, does it predict the continuation?</p>
+<p>In a lot of cases, we might expect the model to be able to just pass the output of the attention head to the unembedding matrix, and predict the continuation from there. It seems likely, too, that the MLP will contribute to this process, but the exact split of MLP to direct logit attribution seems unclear.</p>
+<h2 id="direct-logit-attribution">Direct Logit Attribution<a href="#direct-logit-attribution" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>We can try directly projecting \(x_\text{mid}\) into the output space, like so:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">attn_attribution</span>(trigram_0, trigram_1):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Directly unembed the residual stream
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    after the attention head, i.e. skipping the
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    MLP.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    _, c <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>run_with_cache(t<span style="color:#f92672">.</span>tensor([[trigram_0, trigram_1]], device<span style="color:#f92672">=</span>device),
+</span></span><span style="display:flex;"><span>                                names_filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;blocks.0.hook_resid_mid&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> model<span style="color:#f92672">.</span>unembed(c[<span style="color:#e6db74">&#39;blocks.0.hook_resid_mid&#39;</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>correct <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> trigram <span style="color:#f92672">in</span> dataset<span style="color:#f92672">.</span>trigrams:
+</span></span><span style="display:flex;"><span>    attn_attr <span style="color:#f92672">=</span> attn_attribution(trigram[<span style="color:#ae81ff">0</span>], trigram[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> attn_attr[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item() <span style="color:#f92672">==</span> trigram[<span style="color:#ae81ff">2</span>]:
+</span></span><span style="display:flex;"><span>        correct <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Accuracy = </span><span style="color:#e6db74">{</span>correct <span style="color:#f92672">/</span> len(dataset<span style="color:#f92672">.</span>trigrams)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><pre><code>Accuracy = 0.18050541516245489
+</code></pre>
+<p>This isn&rsquo;t a great baseline, though. It&rsquo;s not like the MLP doesn&rsquo;t exist. We could try account for it by mean-ablating it, instead of zero-ablating it. We ignore the last sequence position, since that&rsquo;s pretty noisy, and take the mean over our (fairly large) dataset.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mean_mlp <span style="color:#f92672">=</span> cache[<span style="color:#e6db74">&#39;blocks.0.hook_mlp_out&#39;</span>][:, :<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>mean(dim<span style="color:#f92672">=</span>[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">attn_mean_ablated</span>(trigram_0, trigram_1):
+</span></span><span style="display:flex;"><span>    _, c <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>run_with_cache(t<span style="color:#f92672">.</span>tensor([[trigram_0, trigram_1]], device<span style="color:#f92672">=</span>device),
+</span></span><span style="display:flex;"><span>                                names_filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;blocks.0.hook_resid_mid&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> model<span style="color:#f92672">.</span>unembed(c[<span style="color:#e6db74">&#39;blocks.0.hook_resid_mid&#39;</span>] <span style="color:#f92672">+</span> mean_mlp)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>correct <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> trigram <span style="color:#f92672">in</span> dataset<span style="color:#f92672">.</span>trigrams:
+</span></span><span style="display:flex;"><span>    attn_attr <span style="color:#f92672">=</span> attn_mean_ablated(trigram[<span style="color:#ae81ff">0</span>], trigram[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> attn_attr[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>item() <span style="color:#f92672">==</span> trigram[<span style="color:#ae81ff">2</span>]:
+</span></span><span style="display:flex;"><span>        correct <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Accuracy = </span><span style="color:#e6db74">{</span>correct <span style="color:#f92672">/</span> len(dataset<span style="color:#f92672">.</span>trigrams)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><pre><code>Accuracy = 0.2490974729241877
+</code></pre>
+<h2 id="linearized-jacobians">Linearized Jacobians<a href="#linearized-jacobians" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>So is ~24.5% a fair accuracy score for how well the attention mechanism predicts tokens? Arguably, no.</p>
+<p>To see why, let&rsquo;s rewrite the MLP contribution:</p>
+<p>\[
+\text{MLP}(x_\text{mid}) = A\:x_\text{mid} + b + \mathcal{N}(x_\text{mid})
+\]</p>
+<p><em>Where the MLP has been decomposed into a linear contribution \(A x + b\) and a nonlinear contribution \(\mathcal{N}\).</em></p>
+<p>The motivation behind this split is that we understand well how linear systems work, and can see that a fixed linear transformation doesn&rsquo;t add extra &ldquo;logic&rdquo; to the model - instead, it moves information around, and always works the same way, regardless of what information it is moving.</p>
+<p>Conceptually, especially without layer-norm, the linear contribution could be absorbed into surrounding matrices and biases such as \(W_U\) and \(b_U\). So, if we could calculate \(A\) and \(b\), we could get a better understanding of the attention head&rsquo;s predictive power without MLP intervention.</p>
+<p>To do this, we can start by looking at the jacobian between the MLP&rsquo;s inputs and its outputs. For each token, the jacobian maps how much a given upstream vector contributes to a downstream vector.</p>
+<p>That is, for an upstream vector x (such as \(x_\text{mid}\)) and a downstream vector y (such as \(x_\text{post}\)), the jacobian \(J\) is defined as:</p>
+<p>\[
+J = \left(\begin{matrix}
+\frac{\partial y_1}{\partial x_1} &amp; &hellip; &amp; \frac{\partial y_1}{\partial x_n} \\
+\frac{\partial y_2}{\partial x_1} &amp; &hellip; &amp; \frac{\partial y_2}{\partial x_n} \\
+\vdots &amp; \vdots &amp; \vdots \\
+\frac{\partial y_n}{\partial x_1} &amp; &hellip; &amp; \frac{\partial y_n}{\partial x_n} \\
+\end{matrix}\right)
+\]</p>
+<p>For a nonlinear function like an MLP, \(J\) needs to be recalculated for each input. Then, for each input, we have</p>
+<p>\[ y = J\:x + b \]</p>
+<p><em>Where \(b\) is a constant bias (independent of J) that we need to calculate.</em></p>
+<p>While \(J\) is a function of x (\(J = J(x)\)) for non-linear functions like our MLP,
+we hope that we can find some situations where \(J\) doesn&rsquo;t vary much, and can use that as the basis of our linearization.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>t<span style="color:#f92672">.</span>set_grad_enabled(<span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">attach_jacobian_hooks</span>(upstream: Float[Tensor, <span style="color:#e6db74">&#34;d_upstream&#34;</span>],
+</span></span><span style="display:flex;"><span>                          downstream: Float[Tensor, <span style="color:#e6db74">&#34;d_downstream&#34;</span>],
+</span></span><span style="display:flex;"><span>                          network: t<span style="color:#f92672">.</span>nn<span style="color:#f92672">.</span>Module,
+</span></span><span style="display:flex;"><span>                          stop_idx_downstream: int,
+</span></span><span style="display:flex;"><span>                          start_idx_downstream<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Calculate the jacobian matrix between an upstream vector and
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       a downstream vector. You must run a forward pass through the model
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       before the gradients tensor will be populated.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       upstream - The upstream vector.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       downstream - The downstream vector. Does not need to have the same
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                    shape as `upstream`.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       network - The model that contains both `upstream` and `downstream`.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       stop_idx_downstream (required) and
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       start_idx_downstream(optional)-
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            The jacobian will be calculated for the downstream vector elements
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            as downstream[ start_idx_downstream : stop_idx_downstream ]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       Returns: (get_jacobian(), get_upstream_vec(), remove_hooks())
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    n_outputs <span style="color:#f92672">=</span> stop_idx_downstream <span style="color:#f92672">-</span> start_idx_downstream
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    capture <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">setup_upstream_hook</span>(module, inp, out):
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        capture[<span style="color:#e6db74">&#39;upstream_vec&#39;</span>] <span style="color:#f92672">=</span> out
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        out <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>repeat(out,
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#34;batch ... d_hidden -&gt; (batch d_out) ... d_hidden&#34;</span>,
+</span></span><span style="display:flex;"><span>                            d_out<span style="color:#f92672">=</span>n_outputs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Setup a do-nothing vector to let us extract the gradients</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># of this intermediate layer.</span>
+</span></span><span style="display:flex;"><span>        output_shape <span style="color:#f92672">=</span> out<span style="color:#f92672">.</span>shape
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        capture[<span style="color:#e6db74">&#39;upstream_grad&#39;</span>] <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>zeros(output_shape, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, device<span style="color:#f92672">=</span>out<span style="color:#f92672">.</span>device)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> out <span style="color:#f92672">+</span> capture[<span style="color:#e6db74">&#39;upstream_grad&#39;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">setup_downstream_hook</span>(module, inp, out):
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Extract the jacobian dimension we snuck</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># into the batch dimension.</span>
+</span></span><span style="display:flex;"><span>        out <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>rearrange(out,
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;(batch d_out) ... d_hidden -&gt; batch ... d_out d_hidden&#34;</span>,
+</span></span><span style="display:flex;"><span>                               d_out<span style="color:#f92672">=</span>n_outputs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        network<span style="color:#f92672">.</span>zero_grad()
+</span></span><span style="display:flex;"><span>        out[<span style="color:#f92672">...</span>, start_idx_downstream : stop_idx_downstream]<span style="color:#f92672">.</span>backward(
+</span></span><span style="display:flex;"><span>            t<span style="color:#f92672">.</span>eye(n_outputs, device<span style="color:#f92672">=</span>out<span style="color:#f92672">.</span>device)<span style="color:#f92672">.</span>repeat(<span style="color:#f92672">*</span>out<span style="color:#f92672">.</span>shape[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    remove_upstr_hook <span style="color:#f92672">=</span> upstream<span style="color:#f92672">.</span>register_forward_hook(setup_upstream_hook)
+</span></span><span style="display:flex;"><span>    remove_downstr_hook <span style="color:#f92672">=</span> downstream<span style="color:#f92672">.</span>register_forward_hook(setup_downstream_hook)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">remove_hooks</span>():
+</span></span><span style="display:flex;"><span>        remove_upstr_hook<span style="color:#f92672">.</span>remove()
+</span></span><span style="display:flex;"><span>        remove_downstr_hook<span style="color:#f92672">.</span>remove()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_jacobian</span>():
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> capture<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#34;upstream_grad&#34;</span>) <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">RuntimeError</span>(<span style="color:#e6db74">&#34;Gradients must be initialized by &#34;</span>
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;running a forward pass through &#34;</span>
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;the model before they can be  &#34;</span>
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;accessed.&#34;</span>)
+</span></span><span style="display:flex;"><span>        rearranged <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>rearrange(capture[<span style="color:#e6db74">&#39;upstream_grad&#39;</span>]<span style="color:#f92672">.</span>grad,
+</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;(batch d_out) ... d_in -&gt; batch ... d_out d_in&#34;</span>,
+</span></span><span style="display:flex;"><span>                                d_out<span style="color:#f92672">=</span>n_outputs)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> rearranged
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_upstream_vec</span>():
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> capture<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#34;upstream_vec&#34;</span>) <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">RuntimeError</span>(<span style="color:#e6db74">&#34;Vectors must be initialized by &#34;</span>
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;running a forward pass through &#34;</span>
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;the model before they can be  &#34;</span>
+</span></span><span style="display:flex;"><span>                               <span style="color:#e6db74">&#34;accessed.&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> capture[<span style="color:#e6db74">&#39;upstream_vec&#39;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> get_jacobian, get_upstream_vec, remove_hooks
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">calc_jacobian</span>(
+</span></span><span style="display:flex;"><span>    upstream_vec: Float[Tensor, <span style="color:#e6db74">&#34;d_up&#34;</span>],
+</span></span><span style="display:flex;"><span>    downstream_vec: Float[Tensor, <span style="color:#e6db74">&#34;d_down&#34;</span>],
+</span></span><span style="display:flex;"><span>    model: t<span style="color:#f92672">.</span>nn<span style="color:#f92672">.</span>Module,
+</span></span><span style="display:flex;"><span>    tokens: Float[Tensor, <span style="color:#e6db74">&#34;batch seq 1&#34;</span>]
+</span></span><span style="display:flex;"><span>    ) <span style="color:#f92672">-&gt;</span> Float[Tensor, <span style="color:#e6db74">&#34;batch seq d_down d_up&#34;</span>]:
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      Return the jacobian,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        J = d(downstream_vec)/d(upstream_vec)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      The jacobian will be calculated across the batches and sequences
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      in `tokens`.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      upstream_vec: Vector in `model` upstream (i.e. before) `downstream_vec` in
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                    `model`&#39;s forward pass.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      downstream_vec: Vector in `model`
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      model: The torch neural net containing `upstream_vec` and `downstream_vec`,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             and accepting `tokens` for its forward pass.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>  jacs <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  model<span style="color:#f92672">.</span>requires_grad_(<span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(tokens<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>      get_jacobian, get_upstream_vec, remove_hooks <span style="color:#f92672">=</span> attach_jacobian_hooks(
+</span></span><span style="display:flex;"><span>          upstream_vec, downstream_vec, model, model<span style="color:#f92672">.</span>cfg<span style="color:#f92672">.</span>d_model
+</span></span><span style="display:flex;"><span>          )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Run a forward pass through the model</span>
+</span></span><span style="display:flex;"><span>      model(tokens[i: i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      jacs <span style="color:#f92672">+=</span> [get_jacobian()]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      remove_hooks()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  model<span style="color:#f92672">.</span>requires_grad_(<span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> t<span style="color:#f92672">.</span>cat(jacs)
+</span></span></code></pre></div><p>Here, we&rsquo;ll run the full set of tokens through the model, and generate a jacobian between \(x_\text{mid}\) and \(x_\text{post}\) for each (batch, seq) combination.</p>
+<p>Because we&rsquo;re interested in the default behaviour of the MLP, we need to subtract off the identity from any jacobians we get, because of the residual connection, i.e.</p>
+<p>\[ x_\text{post} = \text{MLP}(x_\text{mid}) + x_\text{mid} \]</p>
+<p>So, we define our jacobians as</p>
+<p>\[ J_\text{MLP} = J_\text{mid -&gt; post} - \mathbb{I}\]</p>
+<p>We&rsquo;ll then plot these jacobians to observe how the MLP modifies its input. The following plot is a series of squares, of shape (d_model, d_model). These are tiled in the x-direction by batch, and in the y-direction by sequence position.</p>
+<p>We&rsquo;ve also clipped the range displayed to lie between -1 and 1, because some jacobians are extremely out-of-family.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>jacobian <span style="color:#f92672">=</span> calc_jacobian(model<span style="color:#f92672">.</span>blocks[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hook_resid_mid, model<span style="color:#f92672">.</span>blocks[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hook_resid_post, model, dataset<span style="color:#f92672">.</span>toks) <span style="color:#f92672">-</span> t<span style="color:#f92672">.</span>eye(model<span style="color:#f92672">.</span>cfg<span style="color:#f92672">.</span>d_model, device<span style="color:#f92672">=</span>device)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">20</span>, <span style="color:#ae81ff">16</span>))
+</span></span><span style="display:flex;"><span>num_seq <span style="color:#f92672">=</span> <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span>num_batch <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> ax<span style="color:#f92672">.</span>imshow(einops<span style="color:#f92672">.</span>rearrange(jacobian[:num_batch, :num_seq], <span style="color:#e6db74">&#34;batch seq d_res1 d_res2 -&gt; (seq d_res1) (batch d_res2)&#34;</span>)<span style="color:#f92672">.</span>cpu(), vmin<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>, vmax<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Jacobian vs (batch, sequence)&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Batch&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Seq&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xticks(ticks<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>arange(num_batch)<span style="color:#f92672">*</span>jacobian<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>], labels<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>arange(num_batch))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>yticks(ticks<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>arange(num_seq)<span style="color:#f92672">*</span>jacobian<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], labels<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>arange(num_seq))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_31_0.png"></p>
+<h2 id="observations-about-the-jacobian">Observations about the Jacobian<a href="#observations-about-the-jacobian" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Looking at the plot, there are some interesting observations:</p>
+<ul>
+<li>The MLP definitely appears to have a default behavior. Different tiles (with a few clear exceptions) look remarkably similar to one another</li>
+<li>There are a few cases where the MLP behaves extremely differently. This turns out to be (generally) in cases where a trigram is present. These jacobians are orders of magnitude larger than the typical jacobians.</li>
+</ul>
+<p>Looking more closely at a single &ldquo;default&rdquo; jacobian (in this case, batch=0, seq=0), we can actually make out some features:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure()
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>imshow(jacobian[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>cpu())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Jacobian (batch=0, seq=0)&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_33_0.png"></p>
+<ol>
+<li>The MLP slightly erases a number of leading-diagonal terms. Given this, we should probably expect direct logit attribution of upstream vectors to perform worse than on a model trained without this MLP.</li>
+<li>The MLP isn&rsquo;t just erasing data, it&rsquo;s <em>moving</em> data. There are some clear hotspots ((12, 2) in the jacobian, for example) that repeat amongst different sequence positions.</li>
+</ol>
+<p>It&rsquo;s also important to remember that once we fix a jacobian (i.e. we <em>linearize the MLP</em>), the jacobian can no longer add extra information to the residual stream, and instead only moves it around.</p>
+<p>What&rsquo;s an appropriate jacobian to fix? We could try the mean:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>jac_mean <span style="color:#f92672">=</span> jacobian<span style="color:#f92672">.</span>mean(dim<span style="color:#f92672">=</span>[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure()
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Mean Jacobian&#34;</span>)
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>imshow(jac_mean<span style="color:#f92672">.</span>cpu())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span></code></pre></div><pre><code>&lt;matplotlib.colorbar.Colorbar at 0x7f4e57dac3d0&gt;
+</code></pre>
+<p><img alt="png" src="/posts/trigrams/output_35_1.png"></p>
+<p>However, this is not an especially principled choice - when the MLP does activate, the jacobian is changed dramatically. Taking the mean includes the influence of these very large activations, even if we don&rsquo;t really want to.</p>
+<p>Instead, we can try the median:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>jac_median <span style="color:#f92672">=</span> jacobian<span style="color:#f92672">.</span>median(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>median(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>values
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure()
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Median Jacobian&#34;</span>)
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>imshow(jac_median<span style="color:#f92672">.</span>cpu())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>colorbar(f)
+</span></span></code></pre></div><pre><code>&lt;matplotlib.colorbar.Colorbar at 0x7f4e4a0054b0&gt;
+</code></pre>
+<p><img alt="png" src="/posts/trigrams/output_37_1.png"></p>
+<p>This looks a lot more like our <code>jacobian[0, 0]</code> (and other unactivated MLP jacobians)!</p>
+<p>So, now that we have \(J\), we just need to calculate our bias, \(b\), since the MLP ignores constants. To do so, we rearrange the definition of the jacobian:</p>
+<p>\[
+\begin{align}
+y &amp;= J x + b \\
+b &amp;= y - J x \\
+&amp; = x_\text{post} - J x_\text{mid} \\
+\end{align}
+\]</p>
+<p>Using similar justification to before, we pick the median bias:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>projected <span style="color:#f92672">=</span> einops<span style="color:#f92672">.</span>einsum(jacobian, cache[<span style="color:#e6db74">&#39;blocks.0.hook_resid_mid&#39;</span>],
+</span></span><span style="display:flex;"><span>                          <span style="color:#e6db74">&#34;... seq d_model_out d_model_in, ... seq d_model_in -&gt; ... seq d_model_out&#34;</span>)
+</span></span><span style="display:flex;"><span>bias <span style="color:#f92672">=</span> (cache[<span style="color:#e6db74">&#39;blocks.0.hook_mlp_out&#39;</span>] <span style="color:#f92672">-</span> projected)<span style="color:#f92672">.</span>median(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>median(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>values
+</span></span></code></pre></div><h1 id="testing-the-linearization">Testing the Linearization<a href="#testing-the-linearization" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>So, now that we&rsquo;ve frozen the MLP in linearized form, do we get better predictions from the attention mechanism?</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">attention_predict</span>(trigram):
+</span></span><span style="display:flex;"><span>    _, c <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>run_with_cache(t<span style="color:#f92672">.</span>tensor([[trigram[<span style="color:#ae81ff">0</span>], trigram[<span style="color:#ae81ff">1</span>]]], device<span style="color:#f92672">=</span>device),
+</span></span><span style="display:flex;"><span>                                names_filter<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;blocks.0.hook_resid_mid&#34;</span>])
+</span></span><span style="display:flex;"><span>    resid_after_attn <span style="color:#f92672">=</span> c[<span style="color:#e6db74">&#39;blocks.0.hook_resid_mid&#39;</span>]
+</span></span><span style="display:flex;"><span>    resid_post_approx <span style="color:#f92672">=</span> bias <span style="color:#f92672">+</span> resid_after_attn <span style="color:#f92672">+</span> einops<span style="color:#f92672">.</span>einsum(jac_median, resid_after_attn,
+</span></span><span style="display:flex;"><span>                          <span style="color:#e6db74">&#34;d_model_out d_model_in, ... seq d_model_in -&gt; ... seq d_model_out&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> model<span style="color:#f92672">.</span>unembed(resid_post_approx)[<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cpu()<span style="color:#f92672">.</span>item()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>correct <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> trigram <span style="color:#f92672">in</span> dataset<span style="color:#f92672">.</span>trigrams:
+</span></span><span style="display:flex;"><span>    prediction <span style="color:#f92672">=</span> attention_predict(trigram)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> prediction <span style="color:#f92672">==</span> trigram[<span style="color:#ae81ff">2</span>]:
+</span></span><span style="display:flex;"><span>        correct <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Accuracy = </span><span style="color:#e6db74">{</span>correct <span style="color:#f92672">/</span> len(dataset<span style="color:#f92672">.</span>trigrams)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><pre><code>Accuracy = 0.3104693140794224
+</code></pre>
+<p>Yes!!</p>
+<p>By better accounting for the passive behaviour of the MLP, we go from ~25% accuracy to ~31% accuracy using only the attention mechanism&rsquo;s logic (since jac_median and bias are just frozen, linear transformations.)</p>
+<p>In relative terms, we discovered ~25% more performance from the attention mechanism. It&rsquo;s still a long way from explaining the entirety of the model&rsquo;s performance, but it&rsquo;s a step.</p>
+<h1 id="how-the-model-predicts-the-rest-of-the-tokens">How the model predicts the rest of the tokens<a href="#how-the-model-predicts-the-rest-of-the-tokens" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h1>
+<p>Given what we know about the rest of the model, we can hypothesize the following about the MLP:</p>
+<ol>
+<li>It reads from the stream written to by the OV circuit, as well as the current token stream.</li>
+<li>It uses the results from these two streams to retrieve the correct completion. From this, it writes into the unembedding direction corresponding to this conclusion to boost the logits, and potentially even supresses other likely completions.</li>
+</ol>
+<p>An attempt to analyse the MLP using a sparse transcoder was used. In this case, a transcoder seemed like it could work well because we have clearly defined inputs (e.g. 16 in position 0, 43 in position 1 -&gt; predicts 68).</p>
+<p>However, although a number of different attempts were made (varying transcoder widths, warm-up vs cold-start for learning rate and l1 penalty, varieties of learning rates, batch sizes, resampling frequencies etc.), no transcoders emerged that provided cleanly interpretable features.</p>
+<p>It seems likely that good results could come from pursuing this further, but the results obtained in attempts thus far are uninteresting.</p>
+<h2 id="one-last-trick">One last trick<a href="#one-last-trick" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>One trick we have left is to look at what subspaces the MLP reads in. The MLP has dimension 20, the model (residual stream) has dimension 32, and the attention head has dimension 16. This means that the MLP could fully read from the output space of the attention head, but cannot read the full token stream.</p>
+<p>We can observe how it weights these two competing priorities based on the distance between subspaces. This isn&rsquo;t guaranteed to be meaningful for reasons I <a href="https://www.willsnell.com/posts/math_composition/">wrote about here</a>, but might still give us some idea.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> dataclasses <span style="color:#f92672">import</span> dataclass
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@dataclass</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SubspaceMetrics</span>:
+</span></span><span style="display:flex;"><span>  theta: Float[Tensor, <span style="color:#e6db74">&#34;d_hidden&#34;</span>]
+</span></span><span style="display:flex;"><span>  cos_theta: Float[Tensor, <span style="color:#e6db74">&#34;d_hidden&#34;</span>]
+</span></span><span style="display:flex;"><span>  principal_vecs_out: Float[Tensor, <span style="color:#e6db74">&#34;d_model d_hidden&#34;</span>]
+</span></span><span style="display:flex;"><span>  principal_vecs_in: Float[Tensor, <span style="color:#e6db74">&#34;d_model d_hidden&#34;</span>]
+</span></span><span style="display:flex;"><span>  U: Float[Tensor, <span style="color:#e6db74">&#34;d_head d_head&#34;</span>]
+</span></span><span style="display:flex;"><span>  Vh: Float[Tensor, <span style="color:#e6db74">&#34;d_head d_head&#34;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">qr_svd</span>(out_mat: Float[Tensor, <span style="color:#e6db74">&#34;d_hidden d_model&#34;</span>],
+</span></span><span style="display:flex;"><span>           in_mat: Float[Tensor, <span style="color:#e6db74">&#34;d_model d_hidden&#34;</span>]
+</span></span><span style="display:flex;"><span>           ) <span style="color:#f92672">-&gt;</span> SubspaceMetrics:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Purpose:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           Calculate statistics between the two subspaces
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           spanned by the matrices `out_mat` and `in_mat`,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           These matrices should write to/read from a
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           common space of dimension `d_model`.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           Calculate the principal vectors of the subspaces
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           spanned by out_mat and in_mat.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           Also return the angle between each set of principal
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           vectors (aka the principal angles, theta).
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           theta[0] &lt;= ... &lt;= theta[-1]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           (theta, cos(theta), principal_vectors_out_mat,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            principal_vectors_in_mat, U, Vh)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       Follows the procedure in
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       https://helper.ipam.ucla.edu/publications/glws1/glws1_15465.pdf
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       Assumptions:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           Assumes the first n columns in a
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           m x n (m &gt;= n) matrix are linearly
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           independent.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           E.g. in W_O.T, shape [768, 64],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           the first 64 columns should be
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           linearly independent.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Q is the set of orthonormal basis vectors</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># for the subspace spanned by each matrix.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    q_out, r_out <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>qr(out_mat<span style="color:#f92672">.</span>transpose(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>))
+</span></span><span style="display:flex;"><span>    q_in, r_in <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>qr(in_mat)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Compute the deviation between the</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># two subspaces using SVD.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    U, S, Vh <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>svd(q_out<span style="color:#f92672">.</span>transpose(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>) <span style="color:#f92672">@</span> q_in)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Principal vectors let us know what directions were</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># chosen to calculate theta. That is, each are a set</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># of basis vectors that span the spaces of the</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># respective matrices (in or out) and are most closely</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># aligned to each other.</span>
+</span></span><span style="display:flex;"><span>    principal_vectors_out_mat <span style="color:#f92672">=</span> q_out <span style="color:#f92672">@</span> U
+</span></span><span style="display:flex;"><span>    principal_vectors_in_mat <span style="color:#f92672">=</span> q_in <span style="color:#f92672">@</span> Vh<span style="color:#f92672">.</span>transpose(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    theta <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>arccos(S)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> SubspaceMetrics(
+</span></span><span style="display:flex;"><span>        t<span style="color:#f92672">.</span>arccos(S),
+</span></span><span style="display:flex;"><span>          S,
+</span></span><span style="display:flex;"><span>          principal_vectors_out_mat,
+</span></span><span style="display:flex;"><span>          principal_vectors_in_mat,
+</span></span><span style="display:flex;"><span>          U,
+</span></span><span style="display:flex;"><span>          Vh
+</span></span><span style="display:flex;"><span>    )
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>res <span style="color:#f92672">=</span> qr_svd(model<span style="color:#f92672">.</span>W_O[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>], model<span style="color:#f92672">.</span>blocks[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>mlp<span style="color:#f92672">.</span>W_in)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(res<span style="color:#f92672">.</span>cos_theta<span style="color:#f92672">.</span>detach()<span style="color:#f92672">.</span>cpu())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Angle Between Attention Head (writing) and MLP (reading)&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;OV Dimension&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Cos(theta) between subspaces&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;cos(theta) = </span><span style="color:#e6db74">{</span>res<span style="color:#f92672">.</span>cos_theta<span style="color:#f92672">.</span>tolist()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_45_0.png"></p>
+<pre><code>cos(theta) = [1.0000001192092896, 1.0, 0.9999998807907104, 0.9999998807907104, 0.9893388152122498, 0.9778618216514587, 0.9700286984443665, 0.9570831656455994, 0.8961935639381409, 0.8844886422157288, 0.7993403673171997, 0.745817244052887, 0.7342832088470459, 0.5622190237045288, 0.35370132327079773, 0.18341064453125]
+</code></pre>
+<p>So, the MLP pays very close attention to the first 4 dimensions output by the OV circuit, and then pays increasingly less attention. There&rsquo;s a sharp dropoff around the 9th dimension, which implies the MLP&rsquo;s focus is (very crudely) around 50% on the OV circuit and 50% on the current stream, assuming the residual stream has similar variance in all directions.</p>
+<p>To verify this assumption, we can look at the residual stream directly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>var_resid_mid <span style="color:#f92672">=</span> cache[<span style="color:#e6db74">&#39;blocks.0.hook_resid_mid&#39;</span>]<span style="color:#f92672">.</span>var(dim<span style="color:#f92672">=</span>[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(var_resid_mid)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Residual Stream Variance&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Residual Stream Dimension&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Variance&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img alt="png" src="/posts/trigrams/output_47_0.png"></p>
+<p>So, while the residual stream is not equal in magnitude for all directions, everything is within an order of magnitude. For this very crude subspace measurement, it&rsquo;s probably close enough to uniform that we can use subspace angles to quantify how much focus the MLP is placing in different subspaces.</p>
+
+      </div></div>
+
+  
+    
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h"></span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        
+        <span class="button next">
+            <a href="https://willsnell.com/posts/entropy/">
+                <span class="button__text">Entropy and Information Theory</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+    
+
+  
+</article>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2024 Powered by <a href="https://gohugo.io">Hugo</a></span>
+    
+      <span>:: <a href="https://github.com/panr/hugo-theme-terminal" target="_blank">Theme</a> made by <a href="https://github.com/panr" target="_blank">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+
+
+
+
+
+<script type="text/javascript" src="/bundle.min.js"></script>
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>

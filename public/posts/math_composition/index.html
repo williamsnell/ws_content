@@ -211,10 +211,8 @@ the authors use the Frobenius norm to measure how much two heads compose with on
 Lieberum takes this further, axiomatizing what it means to measure composition. These axioms can
 be summarized (imprecisely) as follows:</p>
 <h3 id="lieberums-axioms">Lieberum&rsquo;s Axioms<a href="#lieberums-axioms" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>Let&rsquo;s imagine two matrices \(A\) and \(B\), defined as </p>
 \[B \in \mathbb{R}^{m \times n}, \;A \in \mathbb{R}^{n \times m}\]<p>\(A\) is the matrix in an early head that <strong>writes to</strong> the residual stream.</p>
 <p>\(B\) is the matrix in a later head that <strong>reads from</strong> the residual stream.</p>
-<p>Let&rsquo;s define a score as </p>
 \[C(A,B)\]<p>\(C \) takes the two matrices and outputs some kind of a score.</p>
 <h4 id="axiom-1">Axiom 1:<a href="#axiom-1" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
 <p>If \(C(A,B) = 1\) - that is, two heads are composing as much as possible - \(A\) should only
@@ -240,9 +238,6 @@ none of the current methods for analysing composition meet axioms 3 and 4.</p>
 <h4 id="proposed-axiom-4">(Proposed) Axiom 4:<a href="#proposed-axiom-4" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
 <p>\(C\) should measure the underlying information flow, and thus the relative ordering of composition scores between
 pairs of heads should be preserved when the model is changed in a way that does not affect information flow.</p>
-<p>If \(C(A, B) > C(A, D)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
-transformation which leaves the information flow through the model unchanged. That is,
-</p>
 \[
 \begin{align}
 C(A^*, B^*) > C(A^*, D^*) &\iff C(A, B) > C(A, D) \\
@@ -553,8 +548,6 @@ globally.</p>
 <p>Because \(\mathcal{O}(n)\) comprises all the reflections and rotations about the origin, it preserves not only
 angles between vectors, but also the magnitude of singular values. In some sense, RMS norm leaves us only with
 the most boring symmetries, implying <strong>all</strong> of our typical tools for measuring composition should be valid.</p>
-<p>Also of note, our symmetry-breaking trick shouldn&rsquo;t be expected to work once we include normalization, because:
-</p>
 \[
             W_U\:W_{OV}\:W_E \neq W_U\:W_{OV}\:\mathcal{G}(W_E)\\
 \]<h2 id="things-get-murkier">Things Get Murkier<a href="#things-get-murkier" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
@@ -630,7 +623,7 @@ the compute graphs and gradient functions embedded in the models, and intended f
     
 <div class="pagination">
     <div class="pagination__title">
-        <span class="pagination__title-h">Read other posts</span>
+        <span class="pagination__title-h"></span>
         <hr />
     </div>
     <div class="pagination__buttons">

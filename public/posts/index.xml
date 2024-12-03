@@ -6,7 +6,1163 @@
     <description>Recent content in Posts on willsnell</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 18 Nov 2024 13:45:34 +1300</lastBuildDate><atom:link href="https://willsnell.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 04 Dec 2024 10:26:20 +1300</lastBuildDate><atom:link href="https://willsnell.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Trigrams</title>
+      <link>https://willsnell.com/posts/trigrams/</link>
+      <pubDate>Wed, 04 Dec 2024 10:26:20 +1300</pubDate>
+      
+      <guid>https://willsnell.com/posts/trigrams/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;This post is converted from a Jupyter Notebook. To view the original interactive version, check out the
+&lt;a href=&#34;https://colab.research.google.com/drive/161EE2W98h_mpphESWv_mPtbv__MZP8jV?usp=sharing&#34;&gt;Colab notebook.&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;monthly-algorithmic-challenge-november-2024-trigrams&#34;&gt;Monthly Algorithmic Challenge (November 2024): Trigrams&lt;/h1&gt;
+&lt;p&gt;Last week, I worked through the monthly Mechanistic Interpretability challenge from &lt;a href=&#34;https://arena3-chapter1-transformer-interp.streamlit.app/Monthly_Algorithmic_Problems&#34;&gt;Callum McDougall&amp;rsquo;s ARENA course&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;(A huge shoutout to Callum and the entire ARENA team for all the work they do!)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The challenge was to interpret how a simple neural net - in this case, a 1 layer 1 head transformer (with MLP) - solves a problem.
+The problem at hand was to predict the next token in a sequence of random tokens. As the model was trained with cross-entropy
+loss, training on a completely random dataset would lead the model to always uniformly predict all tokens in the vocabulary.&lt;/p&gt;</description>
+      <content>&lt;blockquote&gt;
+&lt;p&gt;This post is converted from a Jupyter Notebook. To view the original interactive version, check out the
+&lt;a href=&#34;https://colab.research.google.com/drive/161EE2W98h_mpphESWv_mPtbv__MZP8jV?usp=sharing&#34;&gt;Colab notebook.&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;monthly-algorithmic-challenge-november-2024-trigrams&#34;&gt;Monthly Algorithmic Challenge (November 2024): Trigrams&lt;/h1&gt;
+&lt;p&gt;Last week, I worked through the monthly Mechanistic Interpretability challenge from &lt;a href=&#34;https://arena3-chapter1-transformer-interp.streamlit.app/Monthly_Algorithmic_Problems&#34;&gt;Callum McDougall&amp;rsquo;s ARENA course&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;(A huge shoutout to Callum and the entire ARENA team for all the work they do!)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The challenge was to interpret how a simple neural net - in this case, a 1 layer 1 head transformer (with MLP) - solves a problem.
+The problem at hand was to predict the next token in a sequence of random tokens. As the model was trained with cross-entropy
+loss, training on a completely random dataset would lead the model to always uniformly predict all tokens in the vocabulary.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;However&lt;/em&gt;, inserted randomly throughout the dataset were &lt;strong&gt;trigrams&lt;/strong&gt;, sequences of 3 tokens which always followed the pattern&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;trigram[0], trigram[1]&lt;/code&gt; =&amp;gt; &lt;code&gt;trigram[2].&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;For example, for a trigram &lt;code&gt;(1, 2, 3)&lt;/code&gt; and the sequence &lt;code&gt;5 74 38 12 52 1 2&lt;/code&gt;, we know for certain the next token is &lt;code&gt;3&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Consequently, we expect the model to develop ways of detecting the presence of trigrams, determining &lt;em&gt;which&lt;/em&gt; trigram is present, retrieving the correct completion, and writing to the output to confidently predict the correct completion token. The mechanisms the model learns to do this are explored below.&lt;/p&gt;
+&lt;p&gt;My work starts from &lt;a href=&#34;https://willsnell.com/posts/trigrams/#misc-tools&#34;&gt;&amp;ldquo;Misc Tools&amp;rdquo;&lt;/a&gt; onwards.&lt;/p&gt;
+&lt;p&gt;If you&amp;rsquo;re comfortable with Jupyter Notebooks/Google Colab, I&amp;rsquo;d recommend reading through the
+interactive version of this page, linked as a Google Colab notebook, &lt;a href=&#34;https://colab.research.google.com/drive/161EE2W98h_mpphESWv_mPtbv__MZP8jV?usp=sharing&#34;&gt;here.&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=&#34;beginning-of-attempt&#34;&gt;Beginning of Attempt&lt;/h1&gt;
+&lt;h1 id=&#34;misc-tools&#34;&gt;Misc Tools&lt;/h1&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;get_trigram_positions&lt;/span&gt;(dataset: BigramDataset) &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; Tuple[
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;n_trigram_occurences&amp;#34;&lt;/span&gt;], Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;n_trigram_occurences&amp;#34;&lt;/span&gt;]]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Return the batch and sequence positions of trigrams
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    for the tokens in a dataset.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Do a 2-wide sliding window&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    pairs &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unfold(dimension&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, size&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;, step&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    patterns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]] &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; trigram &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Match all pairs against all patterns.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# &amp;#39;matches&amp;#39; gives the position where a particular trigram matches.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    matches &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (pairs&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unsqueeze(&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; patterns&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;reshape(&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, len(patterns), &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;))&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;all(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;# [batch, seq - 1, num_patterns]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# trigram_pos gives the starting position of *any* valid trigram.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    batch_idx, seq_idx &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;where(matches&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;any(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; batch_idx, seq_idx
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;attention-patterns&#34;&gt;Attention Patterns&lt;/h1&gt;
+&lt;p&gt;The first thing to probe is the attention head. To figure out what algorithm/s it might be implementing, we want to plot a number of different batches against the attention patterns.&lt;/p&gt;
+&lt;p&gt;In particular, we add two markers to the plot:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;A ✓ to indicate the model made a correct prediction of the next token,
+based on this sequence position.&lt;/li&gt;
+&lt;li&gt;A highlighted horizontal bar, indicating the presence of the first two elements (trigram[0] and trigram[1]) of a trigram.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;batch_idx, seq_idx &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_trigram_positions(dataset)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;visualize_attn&lt;/span&gt;(batch&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    trigrams &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; seq_idx[batch_idx &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; batch]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    attn &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.attn.hook_pattern&amp;#39;&lt;/span&gt;][batch, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#75715e&#34;&gt;# select batch, head = 0 -&amp;gt; [q_seq, k_seq]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    bound &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; max(attn&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;min()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;abs(), attn&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;max()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;abs())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;batch&lt;span style=&#34;color:#e6db74&#34;&gt;=}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(attn&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), vmin&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, vmax&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;bound, cmap&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Blues&amp;#39;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Key&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Query&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Visualize if the model makes a correct prediction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    correct_predictions &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;where(logits[batch, :&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks[batch, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;:])[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot([&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; len(correct_predictions), correct_predictions&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;g&amp;#34;&lt;/span&gt;, linestyle&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;, marker&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;$✓$&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Highlight places where trigrams are present (in the query direction).&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    mask &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;zeros_like(attn, device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    mask[trigrams] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    mask[trigrams &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(mask&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), alpha&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.05&lt;/span&gt;, cmap&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;gray&amp;#39;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# interact(visualize_attn, batch=(0, logits.shape[0] - 1, 1))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;visualize_attn(batch&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_6_0.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;From the plot, we can see a few interesting things:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Firstly, by default the head attends to the current sequence position. We can probably think of this as a &amp;rsquo;no-op&#39;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Secondly, most of the time when a trigram is present, the query key for &lt;code&gt;trigram[1]&lt;/code&gt; will attend strongly (&amp;gt;0.9) to &lt;code&gt;trigram[0]&lt;/code&gt;. Less frequently, the head will split attention between &lt;code&gt;trigram[1]&lt;/code&gt; and &lt;code&gt;trigram[0]&lt;/code&gt; roughly evenly, and ignore everything else.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Thirdly, for some trigrams, the model makes a correct prediction of &lt;code&gt;trigram[2]&lt;/code&gt; but only attends to &lt;code&gt;trigram[1]&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Finally, the model occasionally makes correct predictions when no trigrams are present, which is just the result of a lucky guess.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Point one makes sense: the model doesn&amp;rsquo;t need to know anything about the previous token if it is just going to make a guess (in the case of no trigram).
+Point two also makes some sense: the residual stream for &lt;code&gt;trigram[1]&lt;/code&gt; always contains information about &lt;code&gt;trigram[1]&lt;/code&gt;. For the unembeddings or the MLP later on to make a correct guess, however, the residual stream also needs some information about &lt;code&gt;trigram[0]&lt;/code&gt;, and the only way it can get this is by attending to the previous token.&lt;/p&gt;
+&lt;p&gt;What&amp;rsquo;s perhaps counter-intuitive is that sometimes the model makes correct predictions in the presence of a trigram without attending to &lt;code&gt;trigram[0]&lt;/code&gt; at all!&lt;/p&gt;
+&lt;p&gt;To get a better understanding of what&amp;rsquo;s going on, let&amp;rsquo;s break apart the attention mechanism into position-based and token-based - that is, projecting the &lt;code&gt;W_pos&lt;/code&gt; and &lt;code&gt;W_E&lt;/code&gt; matrices into the attention space.&lt;/p&gt;
+&lt;p&gt;Below, we plot these two components for the tokens in each batch, all pre-softmax.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;mask_trigrams&lt;/span&gt;(attn, batch&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Show a highlighted area over the query-sequence
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    positions where `trigram[0], trigram[1]` are
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    present. &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    trigrams &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; seq_idx[batch_idx &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; batch]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    mask &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;zeros_like(attn[batch], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    mask[trigrams] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    mask[trigrams &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(mask&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), alpha&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.05&lt;/span&gt;, cmap&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;gray&amp;#39;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;batch &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;plot_tok_pos&lt;/span&gt;(batch):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Plot the attention head contributions from token embeddings
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;  and positional embeddings, separately.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#75715e&#34;&gt;# Positional embedding only&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  q_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;pos_embed&amp;#39;&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_Q[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_Q[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  k_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;pos_embed&amp;#39;&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_K[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_K[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  attn_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;einsum(q_pos, k_pos, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;... qseq dhead, ... kseq dhead -&amp;gt; ... qseq kseq&amp;#34;&lt;/span&gt;)&lt;span style=&#34;color:#75715e&#34;&gt;#.masked_fill_(t.triu(t.ones(q_pos.shape[-2], q_pos.shape[-2]).bool(), diagonal=1), -t.inf)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  fig, ax &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subplots(figsize&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Positional Embeddings&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(attn_pos[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), cmap&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;inferno&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  mask_trigrams(attn_pos, batch)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Query&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Key&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#75715e&#34;&gt;# Token only, no positional embeddings&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  q_tok &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;hook_embed&amp;#39;&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_Q[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_Q[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  k_tok &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;hook_embed&amp;#39;&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_K[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_K[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  attn_tok &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;einsum(q_tok, k_tok, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;... qseq dhead, ... kseq dhead -&amp;gt; ... qseq kseq&amp;#34;&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;masked_fill_(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;triu(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;ones(q_tok&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;], q_tok&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;bool(), diagonal&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;), &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;inf)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  fig, ax &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subplots(figsize&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Token Embeddings&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(attn_tok[batch]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), cmap&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;inferno&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xticks(np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]), dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks[batch]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;numpy(), rotation&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;90&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_yticks(np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]), dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks[batch]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;numpy())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Query&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Key&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# interact(plot_tok_pos, batch=(0, logits.shape[0] - 1, 1))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plot_tok_pos(batch&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_8_0.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_8_1.png&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;initial-hypothesis&#34;&gt;Initial Hypothesis&lt;/h1&gt;
+&lt;h2 id=&#34;token-embeddings&#34;&gt;Token Embeddings&lt;/h2&gt;
+&lt;p&gt;The query vector is looking for a token that precedes it in a trigram.&lt;/p&gt;
+&lt;p&gt;E.g. for token 47, the query vector is looking for 2, 4, or 41 (because (2, 47, 28), (4, 47, 23), and (41, 47, 3) are all valid trigrams.)&lt;/p&gt;
+&lt;p&gt;The key vector indicates which token it represents. For token 41, the key vector says &amp;ldquo;I am 41&amp;rdquo;.&lt;/p&gt;
+&lt;h2 id=&#34;positional-embeddings&#34;&gt;Positional Embeddings&lt;/h2&gt;
+&lt;p&gt;The positional embeddings are monotonic and essentially linear based on sequence position, with higher scores for later tokens. This means that the highest attention score is, by default, always the current token.&lt;/p&gt;
+&lt;p&gt;The positional embeddings for the last position of the sequence appears to be nonsense, because there is no correct prediction to learn.&lt;/p&gt;
+&lt;h2 id=&#34;combined-embeddings&#34;&gt;Combined Embeddings&lt;/h2&gt;
+&lt;p&gt;Combining the two embeddings, the algorithm for detecting trigrams appears to be:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;1. Use token embeddings to determine if a preceding token matches the current token. That is, increase attention when (key == trigram[0]) and (query == trigram[1]).
+
+2. Use positional embeddings to mask out the attention scores for all keys except the immediately previous one.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This &lt;em&gt;could&lt;/em&gt; explain how the model works for almost all trigrams.&lt;/p&gt;
+&lt;p&gt;The one notable exception to this are for trigrams with repeats, e.g. (72, 72, 48). In this case, the model appears to attend only to the most recent occurence of the token. Given what we suspect about how this model&amp;rsquo;s attention mechanism works, we shouldn&amp;rsquo;t really expect it to do anything else.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The monotonic nature of the learned positional embeddings mean the most recent token always gets precedence&lt;/li&gt;
+&lt;li&gt;The token embeddings for two identical keys must, by definition, be identical&lt;/li&gt;
+&lt;li&gt;Because softmax is translation invariant, the model can&amp;rsquo;t just make the token-based attention score very high in the case of duplicated sequences, because only the difference between the two positions&amp;rsquo; attention scores matters.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;How, then, does the model predict these duplicate trigrams (and it does predict them correctly!)&lt;/p&gt;
+&lt;p&gt;Maybe the MLP directly implements predictions for repeated tokens? However, there&amp;rsquo;s no mechanism for the MLP to get information about the previous token without an attention head playing ball and telling it the current token is a repeat. Since the positional embedding scheme in the single head present doesn&amp;rsquo;t do that, there&amp;rsquo;s really only one avenue left for the model to predict completions of duplicate-starting trigrams: fake it!&lt;/p&gt;
+&lt;p&gt;Since &lt;code&gt;trigram[0], trigram[1]&lt;/code&gt; always imply the same &lt;code&gt;trigram[2]&lt;/code&gt;, the model can always guess the correct completion, regardless of whether the current token is a duplicate.&lt;/p&gt;
+&lt;p&gt;Is this what we see?&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;fig, axes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subplots(&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;, figsize&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Predictions for &amp;#39;X, 72 -&amp;gt; &amp;#39;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;72&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;72&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;72, 72&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;72&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1, 72&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;74&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;72&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;74, 72&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;74&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;72&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1, 74, 72&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Token&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Probability&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;legend()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# a series of random tokens (of the same sequence length)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# that end in 54&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Predictions for &amp;#39;X, 54 -&amp;gt; &amp;#39;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;54&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;54&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;54, 54&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;54&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1, 54&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;74&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;54&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;74, 54&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Token&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Probability&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;legend()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# two random tokens that are not a trigram&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Random Tokens&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;32&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;52&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;32, 52&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;32&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;52&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1, 32, 52&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;31&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;52&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), label&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;31, 52&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;legend()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Token&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Probability&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# two random tokens that **are** a trigram&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Random Trigram&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;26&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;49&lt;/span&gt;]]))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Token&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;axes[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Probability&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_10_0.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Above, we have four plots showing (from top left, clockwise):&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;For any sequence (that isn&amp;rsquo;t a non-repeating trigram) ending in 72, the model always makes the same prediction. That is, it (weakly) predicts the correct continuation of the (72, 72, 48) trigram.&lt;/li&gt;
+&lt;li&gt;For another repeating trigram (54, 54, 67), we have the same behaviour: all sequences ending in 54 weakly predict 67 as the follow up.&lt;/li&gt;
+&lt;li&gt;Picking an arbitrary non-repeating trigram (in this case, (26, 49, 22)), we see that the model very strongly predicts the correct continuation (22). This is quite different to the two preceding plots, where the prediction was closer to uniform.&lt;/li&gt;
+&lt;li&gt;If we look at a number of non-trigram sequences, we can see that while predictions are fairly uniform, both sequence position and the preceding token appear to slightly tweak the exact distribution output. This is markedly different to the repeating trigrams (figures 1 and 2), which vary their predictions only based on sequence position and &lt;em&gt;not&lt;/em&gt; on the preceding token.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;does-token-attention-encode-trigram-starts&#34;&gt;Does Token Attention Encode Trigram Starts?&lt;/h1&gt;
+&lt;p&gt;If the model is really using key-query vectors to encode &lt;code&gt;trigram[0], trigram[1]&lt;/code&gt; pairs, we should be able to see that directly. Looking at the first 50 sequence positions:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;tokens &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cfg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;n_ctx &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unsqueeze(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;m, c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_with_cache(tokens)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Token only, no positional embeddings&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;q_tok &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (c[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;hook_embed&amp;#39;&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_Q[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_Q[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;k_tok &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (c[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;hook_embed&amp;#39;&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_K[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_K[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;attn_tok &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;einsum(q_tok, k_tok, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;... qseq dhead, ... kseq dhead -&amp;gt; ... qseq kseq&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;fig, ax &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subplots(figsize&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;grid()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(attn_tok[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;softmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), cmap&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Greens&amp;#39;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Trigram[0]&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Trigram[1]&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_xticks(np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;), tokens[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;numpy(), rotation&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;90&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_yticks(np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;), tokens[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;numpy())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_13_0.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Indeed, we can read off the values of our trigram-starting pairs by:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;1. Pick a value from the y-axis. This is the query token, and
+represents `trigram[1]`.
+2. Read from left to right, until we encounter a large value.
+3. From this highlighted square, read off the x-axis value. This is the key value that the query was looking for - i.e. `trigram[0]`.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can compare the hotspots on this chart to the set of possible trigrams, sorted by second element (&lt;code&gt;trigram[1]&lt;/code&gt;). This gives quite good agreement, once we filter out very low values.&lt;/p&gt;
+&lt;p&gt;What&amp;rsquo;s interesting is the significant variability in how intensely the model attends to different trigram pairs. It&amp;rsquo;s possible this is a limitation of the space the model has to work with, or something else entirely.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;table &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Table(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;First Element&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;table&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;add_column(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Second Element&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;table&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;add_column(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Third Element&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; trigram &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; sorted(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams, key&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt; x: x[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    table&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;add_row(str(trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]), str(trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]), str(trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;console &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Console()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;console&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;print(table)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;details&gt;
+	&lt;summary&gt;&lt;b&gt;Click to view table&lt;/b&gt;&lt;/summary&gt;
+&lt;pre style=&#34;white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,&#39;DejaVu Sans Mono&#39;,consolas,&#39;Courier New&#39;,monospace&#34;&gt;┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃&lt;span style=&#34;font-weight: bold&#34;&gt; First Element &lt;/span&gt;┃&lt;span style=&#34;font-weight: bold&#34;&gt; Second Element &lt;/span&gt;┃&lt;span style=&#34;font-weight: bold&#34;&gt; Third Element &lt;/span&gt;┃
+┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ 17            │ 0              │ 43            │
+│ 57            │ 0              │ 34            │
+│ 9             │ 0              │ 37            │
+│ 12            │ 0              │ 20            │
+│ 13            │ 1              │ 22            │
+│ 6             │ 1              │ 54            │
+│ 17            │ 1              │ 12            │
+│ 64            │ 1              │ 8             │
+│ 10            │ 2              │ 67            │
+│ 56            │ 2              │ 22            │
+│ 3             │ 2              │ 62            │
+│ 63            │ 2              │ 17            │
+│ 58            │ 3              │ 70            │
+│ 15            │ 4              │ 50            │
+│ 57            │ 4              │ 73            │
+│ 54            │ 4              │ 4             │
+│ 71            │ 4              │ 7             │
+│ 13            │ 4              │ 8             │
+│ 11            │ 5              │ 53            │
+│ 2             │ 5              │ 17            │
+│ 16            │ 5              │ 60            │
+│ 38            │ 5              │ 35            │
+│ 67            │ 6              │ 72            │
+│ 10            │ 7              │ 56            │
+│ 37            │ 7              │ 51            │
+│ 52            │ 8              │ 30            │
+│ 63            │ 8              │ 8             │
+│ 5             │ 8              │ 0             │
+│ 22            │ 8              │ 38            │
+│ 12            │ 9              │ 26            │
+│ 11            │ 9              │ 30            │
+│ 2             │ 9              │ 59            │
+│ 45            │ 10             │ 47            │
+│ 4             │ 10             │ 3             │
+│ 24            │ 10             │ 22            │
+│ 51            │ 10             │ 65            │
+│ 28            │ 10             │ 6             │
+│ 37            │ 11             │ 66            │
+│ 64            │ 12             │ 34            │
+│ 12            │ 12             │ 4             │
+│ 39            │ 12             │ 73            │
+│ 6             │ 13             │ 39            │
+│ 71            │ 13             │ 62            │
+│ 42            │ 13             │ 69            │
+│ 59            │ 13             │ 73            │
+│ 47            │ 13             │ 18            │
+│ 26            │ 13             │ 46            │
+│ 14            │ 13             │ 9             │
+│ 59            │ 14             │ 68            │
+│ 9             │ 14             │ 65            │
+│ 16            │ 14             │ 5             │
+│ 60            │ 14             │ 16            │
+│ 24            │ 14             │ 62            │
+│ 22            │ 15             │ 20            │
+│ 6             │ 15             │ 47            │
+│ 12            │ 15             │ 54            │
+│ 24            │ 15             │ 66            │
+│ 71            │ 15             │ 38            │
+│ 18            │ 15             │ 0             │
+│ 50            │ 16             │ 16            │
+│ 3             │ 16             │ 71            │
+│ 6             │ 17             │ 40            │
+│ 0             │ 17             │ 26            │
+│ 13            │ 17             │ 16            │
+│ 70            │ 17             │ 52            │
+│ 57            │ 18             │ 2             │
+│ 52            │ 18             │ 48            │
+│ 72            │ 19             │ 18            │
+│ 55            │ 19             │ 0             │
+│ 60            │ 19             │ 15            │
+│ 9             │ 20             │ 2             │
+│ 14            │ 20             │ 1             │
+│ 60            │ 20             │ 30            │
+│ 2             │ 20             │ 57            │
+│ 13            │ 21             │ 46            │
+│ 67            │ 21             │ 30            │
+│ 69            │ 22             │ 4             │
+│ 9             │ 22             │ 2             │
+│ 21            │ 22             │ 20            │
+│ 68            │ 22             │ 9             │
+│ 2             │ 23             │ 55            │
+│ 67            │ 23             │ 10            │
+│ 16            │ 23             │ 9             │
+│ 55            │ 23             │ 51            │
+│ 22            │ 23             │ 16            │
+│ 11            │ 23             │ 37            │
+│ 47            │ 24             │ 0             │
+│ 10            │ 24             │ 42            │
+│ 18            │ 25             │ 10            │
+│ 5             │ 25             │ 55            │
+│ 51            │ 25             │ 46            │
+│ 56            │ 25             │ 11            │
+│ 60            │ 25             │ 72            │
+│ 16            │ 25             │ 61            │
+│ 46            │ 26             │ 42            │
+│ 42            │ 26             │ 51            │
+│ 55            │ 26             │ 16            │
+│ 37            │ 26             │ 62            │
+│ 7             │ 26             │ 60            │
+│ 55            │ 27             │ 72            │
+│ 44            │ 27             │ 7             │
+│ 21            │ 27             │ 23            │
+│ 4             │ 27             │ 14            │
+│ 32            │ 28             │ 18            │
+│ 62            │ 28             │ 14            │
+│ 15            │ 28             │ 40            │
+│ 57            │ 28             │ 7             │
+│ 16            │ 28             │ 16            │
+│ 41            │ 29             │ 41            │
+│ 10            │ 29             │ 34            │
+│ 60            │ 29             │ 67            │
+│ 69            │ 30             │ 14            │
+│ 35            │ 30             │ 17            │
+│ 2             │ 30             │ 55            │
+│ 26            │ 31             │ 18            │
+│ 73            │ 32             │ 10            │
+│ 29            │ 33             │ 53            │
+│ 67            │ 33             │ 40            │
+│ 33            │ 34             │ 46            │
+│ 27            │ 34             │ 27            │
+│ 63            │ 34             │ 43            │
+│ 13            │ 35             │ 72            │
+│ 27            │ 35             │ 8             │
+│ 52            │ 35             │ 70            │
+│ 2             │ 35             │ 62            │
+│ 35            │ 36             │ 28            │
+│ 40            │ 36             │ 47            │
+│ 39            │ 36             │ 7             │
+│ 13            │ 36             │ 50            │
+│ 22            │ 37             │ 37            │
+│ 69            │ 37             │ 61            │
+│ 40            │ 37             │ 47            │
+│ 48            │ 37             │ 8             │
+│ 65            │ 37             │ 27            │
+│ 17            │ 37             │ 5             │
+│ 43            │ 38             │ 67            │
+│ 33            │ 38             │ 25            │
+│ 14            │ 38             │ 30            │
+│ 57            │ 39             │ 18            │
+│ 58            │ 39             │ 73            │
+│ 72            │ 39             │ 6             │
+│ 46            │ 39             │ 30            │
+│ 55            │ 40             │ 20            │
+│ 19            │ 40             │ 68            │
+│ 39            │ 40             │ 62            │
+│ 59            │ 40             │ 67            │
+│ 48            │ 40             │ 52            │
+│ 42            │ 40             │ 63            │
+│ 1             │ 40             │ 72            │
+│ 15            │ 41             │ 52            │
+│ 49            │ 41             │ 38            │
+│ 7             │ 42             │ 17            │
+│ 50            │ 42             │ 63            │
+│ 33            │ 42             │ 58            │
+│ 31            │ 42             │ 24            │
+│ 0             │ 42             │ 36            │
+│ 16            │ 43             │ 68            │
+│ 39            │ 43             │ 19            │
+│ 69            │ 43             │ 50            │
+│ 10            │ 43             │ 36            │
+│ 15            │ 43             │ 37            │
+│ 17            │ 44             │ 15            │
+│ 68            │ 44             │ 45            │
+│ 18            │ 44             │ 6             │
+│ 13            │ 44             │ 13            │
+│ 0             │ 44             │ 53            │
+│ 53            │ 44             │ 38            │
+│ 73            │ 44             │ 43            │
+│ 69            │ 44             │ 12            │
+│ 12            │ 45             │ 61            │
+│ 63            │ 45             │ 19            │
+│ 68            │ 45             │ 30            │
+│ 51            │ 45             │ 67            │
+│ 23            │ 46             │ 4             │
+│ 36            │ 46             │ 34            │
+│ 2             │ 46             │ 35            │
+│ 2             │ 47             │ 28            │
+│ 41            │ 47             │ 3             │
+│ 4             │ 47             │ 23            │
+│ 55            │ 48             │ 26            │
+│ 28            │ 48             │ 29            │
+│ 56            │ 49             │ 0             │
+│ 54            │ 49             │ 65            │
+│ 28            │ 49             │ 17            │
+│ 26            │ 49             │ 22            │
+│ 8             │ 49             │ 40            │
+│ 58            │ 50             │ 45            │
+│ 65            │ 50             │ 67            │
+│ 54            │ 50             │ 32            │
+│ 16            │ 50             │ 72            │
+│ 9             │ 50             │ 74            │
+│ 46            │ 51             │ 54            │
+│ 11            │ 51             │ 66            │
+│ 57            │ 51             │ 47            │
+│ 47            │ 51             │ 37            │
+│ 19            │ 52             │ 41            │
+│ 34            │ 53             │ 47            │
+│ 13            │ 53             │ 35            │
+│ 6             │ 53             │ 52            │
+│ 22            │ 53             │ 30            │
+│ 21            │ 53             │ 39            │
+│ 20            │ 54             │ 10            │
+│ 4             │ 54             │ 12            │
+│ 32            │ 54             │ 56            │
+│ 54            │ 54             │ 67            │
+│ 55            │ 54             │ 20            │
+│ 4             │ 55             │ 72            │
+│ 64            │ 55             │ 2             │
+│ 36            │ 56             │ 32            │
+│ 24            │ 56             │ 51            │
+│ 31            │ 56             │ 69            │
+│ 51            │ 56             │ 42            │
+│ 38            │ 56             │ 47            │
+│ 44            │ 56             │ 37            │
+│ 43            │ 56             │ 67            │
+│ 14            │ 56             │ 69            │
+│ 47            │ 57             │ 54            │
+│ 44            │ 57             │ 24            │
+│ 31            │ 57             │ 17            │
+│ 49            │ 58             │ 28            │
+│ 61            │ 58             │ 56            │
+│ 21            │ 58             │ 42            │
+│ 3             │ 58             │ 32            │
+│ 28            │ 60             │ 43            │
+│ 49            │ 60             │ 7             │
+│ 23            │ 60             │ 44            │
+│ 12            │ 60             │ 48            │
+│ 16            │ 60             │ 46            │
+│ 72            │ 61             │ 11            │
+│ 28            │ 61             │ 6             │
+│ 37            │ 62             │ 61            │
+│ 58            │ 62             │ 43            │
+│ 7             │ 62             │ 73            │
+│ 11            │ 63             │ 36            │
+│ 61            │ 63             │ 32            │
+│ 71            │ 63             │ 3             │
+│ 28            │ 64             │ 11            │
+│ 4             │ 64             │ 20            │
+│ 23            │ 64             │ 64            │
+│ 18            │ 64             │ 19            │
+│ 72            │ 65             │ 21            │
+│ 31            │ 65             │ 30            │
+│ 23            │ 65             │ 19            │
+│ 40            │ 66             │ 43            │
+│ 74            │ 66             │ 33            │
+│ 31            │ 66             │ 7             │
+│ 26            │ 66             │ 47            │
+│ 27            │ 66             │ 74            │
+│ 37            │ 66             │ 41            │
+│ 44            │ 67             │ 66            │
+│ 5             │ 67             │ 59            │
+│ 63            │ 67             │ 25            │
+│ 1             │ 68             │ 72            │
+│ 25            │ 68             │ 7             │
+│ 70            │ 68             │ 11            │
+│ 51            │ 69             │ 48            │
+│ 36            │ 70             │ 33            │
+│ 58            │ 70             │ 35            │
+│ 32            │ 70             │ 40            │
+│ 61            │ 70             │ 74            │
+│ 21            │ 70             │ 46            │
+│ 9             │ 71             │ 20            │
+│ 52            │ 71             │ 45            │
+│ 20            │ 71             │ 35            │
+│ 1             │ 71             │ 26            │
+│ 65            │ 71             │ 45            │
+│ 32            │ 72             │ 3             │
+│ 52            │ 72             │ 62            │
+│ 72            │ 72             │ 48            │
+│ 54            │ 72             │ 49            │
+│ 56            │ 73             │ 3             │
+│ 5             │ 73             │ 25            │
+│ 71            │ 73             │ 5             │
+│ 16            │ 74             │ 46            │
+│ 35            │ 74             │ 55            │
+│ 3             │ 74             │ 28            │
+│ 44            │ 74             │ 42            │
+└───────────────┴────────────────┴───────────────┘
+&lt;/pre&gt;
+&lt;/details&gt;
+&lt;hr&gt;
+&lt;h1 id=&#34;testing-our-working-model&#34;&gt;Testing our working model&lt;/h1&gt;
+&lt;p&gt;So far, we have a strong working theory for how the model might work.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Use the attention mechanism to encode &lt;code&gt;(trigram[0], trigram[1])&lt;/code&gt; pairs. So long as &lt;code&gt;trigram[0]&lt;/code&gt; and &lt;code&gt;trigram[1]&lt;/code&gt; are different numbers, the model has two modes of operation. If a trigram is detected, the attention mechanism will move some information about &lt;code&gt;trigram[0]&lt;/code&gt; (via the OV-circuit) into the residual stream. If a trigram is not detected, it will move information about &lt;code&gt;trigram[1]&lt;/code&gt; into the residual stream (i.e. self-attend).&lt;/li&gt;
+&lt;li&gt;Based on the contents of the residual stream, predict the continuation. Theoretically this could be done purely with the unembeddings, although there will probably be practical constraints that prevent this and rely on the MLP.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We can build this simplified model in code and see how well it predicts different trigrams (versus the actual model). Since we&amp;rsquo;ll always predict trigrams, we&amp;rsquo;ll fake the attention head by defining our own mid-model residual stream:&lt;/p&gt;
+&lt;p&gt;\[
+x_\text{mid} = W_{OV}\:x_\text{trigram[0]} + x_\text{trigram[1]}
+\]&lt;/p&gt;
+&lt;p&gt;Where \(x_\text{trigram}\) is the combination of positional and token embeddings for the two tokens. (There are biases to consider, too, but I&amp;rsquo;ve hidden them for simplicity in the above equation.)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;simple_model&lt;/span&gt;(trigram_0, trigram_1, print_results&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    toks &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[trigram_0, trigram_1]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    embeddings &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;pos_embed(toks) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;embed(toks)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ov_transformed &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (embeddings[:, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_V[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_V[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_O[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;b_O[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    resid_mid_fake &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ov_transformed &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; embeddings[:, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    prediction &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unembed(model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;blocks[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;mlp(resid_mid_fake) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; resid_mid_fake)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    model_prediction &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model(toks)[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; print_results:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;30&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Trigram: (&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;trigram_0&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;, &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;trigram_1&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;, ...)&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Simplified Model Prediction: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;prediction&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Actual Model Prediction: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;model_prediction&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;30&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; prediction, model_prediction
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;simple_model(&lt;span style=&#34;color:#ae81ff&#34;&gt;55&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;40&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;simple_model(&lt;span style=&#34;color:#ae81ff&#34;&gt;34&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;53&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;------------------------------
+Trigram: (55, 40, ...)
+Simplified Model Prediction: 20
+Actual Model Prediction: 20
+------------------------------
+
+
+------------------------------
+Trigram: (34, 53, ...)
+Simplified Model Prediction: 36
+Actual Model Prediction: 47
+------------------------------
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can see that our simplified model gets some predictions correct, but gets others wrong relative to the model - even with the full power of the mlp.&lt;/p&gt;
+&lt;p&gt;We can assess our simple model&amp;rsquo;s accuracy against all the trigrams in the dataset. For every trigram the simple model fails to predict, we&amp;rsquo;ll also print it&amp;rsquo;s attention pattern (i.e. attention paid to (previous_token, current_token)).&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;simpl_correct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;model_correct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; trigram &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    simpl_predict, model_predict &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; simple_model(trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;], &lt;span style=&#34;color:#66d9ef&#34;&gt;False&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; simpl_predict &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        simpl_correct &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        _, c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_with_cache(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Trigram: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;trigram&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        attn &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; c[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.attn.hook_pattern&amp;#39;&lt;/span&gt;][&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tolist()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Attention pattern: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;attn[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#e6db74&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;.3f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;, &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;attn[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#e6db74&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;.3f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; model_predict &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        model_correct &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;Simplified Model accuracy = &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;simpl_correct &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; len(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Model accuracy: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;model_correct &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; len(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;b&gt;Click to view output&lt;/b&gt;&lt;/summary&gt;
+&lt;pre&gt;&lt;code&gt;Trigram: (34, 53, 47)
+Attention pattern: 0.000, 1.000
+Trigram: (9, 14, 65)
+Attention pattern: 0.000, 1.000
+Trigram: (12, 45, 61)
+Attention pattern: 0.000, 1.000
+Trigram: (7, 42, 17)
+Attention pattern: 0.756, 0.244
+Trigram: (10, 29, 34)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 58, 42)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 49, 65)
+Attention pattern: 0.000, 1.000
+Trigram: (59, 13, 73)
+Attention pattern: 0.687, 0.313
+Trigram: (36, 56, 32)
+Attention pattern: 0.000, 1.000
+Trigram: (63, 45, 19)
+Attention pattern: 0.000, 1.000
+Trigram: (61, 63, 32)
+Attention pattern: 0.000, 1.000
+Trigram: (57, 0, 34)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 50, 32)
+Attention pattern: 0.000, 1.000
+Trigram: (47, 13, 18)
+Attention pattern: 0.680, 0.320
+Trigram: (51, 69, 48)
+Attention pattern: 0.000, 1.000
+Trigram: (24, 56, 51)
+Attention pattern: 0.000, 1.000
+Trigram: (33, 38, 25)
+Attention pattern: 0.000, 1.000
+Trigram: (48, 40, 52)
+Attention pattern: 0.000, 1.000
+Trigram: (65, 37, 27)
+Attention pattern: 0.000, 1.000
+Trigram: (23, 46, 4)
+Attention pattern: 0.002, 0.998
+Trigram: (18, 25, 10)
+Attention pattern: 0.000, 1.000
+Trigram: (50, 42, 63)
+Attention pattern: 0.000, 1.000
+Trigram: (71, 73, 5)
+Attention pattern: 0.000, 1.000
+Trigram: (11, 51, 66)
+Attention pattern: 0.000, 1.000
+Trigram: (71, 63, 3)
+Attention pattern: 0.000, 1.000
+Trigram: (73, 32, 10)
+Attention pattern: 0.000, 1.000
+Trigram: (57, 18, 2)
+Attention pattern: 0.002, 0.998
+Trigram: (21, 22, 20)
+Attention pattern: 0.000, 1.000
+Trigram: (0, 17, 26)
+Attention pattern: 0.000, 1.000
+Trigram: (70, 17, 52)
+Attention pattern: 0.000, 1.000
+Trigram: (56, 25, 11)
+Attention pattern: 0.000, 1.000
+Trigram: (16, 5, 60)
+Attention pattern: 0.000, 1.000
+Trigram: (2, 35, 62)
+Attention pattern: 0.000, 1.000
+Trigram: (26, 66, 47)
+Attention pattern: 0.000, 1.000
+Trigram: (72, 72, 48)
+Attention pattern: 0.000, 1.000
+Trigram: (12, 60, 48)
+Attention pattern: 0.000, 1.000
+Trigram: (57, 51, 47)
+Attention pattern: 0.000, 1.000
+Trigram: (26, 31, 18)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 54, 67)
+Attention pattern: 0.000, 1.000
+Trigram: (1, 71, 26)
+Attention pattern: 0.000, 1.000
+Trigram: (31, 65, 30)
+Attention pattern: 0.000, 1.000
+Trigram: (73, 44, 43)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 27, 23)
+Attention pattern: 0.000, 1.000
+Trigram: (64, 12, 34)
+Attention pattern: 0.000, 1.000
+Trigram: (28, 48, 29)
+Attention pattern: 0.000, 1.000
+Trigram: (24, 15, 66)
+Attention pattern: 0.000, 1.000
+Trigram: (69, 43, 50)
+Attention pattern: 0.000, 1.000
+Trigram: (19, 52, 41)
+Attention pattern: 0.000, 1.000
+Trigram: (60, 19, 15)
+Attention pattern: 0.000, 1.000
+Trigram: (54, 72, 49)
+Attention pattern: 0.000, 1.000
+Trigram: (68, 22, 9)
+Attention pattern: 0.000, 1.000
+Trigram: (64, 1, 8)
+Attention pattern: 0.000, 1.000
+Trigram: (7, 26, 60)
+Attention pattern: 0.000, 1.000
+Trigram: (51, 10, 65)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 70, 46)
+Attention pattern: 0.000, 1.000
+Trigram: (64, 55, 2)
+Attention pattern: 0.000, 1.000
+Trigram: (21, 53, 39)
+Attention pattern: 0.000, 1.000
+Trigram: (39, 12, 73)
+Attention pattern: 0.000, 1.000
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/details&gt;
+&lt;pre&gt;&lt;code&gt;Simplified Model accuracy = 0.7906137184115524
+Model accuracy: 0.9602888086642599
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Evidently, our simplified attention pattern captures most - but not all - of the nuances of what the model has learned. The ~17% of failed predictions fall into two camps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Attention is only paid to the current token. (This is the vast majority).&lt;/li&gt;
+&lt;li&gt;Some attention is paid to both the current and the previous token (this is quite rare.)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;So, we need to slightly extend our understanding of what attention does in the model:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Attention detects &lt;em&gt;most&lt;/em&gt; trigram pairs, and &lt;em&gt;typically&lt;/em&gt; pays attention to the preceding token if it detects a trigram. Most of the time this is ~100% attention, but occasionally the split of (previous:current) is around 70:30.&lt;/li&gt;
+&lt;li&gt;Otherwise, the attention mechanism focuses on just the current token.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Some trigrams are still succesfully predicted, even when the attention mechanism focuses 100% on the current token. For this to work, the model must encode a &lt;code&gt;trigram[1] -&amp;gt; trigram[2]&lt;/code&gt; map and always predict the same completion, regardless of if &lt;code&gt;trigram[0]&lt;/code&gt; is present - that is, the same mechanism as used for repeated trigrams.&lt;/p&gt;
+&lt;p&gt;To verify this, lets take a trigram that doesn&amp;rsquo;t excite the attention pattern out of its default state: (39, 12, 73):&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Prediction (39, 12) -&amp;gt; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;39&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Prediction (15, 12) -&amp;gt; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;15&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Prediction (64, 12) -&amp;gt; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;64&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Prediction (12, 12) -&amp;gt; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;model(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[&lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device))[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;Prediction (39, 12) -&amp;gt; 34
+Prediction (15, 12) -&amp;gt; 34
+Prediction (64, 12) -&amp;gt; 34
+Prediction (12, 12) -&amp;gt; 34
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Interestingly, in this case, the model fails to predict several trigrams (12, 12, 4), and (39, 12, 73) because it always predicts the completion for (64, 12, 34).&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s possible this is an artefact of a phase-change in learned behaviour - the model might initially predict completions based only on the most recent token,
+and only later in training learns to exploit attention to do a two-part prediction. If this is the case, perhaps some trigrams have not yet transitioned from the single-token prediction regime to the two-token regime.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s also interesting that the model always predicts the completion for (64, 12, 34) - a sequence it could detect with attention - and not for (12, 12, 4), a sequence it could not detect because of the duplicate 12&amp;rsquo;s.&lt;/p&gt;
+&lt;p&gt;Other uses of this attention-free mechanism make some sense: (19, 52, 41) is never going to clash with another trigram, because 52 only appears as &lt;code&gt;trigram[1]&lt;/code&gt; in this single example. Still, the prediction is less confident than it could otherwise be.&lt;/p&gt;
+&lt;h1 id=&#34;predicting-tokens&#34;&gt;Predicting Tokens&lt;/h1&gt;
+&lt;p&gt;We have a fairly good grip on how the model detects trigrams. How, then, does it predict the continuation?&lt;/p&gt;
+&lt;p&gt;In a lot of cases, we might expect the model to be able to just pass the output of the attention head to the unembedding matrix, and predict the continuation from there. It seems likely, too, that the MLP will contribute to this process, but the exact split of MLP to direct logit attribution seems unclear.&lt;/p&gt;
+&lt;h2 id=&#34;direct-logit-attribution&#34;&gt;Direct Logit Attribution&lt;/h2&gt;
+&lt;p&gt;We can try directly projecting \(x_\text{mid}\) into the output space, like so:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;attn_attribution&lt;/span&gt;(trigram_0, trigram_1):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Directly unembed the residual stream
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    after the attention head, i.e. skipping the
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    MLP.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    _, c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_with_cache(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[trigram_0, trigram_1]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                names_filter&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;blocks.0.hook_resid_mid&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unembed(c[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_resid_mid&amp;#39;&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;correct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; trigram &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    attn_attr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attn_attribution(trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; attn_attr[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item() &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        correct &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Accuracy = &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;correct &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; len(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;Accuracy = 0.18050541516245489
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This isn&amp;rsquo;t a great baseline, though. It&amp;rsquo;s not like the MLP doesn&amp;rsquo;t exist. We could try account for it by mean-ablating it, instead of zero-ablating it. We ignore the last sequence position, since that&amp;rsquo;s pretty noisy, and take the mean over our (fairly large) dataset.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mean_mlp &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_mlp_out&amp;#39;&lt;/span&gt;][:, :&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;mean(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;attn_mean_ablated&lt;/span&gt;(trigram_0, trigram_1):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    _, c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_with_cache(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[trigram_0, trigram_1]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                names_filter&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;blocks.0.hook_resid_mid&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unembed(c[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_resid_mid&amp;#39;&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; mean_mlp)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;correct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; trigram &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    attn_attr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attn_mean_ablated(trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; attn_attr[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item() &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        correct &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Accuracy = &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;correct &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; len(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;Accuracy = 0.2490974729241877
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;linearized-jacobians&#34;&gt;Linearized Jacobians&lt;/h2&gt;
+&lt;p&gt;So is ~24.5% a fair accuracy score for how well the attention mechanism predicts tokens? Arguably, no.&lt;/p&gt;
+&lt;p&gt;To see why, let&amp;rsquo;s rewrite the MLP contribution:&lt;/p&gt;
+&lt;p&gt;\[
+\text{MLP}(x_\text{mid}) = A\:x_\text{mid} + b + \mathcal{N}(x_\text{mid})
+\]&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Where the MLP has been decomposed into a linear contribution \(A x + b\) and a nonlinear contribution \(\mathcal{N}\).&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The motivation behind this split is that we understand well how linear systems work, and can see that a fixed linear transformation doesn&amp;rsquo;t add extra &amp;ldquo;logic&amp;rdquo; to the model - instead, it moves information around, and always works the same way, regardless of what information it is moving.&lt;/p&gt;
+&lt;p&gt;Conceptually, especially without layer-norm, the linear contribution could be absorbed into surrounding matrices and biases such as \(W_U\) and \(b_U\). So, if we could calculate \(A\) and \(b\), we could get a better understanding of the attention head&amp;rsquo;s predictive power without MLP intervention.&lt;/p&gt;
+&lt;p&gt;To do this, we can start by looking at the jacobian between the MLP&amp;rsquo;s inputs and its outputs. For each token, the jacobian maps how much a given upstream vector contributes to a downstream vector.&lt;/p&gt;
+&lt;p&gt;That is, for an upstream vector x (such as \(x_\text{mid}\)) and a downstream vector y (such as \(x_\text{post}\)), the jacobian \(J\) is defined as:&lt;/p&gt;
+&lt;p&gt;\[
+J = \left(\begin{matrix}
+\frac{\partial y_1}{\partial x_1} &amp;amp; &amp;hellip; &amp;amp; \frac{\partial y_1}{\partial x_n} \\
+\frac{\partial y_2}{\partial x_1} &amp;amp; &amp;hellip; &amp;amp; \frac{\partial y_2}{\partial x_n} \\
+\vdots &amp;amp; \vdots &amp;amp; \vdots \\
+\frac{\partial y_n}{\partial x_1} &amp;amp; &amp;hellip; &amp;amp; \frac{\partial y_n}{\partial x_n} \\
+\end{matrix}\right)
+\]&lt;/p&gt;
+&lt;p&gt;For a nonlinear function like an MLP, \(J\) needs to be recalculated for each input. Then, for each input, we have&lt;/p&gt;
+&lt;p&gt;\[ y = J\:x + b \]&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Where \(b\) is a constant bias (independent of J) that we need to calculate.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;While \(J\) is a function of x (\(J = J(x)\)) for non-linear functions like our MLP,
+we hope that we can find some situations where \(J\) doesn&amp;rsquo;t vary much, and can use that as the basis of our linearization.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;set_grad_enabled(&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;attach_jacobian_hooks&lt;/span&gt;(upstream: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_upstream&amp;#34;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                          downstream: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_downstream&amp;#34;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                          network: t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;nn&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Module,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                          stop_idx_downstream: int,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                          start_idx_downstream&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Calculate the jacobian matrix between an upstream vector and
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       a downstream vector. You must run a forward pass through the model
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       before the gradients tensor will be populated.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       upstream - The upstream vector.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       downstream - The downstream vector. Does not need to have the same
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;                    shape as `upstream`.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       network - The model that contains both `upstream` and `downstream`.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       stop_idx_downstream (required) and
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       start_idx_downstream(optional)-
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;            The jacobian will be calculated for the downstream vector elements
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;            as downstream[ start_idx_downstream : stop_idx_downstream ]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       Returns: (get_jacobian(), get_upstream_vec(), remove_hooks())
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    n_outputs &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; stop_idx_downstream &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; start_idx_downstream
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    capture &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; {}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;setup_upstream_hook&lt;/span&gt;(module, inp, out):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        capture[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;upstream_vec&amp;#39;&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; out
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        out &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;repeat(out,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;batch ... d_hidden -&amp;gt; (batch d_out) ... d_hidden&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                            d_out&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;n_outputs)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;# Setup a do-nothing vector to let us extract the gradients&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;# of this intermediate layer.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        output_shape &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; out&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        capture[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;upstream_grad&amp;#39;&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;zeros(output_shape, requires_grad&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;, device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;out&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;device)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; out &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; capture[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;upstream_grad&amp;#39;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;setup_downstream_hook&lt;/span&gt;(module, inp, out):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;# Extract the jacobian dimension we snuck&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;# into the batch dimension.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        out &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;rearrange(out,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(batch d_out) ... d_hidden -&amp;gt; batch ... d_out d_hidden&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               d_out&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;n_outputs)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        network&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;zero_grad()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        out[&lt;span style=&#34;color:#f92672&#34;&gt;...&lt;/span&gt;, start_idx_downstream : stop_idx_downstream]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;backward(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;eye(n_outputs, device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;out&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;device)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;repeat(&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;out&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[:&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;], &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    remove_upstr_hook &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; upstream&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;register_forward_hook(setup_upstream_hook)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    remove_downstr_hook &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; downstream&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;register_forward_hook(setup_downstream_hook)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;remove_hooks&lt;/span&gt;():
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        remove_upstr_hook&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;remove()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        remove_downstr_hook&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;remove()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;get_jacobian&lt;/span&gt;():
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; capture&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;get(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upstream_grad&amp;#34;&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;is&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#66d9ef&#34;&gt;raise&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;RuntimeError&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Gradients must be initialized by &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;running a forward pass through &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;the model before they can be  &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;accessed.&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        rearranged &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;rearrange(capture[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;upstream_grad&amp;#39;&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;grad,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(batch d_out) ... d_in -&amp;gt; batch ... d_out d_in&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                d_out&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;n_outputs)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; rearranged
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;get_upstream_vec&lt;/span&gt;():
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; capture&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;get(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upstream_vec&amp;#34;&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;is&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#66d9ef&#34;&gt;raise&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;RuntimeError&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Vectors must be initialized by &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;running a forward pass through &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;the model before they can be  &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;accessed.&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; capture[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;upstream_vec&amp;#39;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; get_jacobian, get_upstream_vec, remove_hooks
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;calc_jacobian&lt;/span&gt;(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    upstream_vec: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_up&amp;#34;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    downstream_vec: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_down&amp;#34;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    model: t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;nn&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Module,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    tokens: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;batch seq 1&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ) &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;batch seq d_down d_up&amp;#34;&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      Return the jacobian,
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;        J = d(downstream_vec)/d(upstream_vec)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      The jacobian will be calculated across the batches and sequences
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      in `tokens`.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      upstream_vec: Vector in `model` upstream (i.e. before) `downstream_vec` in
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;                    `model`&amp;#39;s forward pass.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      downstream_vec: Vector in `model`
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      model: The torch neural net containing `upstream_vec` and `downstream_vec`,
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;             and accepting `tokens` for its forward pass.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;  &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  jacs &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; []
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;requires_grad_(&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; range(tokens&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      get_jacobian, get_upstream_vec, remove_hooks &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attach_jacobian_hooks(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          upstream_vec, downstream_vec, model, model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cfg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;d_model
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          )
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#75715e&#34;&gt;# Run a forward pass through the model&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      model(tokens[i: i &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      jacs &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [get_jacobian()]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      remove_hooks()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;requires_grad_(&lt;span style=&#34;color:#66d9ef&#34;&gt;False&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cat(jacs)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Here, we&amp;rsquo;ll run the full set of tokens through the model, and generate a jacobian between \(x_\text{mid}\) and \(x_\text{post}\) for each (batch, seq) combination.&lt;/p&gt;
+&lt;p&gt;Because we&amp;rsquo;re interested in the default behaviour of the MLP, we need to subtract off the identity from any jacobians we get, because of the residual connection, i.e.&lt;/p&gt;
+&lt;p&gt;\[ x_\text{post} = \text{MLP}(x_\text{mid}) + x_\text{mid} \]&lt;/p&gt;
+&lt;p&gt;So, we define our jacobians as&lt;/p&gt;
+&lt;p&gt;\[ J_\text{MLP} = J_\text{mid -&amp;gt; post} - \mathbb{I}\]&lt;/p&gt;
+&lt;p&gt;We&amp;rsquo;ll then plot these jacobians to observe how the MLP modifies its input. The following plot is a series of squares, of shape (d_model, d_model). These are tiled in the x-direction by batch, and in the y-direction by sequence position.&lt;/p&gt;
+&lt;p&gt;We&amp;rsquo;ve also clipped the range displayed to lie between -1 and 1, because some jacobians are extremely out-of-family.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;jacobian &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; calc_jacobian(model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;blocks[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;hook_resid_mid, model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;blocks[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;hook_resid_post, model, dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;toks) &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;eye(model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cfg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;d_model, device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;fig, ax &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subplots(figsize&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;20&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;num_seq &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;25&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;num_batch &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ax&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;rearrange(jacobian[:num_batch, :num_seq], &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;batch seq d_res1 d_res2 -&amp;gt; (seq d_res1) (batch d_res2)&amp;#34;&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu(), vmin&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, vmax&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Jacobian vs (batch, sequence)&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Batch&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Seq&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;xticks(ticks&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(num_batch)&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;jacobian&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;], labels&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(num_batch))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;yticks(ticks&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(num_seq)&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;jacobian&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;shape[&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;], labels&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;np&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arange(num_seq))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_31_0.png&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;observations-about-the-jacobian&#34;&gt;Observations about the Jacobian&lt;/h2&gt;
+&lt;p&gt;Looking at the plot, there are some interesting observations:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The MLP definitely appears to have a default behavior. Different tiles (with a few clear exceptions) look remarkably similar to one another&lt;/li&gt;
+&lt;li&gt;There are a few cases where the MLP behaves extremely differently. This turns out to be (generally) in cases where a trigram is present. These jacobians are orders of magnitude larger than the typical jacobians.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Looking more closely at a single &amp;ldquo;default&amp;rdquo; jacobian (in this case, batch=0, seq=0), we can actually make out some features:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;figure()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(jacobian[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Jacobian (batch=0, seq=0)&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_33_0.png&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The MLP slightly erases a number of leading-diagonal terms. Given this, we should probably expect direct logit attribution of upstream vectors to perform worse than on a model trained without this MLP.&lt;/li&gt;
+&lt;li&gt;The MLP isn&amp;rsquo;t just erasing data, it&amp;rsquo;s &lt;em&gt;moving&lt;/em&gt; data. There are some clear hotspots ((12, 2) in the jacobian, for example) that repeat amongst different sequence positions.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;It&amp;rsquo;s also important to remember that once we fix a jacobian (i.e. we &lt;em&gt;linearize the MLP&lt;/em&gt;), the jacobian can no longer add extra information to the residual stream, and instead only moves it around.&lt;/p&gt;
+&lt;p&gt;What&amp;rsquo;s an appropriate jacobian to fix? We could try the mean:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;jac_mean &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; jacobian&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;mean(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;figure()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Mean Jacobian&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(jac_mean&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;&amp;lt;matplotlib.colorbar.Colorbar at 0x7f4e57dac3d0&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_35_1.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;However, this is not an especially principled choice - when the MLP does activate, the jacobian is changed dramatically. Taking the mean includes the influence of these very large activations, even if we don&amp;rsquo;t really want to.&lt;/p&gt;
+&lt;p&gt;Instead, we can try the median:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;jac_median &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; jacobian&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;median(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;values&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;median(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;values
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;figure()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Median Jacobian&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;imshow(jac_median&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;colorbar(f)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;&amp;lt;matplotlib.colorbar.Colorbar at 0x7f4e4a0054b0&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_37_1.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;This looks a lot more like our &lt;code&gt;jacobian[0, 0]&lt;/code&gt; (and other unactivated MLP jacobians)!&lt;/p&gt;
+&lt;p&gt;So, now that we have \(J\), we just need to calculate our bias, \(b\), since the MLP ignores constants. To do so, we rearrange the definition of the jacobian:&lt;/p&gt;
+&lt;p&gt;\[
+\begin{align}
+y &amp;amp;= J x + b \\
+b &amp;amp;= y - J x \\
+&amp;amp; = x_\text{post} - J x_\text{mid} \\
+\end{align}
+\]&lt;/p&gt;
+&lt;p&gt;Using similar justification to before, we pick the median bias:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;projected &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;einsum(jacobian, cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_resid_mid&amp;#39;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;... seq d_model_out d_model_in, ... seq d_model_in -&amp;gt; ... seq d_model_out&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;bias &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_mlp_out&amp;#39;&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; projected)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;median(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;values&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;median(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;values
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;testing-the-linearization&#34;&gt;Testing the Linearization&lt;/h1&gt;
+&lt;p&gt;So, now that we&amp;rsquo;ve frozen the MLP in linearized form, do we get better predictions from the attention mechanism?&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;attention_predict&lt;/span&gt;(trigram):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    _, c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_with_cache(t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tensor([[trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]]], device&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;device),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                names_filter&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;blocks.0.hook_resid_mid&amp;#34;&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    resid_after_attn &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; c[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_resid_mid&amp;#39;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    resid_post_approx &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; bias &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; resid_after_attn &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; einops&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;einsum(jac_median, resid_after_attn,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_model_out d_model_in, ... seq d_model_in -&amp;gt; ... seq d_model_out&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unembed(resid_post_approx)[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argmax(dim&lt;span style=&#34;color:#f92672&#34;&gt;=-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;item()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;correct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; trigram &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    prediction &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attention_predict(trigram)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; prediction &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; trigram[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        correct &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Accuracy = &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;correct &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; len(dataset&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;trigrams)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;Accuracy = 0.3104693140794224
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Yes!!&lt;/p&gt;
+&lt;p&gt;By better accounting for the passive behaviour of the MLP, we go from ~25% accuracy to ~31% accuracy using only the attention mechanism&amp;rsquo;s logic (since jac_median and bias are just frozen, linear transformations.)&lt;/p&gt;
+&lt;p&gt;In relative terms, we discovered ~25% more performance from the attention mechanism. It&amp;rsquo;s still a long way from explaining the entirety of the model&amp;rsquo;s performance, but it&amp;rsquo;s a step.&lt;/p&gt;
+&lt;h1 id=&#34;how-the-model-predicts-the-rest-of-the-tokens&#34;&gt;How the model predicts the rest of the tokens&lt;/h1&gt;
+&lt;p&gt;Given what we know about the rest of the model, we can hypothesize the following about the MLP:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;It reads from the stream written to by the OV circuit, as well as the current token stream.&lt;/li&gt;
+&lt;li&gt;It uses the results from these two streams to retrieve the correct completion. From this, it writes into the unembedding direction corresponding to this conclusion to boost the logits, and potentially even supresses other likely completions.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;An attempt to analyse the MLP using a sparse transcoder was used. In this case, a transcoder seemed like it could work well because we have clearly defined inputs (e.g. 16 in position 0, 43 in position 1 -&amp;gt; predicts 68).&lt;/p&gt;
+&lt;p&gt;However, although a number of different attempts were made (varying transcoder widths, warm-up vs cold-start for learning rate and l1 penalty, varieties of learning rates, batch sizes, resampling frequencies etc.), no transcoders emerged that provided cleanly interpretable features.&lt;/p&gt;
+&lt;p&gt;It seems likely that good results could come from pursuing this further, but the results obtained in attempts thus far are uninteresting.&lt;/p&gt;
+&lt;h2 id=&#34;one-last-trick&#34;&gt;One last trick&lt;/h2&gt;
+&lt;p&gt;One trick we have left is to look at what subspaces the MLP reads in. The MLP has dimension 20, the model (residual stream) has dimension 32, and the attention head has dimension 16. This means that the MLP could fully read from the output space of the attention head, but cannot read the full token stream.&lt;/p&gt;
+&lt;p&gt;We can observe how it weights these two competing priorities based on the distance between subspaces. This isn&amp;rsquo;t guaranteed to be meaningful for reasons I &lt;a href=&#34;https://www.willsnell.com/posts/math_composition/&#34;&gt;wrote about here&lt;/a&gt;, but might still give us some idea.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; dataclasses &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; dataclass
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;@dataclass&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;SubspaceMetrics&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  theta: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_hidden&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  cos_theta: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_hidden&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  principal_vecs_out: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_model d_hidden&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  principal_vecs_in: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_model d_hidden&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  U: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_head d_head&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Vh: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_head d_head&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;qr_svd&lt;/span&gt;(out_mat: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_hidden d_model&amp;#34;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;           in_mat: Float[Tensor, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;d_model d_hidden&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;           ) &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; SubspaceMetrics:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Purpose:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           Calculate statistics between the two subspaces
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           spanned by the matrices `out_mat` and `in_mat`,
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           These matrices should write to/read from a
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           common space of dimension `d_model`.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           Calculate the principal vectors of the subspaces
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           spanned by out_mat and in_mat.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           Also return the angle between each set of principal
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           vectors (aka the principal angles, theta).
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           theta[0] &amp;lt;= ... &amp;lt;= theta[-1]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       Returns:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           (theta, cos(theta), principal_vectors_out_mat,
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;            principal_vectors_in_mat, U, Vh)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       Follows the procedure in
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       https://helper.ipam.ucla.edu/publications/glws1/glws1_15465.pdf
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;       Assumptions:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           Assumes the first n columns in a
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           m x n (m &amp;gt;= n) matrix are linearly
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           independent.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           E.g. in W_O.T, shape [768, 64],
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           the first 64 columns should be
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;           linearly independent.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Q is the set of orthonormal basis vectors&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# for the subspace spanned by each matrix.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    q_out, r_out &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;linalg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;qr(out_mat&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;transpose(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    q_in, r_in &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;linalg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;qr(in_mat)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Compute the deviation between the&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# two subspaces using SVD.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    U, S, Vh &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;linalg&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;svd(q_out&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;transpose(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; q_in)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Principal vectors let us know what directions were&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# chosen to calculate theta. That is, each are a set&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# of basis vectors that span the spaces of the&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# respective matrices (in or out) and are most closely&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# aligned to each other.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    principal_vectors_out_mat &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; q_out &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; U
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    principal_vectors_in_mat &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; q_in &lt;span style=&#34;color:#f92672&#34;&gt;@&lt;/span&gt; Vh&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;transpose(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    theta &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arccos(S)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; SubspaceMetrics(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        t&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;arccos(S),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          S,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          principal_vectors_out_mat,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          principal_vectors_in_mat,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          U,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;          Vh
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    )
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;res &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; qr_svd(model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_O[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;], model&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;blocks[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;mlp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;W_in)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(res&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cos_theta&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;detach()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cpu())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Angle Between Attention Head (writing) and MLP (reading)&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;OV Dimension&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Cos(theta) between subspaces&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;cos(theta) = &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;res&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;cos_theta&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tolist()&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_45_0.png&#34;&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cos(theta) = [1.0000001192092896, 1.0, 0.9999998807907104, 0.9999998807907104, 0.9893388152122498, 0.9778618216514587, 0.9700286984443665, 0.9570831656455994, 0.8961935639381409, 0.8844886422157288, 0.7993403673171997, 0.745817244052887, 0.7342832088470459, 0.5622190237045288, 0.35370132327079773, 0.18341064453125]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So, the MLP pays very close attention to the first 4 dimensions output by the OV circuit, and then pays increasingly less attention. There&amp;rsquo;s a sharp dropoff around the 9th dimension, which implies the MLP&amp;rsquo;s focus is (very crudely) around 50% on the OV circuit and 50% on the current stream, assuming the residual stream has similar variance in all directions.&lt;/p&gt;
+&lt;p&gt;To verify this assumption, we can look at the residual stream directly:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;var_resid_mid &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; cache[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;blocks.0.hook_resid_mid&amp;#39;&lt;/span&gt;]&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;var(dim&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;plot(var_resid_mid)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Residual Stream Variance&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;xlabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Residual Stream Dimension&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;ylabel(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Variance&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;plt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;show()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img alt=&#34;png&#34; src=&#34;https://willsnell.com/posts/trigrams/output_47_0.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;So, while the residual stream is not equal in magnitude for all directions, everything is within an order of magnitude. For this very crude subspace measurement, it&amp;rsquo;s probably close enough to uniform that we can use subspace angles to quantify how much focus the MLP is placing in different subspaces.&lt;/p&gt;
+</content>
+    </item>
+    
     <item>
       <title>Entropy and Information Theory</title>
       <link>https://willsnell.com/posts/entropy/</link>
@@ -121,13 +1277,9 @@ We just multiply the &lt;em&gt;information&lt;/em&gt; of each message by the &lt
 the results of the lottery:&lt;/p&gt;
 \[
         H(\text{Lottery}) = P(\text{win}) I(\text{win}) + P(\text{lose}) I(\text{lose}) \\
-\]&lt;p&gt;Remember from before, that:
-&lt;/p&gt;
-\[
+\]\[
                     I(x)  = \log_2{\frac{1}{P(x)}} = -\log_2{P(x)} \\
-\]&lt;p&gt;Therefore,
-&lt;/p&gt;
-\[
+\]\[
 H(\text{Lottery}) = -P(\text{win}) \log_2{P(\text{win})} \\
                     - P(\text{lose}) \log_2{P(\text{lose})}
 \]&lt;p&gt;We know that \(P(\text{win}) = \frac{1}{20}\) and \(P(\text{lose}) = \frac{19}{20}\), so
@@ -404,11 +1556,7 @@ Because \(\log_2 \Delta x\) is a constant, we can bring it out to the front of t
     H(X) &amp;= -\lim_{\Delta x \rightarrow 0} \left(\
             \sum_{i=0}^N p(x_i) \Delta x \log_2 p(x_i) + \log_2 \Delta x \sum_{i=0}^N p(x_i) \Delta x \right) 
 \end{align}
-\]&lt;p&gt;But wait! Remembering our Riemann sum approximation, and remembering that the integral of the probability
-density function from \((-\infty, \infty)\) must equal 1,
-we have:
-&lt;/p&gt;
-\[
+\]\[
 \begin{align}
         p(x) \Delta x &amp;\approx \int_x^{x + \Delta x} p(x) dx \\
     \lim_{\Delta x \rightarrow 0} \sum_{i=0}^N  p(x_i) \Delta x &amp;= 1 \\
@@ -453,8 +1601,6 @@ and love:&lt;/p&gt;
 \[\text{height}_\text{m} = [1.67\text{m}, 1.85\text{m}, ...]\]
 The differential entropy of \(\text{height}_\text{cm}\) would be &lt;em&gt;larger&lt;/em&gt; than the differential entropy of \(\text{height}_\text{m}\).&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;One useful property differential entropy does have is &lt;em&gt;translational invariance&lt;/em&gt;:
-&lt;/p&gt;
 \[
         h(X + c) = h(X)
 \]&lt;p&gt;So, with our normal distribution, we can shift the mean wherever we like and keep the same differential
@@ -571,11 +1717,6 @@ and we blow up the KL-divergence to infinity (recall, mutual information is a sp
 &lt;h1 id=&#34;k-nearest-neighbors&#34;&gt;K-Nearest Neighbors&lt;/h1&gt;
 &lt;p&gt;Instead, we&amp;rsquo;ll use K-Nearest-Neighbors (KNN). This technique can be used for a number of problems, although we&amp;rsquo;ll
 use it to estimate the mutual information directly (as per &lt;a href=&#34;https://arxiv.org/pdf/cond-mat/0305641&#34;&gt;Kraskov, Stögbauer, and Grassberger&lt;/a&gt;).&lt;/p&gt;
-&lt;p&gt;K-nearest-neighbors can be thought of as a &amp;ldquo;dynamic binning&amp;rdquo; method - it only runs calculations in areas
-where samples have actually fallen. Before we dive into the maths, lets have a play around with it. In this plot,
-we sample from a uniform distribution on the x axis, and feed samples of x through the sine function - before
-adding some noise - to get y.
-&lt;/p&gt;
 \[
 \begin{align}
 X = \mathcal{U}(0, 5) \\
@@ -748,8 +1889,6 @@ the number of points captured in a wide strip of height 1 (or a tall
 strip of width 1) should be \(\sqrt{N}\). In other words, if the orange square
 that holds our K nearest neighbors held 1 point, we should expect \(n_x\) and \(n_y\)
 to both hold \(\sqrt{N}\) points in this uncorrelated case.&lt;/p&gt;
-&lt;p&gt;Earlier, we established that:
-&lt;/p&gt;
 \[
     \psi(n) \approx 2 \cdot \psi(\sqrt{n})
 \]&lt;p&gt;Also, we know our equation for mutual information is:&lt;/p&gt;
@@ -1006,10 +2145,8 @@ the authors use the Frobenius norm to measure how much two heads compose with on
 Lieberum takes this further, axiomatizing what it means to measure composition. These axioms can
 be summarized (imprecisely) as follows:&lt;/p&gt;
 &lt;h3 id=&#34;lieberums-axioms&#34;&gt;Lieberum&amp;rsquo;s Axioms&lt;/h3&gt;
-&lt;p&gt;Let&amp;rsquo;s imagine two matrices \(A\) and \(B\), defined as &lt;/p&gt;
 \[B \in \mathbb{R}^{m \times n}, \;A \in \mathbb{R}^{n \times m}\]&lt;p&gt;\(A\) is the matrix in an early head that &lt;strong&gt;writes to&lt;/strong&gt; the residual stream.&lt;/p&gt;
 &lt;p&gt;\(B\) is the matrix in a later head that &lt;strong&gt;reads from&lt;/strong&gt; the residual stream.&lt;/p&gt;
-&lt;p&gt;Let&amp;rsquo;s define a score as &lt;/p&gt;
 \[C(A,B)\]&lt;p&gt;\(C \) takes the two matrices and outputs some kind of a score.&lt;/p&gt;
 &lt;h4 id=&#34;axiom-1&#34;&gt;Axiom 1:&lt;/h4&gt;
 &lt;p&gt;If \(C(A,B) = 1\) - that is, two heads are composing as much as possible - \(A\) should only
@@ -1035,9 +2172,6 @@ none of the current methods for analysing composition meet axioms 3 and 4.&lt;/p
 &lt;h4 id=&#34;proposed-axiom-4&#34;&gt;(Proposed) Axiom 4:&lt;/h4&gt;
 &lt;p&gt;\(C\) should measure the underlying information flow, and thus the relative ordering of composition scores between
 pairs of heads should be preserved when the model is changed in a way that does not affect information flow.&lt;/p&gt;
-&lt;p&gt;If \(C(A, B) &gt; C(A, D)\), then this ordering should be preserved for an equivalent transformer separated only by a basis
-transformation which leaves the information flow through the model unchanged. That is,
-&lt;/p&gt;
 \[
 \begin{align}
 C(A^*, B^*) &gt; C(A^*, D^*) &amp;\iff C(A, B) &gt; C(A, D) \\
@@ -1348,8 +2482,6 @@ globally.&lt;/p&gt;
 &lt;p&gt;Because \(\mathcal{O}(n)\) comprises all the reflections and rotations about the origin, it preserves not only
 angles between vectors, but also the magnitude of singular values. In some sense, RMS norm leaves us only with
 the most boring symmetries, implying &lt;strong&gt;all&lt;/strong&gt; of our typical tools for measuring composition should be valid.&lt;/p&gt;
-&lt;p&gt;Also of note, our symmetry-breaking trick shouldn&amp;rsquo;t be expected to work once we include normalization, because:
-&lt;/p&gt;
 \[
             W_U\:W_{OV}\:W_E \neq W_U\:W_{OV}\:\mathcal{G}(W_E)\\
 \]&lt;h2 id=&#34;things-get-murkier&#34;&gt;Things Get Murkier&lt;/h2&gt;
