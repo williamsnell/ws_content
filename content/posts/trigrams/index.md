@@ -1273,7 +1273,8 @@ Given what we know about the rest of the model, we can hypothesize the following
 1. It reads from the stream written to by the OV circuit, as well as the current token stream.
 2. It uses the results from these two streams to retrieve the correct completion. From this, it writes into the unembedding direction corresponding to this conclusion to boost the logits, and potentially even supresses other likely completions.
 
-An attempt to analyse the MLP using a sparse transcoder was made. In this case, a transcoder seemed like it could work well because we have clearly defined inputs (e.g. 16 in position 0, 43 in position 1 -> predicts 68).
+An attempt to analyse the MLP using a sparse transcoder was made. In this case, a transcoder seemed like it could work well because we have clearly defined, discrete inputs (e.g. 16 in position 0, 43 in position 1) which lead to discrete outputs 
+(e.g. predict 68).
 
 However, although a number of different attempts were made (varying transcoder widths, warm-up vs cold-start for learning rate and l1 penalty, varieties of learning rates, batch sizes, resampling frequencies etc.), no transcoders emerged that provided cleanly interpretable features.
 
