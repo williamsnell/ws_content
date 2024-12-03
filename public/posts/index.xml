@@ -1060,7 +1060,7 @@ b &amp;amp;= y - J x \\
 &lt;li&gt;It reads from the stream written to by the OV circuit, as well as the current token stream.&lt;/li&gt;
 &lt;li&gt;It uses the results from these two streams to retrieve the correct completion. From this, it writes into the unembedding direction corresponding to this conclusion to boost the logits, and potentially even supresses other likely completions.&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;An attempt to analyse the MLP using a sparse transcoder was used. In this case, a transcoder seemed like it could work well because we have clearly defined inputs (e.g. 16 in position 0, 43 in position 1 -&amp;gt; predicts 68).&lt;/p&gt;
+&lt;p&gt;An attempt to analyse the MLP using a sparse transcoder was made. In this case, a transcoder seemed like it could work well because we have clearly defined inputs (e.g. 16 in position 0, 43 in position 1 -&amp;gt; predicts 68).&lt;/p&gt;
 &lt;p&gt;However, although a number of different attempts were made (varying transcoder widths, warm-up vs cold-start for learning rate and l1 penalty, varieties of learning rates, batch sizes, resampling frequencies etc.), no transcoders emerged that provided cleanly interpretable features.&lt;/p&gt;
 &lt;p&gt;It seems likely that good results could come from pursuing this further, but the results obtained in attempts thus far are uninteresting.&lt;/p&gt;
 &lt;h2 id=&#34;one-last-trick&#34;&gt;One last trick&lt;/h2&gt;
