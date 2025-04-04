@@ -1,3 +1,4 @@
+const colors = ["#23B0FF", "#FF6266", "#FFA86A", "#EE72F1", "#23B0FF"];
 /**
  * Token Probability Visualization
  * Self-contained function to create a visualization from JSON data.
@@ -23,27 +24,7 @@ function create_visualizer(json_path, elem_id) {
     function initializeVisualizer() {
         // Create container structure
         targetElement.innerHTML = `
-            <div class="container">
-                <div class="controls">
-                    <div>
-                        <label for="sequenceSelect_${elem_id}">Sequence: </label>
-                        <select id="sequenceSelect_${elem_id}" disabled>
-                            <option value="">Select a sequence</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <button id="prevBtn_${elem_id}" disabled>Previous</button>
-                        <button id="nextBtn_${elem_id}" disabled>Next</button>
-                    </div>
-                </div>
-                
-                <div class="loading_${elem_id}" style="display: flex; justify-content: center; margin: 20px 0;">
-                    <div class="loading-spinner" style="border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #4a6fa5; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
-                </div>
-            </div>
-            
-            <div id="sequenceVisualization_${elem_id}" class="container" style="display: none; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); padding: 20px; margin-bottom: 20px;">
+            <div id="sequenceVisualization_${elem_id}" class="container" style="display: none; background-color: rgb(255, 255, 255, 0.05); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <div class="sequence-content">
                     <div id="tokenContainer_${elem_id}" class="token-container"></div>
                     <div id="answerIndicator_${elem_id}" class="answer-indicator"></div>
@@ -63,16 +44,6 @@ function create_visualizer(json_path, elem_id) {
             document.head.appendChild(styleElement);
         }
         
-        // Get DOM elements
-        const sequenceSelect = document.getElementById(`sequenceSelect_${elem_id}`);
-        const prevBtn = document.getElementById(`prevBtn_${elem_id}`);
-        const nextBtn = document.getElementById(`nextBtn_${elem_id}`);
-        
-        // Add event listeners
-        sequenceSelect.addEventListener('change', handleSequenceChange);
-        prevBtn.addEventListener('click', showPreviousSequence);
-        nextBtn.addEventListener('click', showNextSequence);
-        
         // Load data
         loadData(json_path);
     }
@@ -81,11 +52,6 @@ function create_visualizer(json_path, elem_id) {
      * Load JSON data from specified path
      */
     function loadData(dataUrl) {
-        const loadingElement = document.querySelector(`.loading_${elem_id}`);
-        
-        // Show loading spinner
-        loadingElement.style.display = 'flex';
-        
         // Fetch the JSON data
         fetch(dataUrl)
             .then(response => {
@@ -97,101 +63,26 @@ function create_visualizer(json_path, elem_id) {
             .then(jsonData => {
                 data = jsonData;
                 
-                // Populate sequence dropdown
-                populateSequenceDropdown();
-                
                 // Show the first sequence
                 currentSequenceIndex = 0;
                 showSequence(currentSequenceIndex);
                 
-                // Enable controls
-                const sequenceSelect = document.getElementById(`sequenceSelect_${elem_id}`);
-                sequenceSelect.disabled = false;
-                updateNavigationButtons();
-                
-                // Hide loading spinner
-                loadingElement.style.display = 'none';
             })
             .catch(error => {
                 console.error('Error loading data:', error);
                 // Create error info box if not exists
                 const infoBox = document.createElement('div');
                 infoBox.className = 'info-box';
-                infoBox.style.cssText = 'background-color: #cfe2ff; border: 1px solid #b6d4fe; border-radius: 4px; padding: 10px 15px; margin-bottom: 20px;';
+                infoBox.style.cssText = 'background-color: rgb(255, 255, 255, 0.2); border: 1px solid #b6d4fe; border-radius: 4px; padding: 10px 15px; margin-bottom: 20px;';
                 infoBox.innerHTML = `
-                    <p style="color: #dc3545;">Error loading data: ${error.message}</p>
+                    <p style="color: rgb(255, 255, 255, 0.2);">Error loading data: ${error.message}</p>
                     <p>Make sure the file "${dataUrl}" exists and is valid JSON.</p>
                 `;
                 targetElement.appendChild(infoBox);
-                loadingElement.style.display = 'none';
             });
     }
     
-    /**
-     * Populate sequence dropdown with options from data
-     */
-    function populateSequenceDropdown() {
-        const sequenceSelect = document.getElementById(`sequenceSelect_${elem_id}`);
-        sequenceSelect.innerHTML = '';
-        
-        Object.keys(data).forEach(key => {
-            const option = document.createElement('option');
-            option.value = key;
-            option.textContent = `Sequence #${key}`;
-            sequenceSelect.appendChild(option);
-        });
-    }
-    
-    /**
-     * Handle sequence selection change
-     */
-    function handleSequenceChange() {
-        const sequenceSelect = document.getElementById(`sequenceSelect_${elem_id}`);
-        const selectedIndex = parseInt(sequenceSelect.value);
-        if (!isNaN(selectedIndex)) {
-            currentSequenceIndex = selectedIndex;
-            showSequence(currentSequenceIndex);
-            updateNavigationButtons();
-        }
-    }
-    
-    /**
-     * Show previous sequence
-     */
-    function showPreviousSequence() {
-        if (currentSequenceIndex > 0) {
-            currentSequenceIndex--;
-            const sequenceSelect = document.getElementById(`sequenceSelect_${elem_id}`);
-            sequenceSelect.value = currentSequenceIndex;
-            showSequence(currentSequenceIndex);
-            updateNavigationButtons();
-        }
-    }
-    
-    /**
-     * Show next sequence
-     */
-    function showNextSequence() {
-        if (currentSequenceIndex < Object.keys(data).length - 1) {
-            currentSequenceIndex++;
-            const sequenceSelect = document.getElementById(`sequenceSelect_${elem_id}`);
-            sequenceSelect.value = currentSequenceIndex;
-            showSequence(currentSequenceIndex);
-            updateNavigationButtons();
-        }
-    }
-    
-    /**
-     * Update navigation button states
-     */
-    function updateNavigationButtons() {
-        const prevBtn = document.getElementById(`prevBtn_${elem_id}`);
-        const nextBtn = document.getElementById(`nextBtn_${elem_id}`);
-        
-        prevBtn.disabled = currentSequenceIndex === 0;
-        nextBtn.disabled = currentSequenceIndex === Object.keys(data).length - 1;
-    }
-    
+   
     /**
      * Helper function to get lighter color for token backgrounds
      */
@@ -208,25 +99,6 @@ function create_visualizer(json_path, elem_id) {
         
         // Convert back to hex
         return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    }
-    
-    /**
-     * Helper function to create the colorbar segments
-     */
-    function createColorbarSegments(probsData, parentElement, colors) {
-        // Clear any existing segments
-        parentElement.innerHTML = '';
-        
-        // Add segments to the colorbar
-        probsData.forEach((prob, j) => {
-            if (prob > 0) {
-                const segment = document.createElement('div');
-                segment.className = 'class-segment';
-                segment.style.width = `${prob * 100}%`;
-                segment.style.backgroundColor = colors[j % colors.length];
-                parentElement.appendChild(segment);
-            }
-        });
     }
     
     /**
@@ -248,13 +120,6 @@ function create_visualizer(json_path, elem_id) {
         
         // Display tokens
         tokenContainer.innerHTML = '';
-        
-        // Define color array
-        const colors = [
-            '#4285f4', '#ea4335', '#fbbc05', '#34a853', 
-            '#8e44ad', '#3498db', '#e74c3c', '#2ecc71',
-            '#f39c12', '#1abc9c', '#d35400', '#2c3e50'
-        ];
         
         // Create a line wrapper to organize tokens in rows
         let currentLine = document.createElement('div');
@@ -302,8 +167,7 @@ function create_visualizer(json_path, elem_id) {
             // Determine if prediction is correct
             const isCorrect = maxProbIndex === correctClass;
             
-            // Set base color (green for correct, red for incorrect)
-            const baseColor = isCorrect ? '#28a745' : '#dc3545'; // green : red
+            const baseColor = isCorrect ? '#73f271' : '#ee62f1'; // green : red
             
             // Adjust opacity based on confidence level with minimum confidence of 0.1 (10%)
             // Normalize the confidence to a 0.1-1.0 range for opacity
@@ -333,7 +197,8 @@ function create_visualizer(json_path, elem_id) {
             tokenDetails.style.top = '100%';
             tokenDetails.style.left = '0';
             tokenDetails.style.width = '280px';
-            tokenDetails.style.backgroundColor = 'white';
+            //tokenDetails.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            tokenDetails.style.backdropFilter = "blur(50px)";
             tokenDetails.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
             tokenDetails.style.borderRadius = '4px';
             tokenDetails.style.padding = '10px';
@@ -377,14 +242,14 @@ function create_visualizer(json_path, elem_id) {
                 
                 // Add correct-class style if this is the correct answer
                 if (index === correctClass) {
-                    bar.style.outline = '2px solid #000';
+                    bar.style.outline = '2px solid #73f271';
                     bar.style.outlineOffset = '1px';
                     bar.style.position = 'relative';
                     bar.style.zIndex = '10';
                 }
                 
                 bar.style.height = `${Math.max(prob * 100, 1)}%`; // Min height of 1%
-                bar.style.backgroundColor = colors[index % colors.length];
+                bar.style.backgroundColor = "var(--accent)";//colors[0]; //[index % colors.length];
                 probGraph.appendChild(bar);
                 
                 // Create label for this class
@@ -394,8 +259,6 @@ function create_visualizer(json_path, elem_id) {
                 // Add correct-class style if this is the correct answer
                 if (index === correctClass) {
                     label.style.fontWeight = 'bold';
-                    label.style.textDecoration = 'underline';
-                    label.style.color = '#000';
                 }
                 
                 probLabels.appendChild(label);
