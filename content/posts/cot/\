@@ -1,0 +1,26 @@
++++
+draft = false
+title = "Investigating Chain-of-thought Faithfulness"
+date = "2025-04-04T11:35:00+12:00"
+author = ""
+authorTwitter = "" #do not include @
+cover = ""
+tags = ["", ""]
+keywords = ["", ""]
+description = ""
+showFullContent = false
+readingTime = false
+hideComments = false
+color = "" #color from the theme settings
++++
+
+
+<div id="visualizer1"></div>
+
+<script src="script.js"></script>
+<script>
+    // Initialize visualizer with MLP data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        create_visualizer('tf.json', 'visualizer1');
+    });
+</script>

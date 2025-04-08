@@ -1,4 +1,6 @@
 const colors = ["#23B0FF", "#FF6266", "#FFA86A", "#EE72F1", "#23B0FF"];
+
+const textBackground = "#36383c";
 /**
  * Token Probability Visualization
  * Self-contained function to create a visualization from JSON data.
@@ -24,10 +26,14 @@ function create_visualizer(json_path, elem_id) {
     function initializeVisualizer() {
         // Create container structure
         targetElement.innerHTML = `
-            <div id="sequenceVisualization_${elem_id}" class="container" style="display: none; background-color: rgb(255, 255, 255, 0.05); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <div id="sequenceVisualization_${elem_id}" class="container" style="display: none; border: 0; background-color: ${textBackground}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <div class="sequence-content">
                     <div id="tokenContainer_${elem_id}" class="token-container"></div>
                     <div id="answerIndicator_${elem_id}" class="answer-indicator"></div>
+                </div>
+                <div class="sequence-navigation" style="display: flex; justify-content: space-between; margin-top: 10px;">
+                    <button id="prevButton_${elem_id}">Previous</button>
+                    <button id="nextButton_${elem_id}">Next</button>
                 </div>
             </div>
         `;
@@ -43,6 +49,23 @@ function create_visualizer(json_path, elem_id) {
             `;
             document.head.appendChild(styleElement);
         }
+        
+        // Add event listeners for navigation buttons
+        document.getElementById(`prevButton_${elem_id}`).addEventListener('click', () => {
+            if (data && currentSequenceIndex > 0) {
+                currentSequenceIndex--;
+                showSequence(currentSequenceIndex);
+                updateNavigationButtons();
+            }
+        });
+        
+        document.getElementById(`nextButton_${elem_id}`).addEventListener('click', () => {
+            if (data && currentSequenceIndex < Object.keys(data).length - 1) {
+                currentSequenceIndex++;
+                showSequence(currentSequenceIndex);
+                updateNavigationButtons();
+            }
+        });
         
         // Load data
         loadData(json_path);
@@ -67,6 +90,8 @@ function create_visualizer(json_path, elem_id) {
                 currentSequenceIndex = 0;
                 showSequence(currentSequenceIndex);
                 
+                // Update button states
+                updateNavigationButtons();
             })
             .catch(error => {
                 console.error('Error loading data:', error);
@@ -81,8 +106,49 @@ function create_visualizer(json_path, elem_id) {
                 targetElement.appendChild(infoBox);
             });
     }
-    
-   
+
+/**
+    * Linearly blends between two hex colors
+    * @param {string} color1 - Starting hex color (format: "#RRGGBB" or "#RGB")
+    * @param {string} color2 - Ending hex color (format: "#RRGGBB" or "#RGB")
+    * @param {number} ratio - Blend ratio between 0 and 1 (0 = color1, 1 = color2)
+    * @returns {string} Resulting hex color
+    */
+    function blendColors(color1, color2, ratio) {
+        // Ensure ratio is between 0 and 1
+        ratio = Math.max(0, Math.min(1, ratio));
+
+        // Expand shorthand hex format (e.g., "#03F" to "#0033FF")
+        function expandHex(hex) {
+            hex = hex.replace(/^#/, '');
+            if (hex.length === 3) {
+                hex = hex.split('').map(char => char + char).join('');
+            }
+            return hex;
+        }
+
+        // Convert hex to RGB components
+        const hex1 = expandHex(color1);
+        const hex2 = expandHex(color2);
+
+        // Parse each hex color into RGB components
+        const r1 = parseInt(hex1.substring(0, 2), 16);
+        const g1 = parseInt(hex1.substring(2, 4), 16);
+        const b1 = parseInt(hex1.substring(4, 6), 16);
+
+        const r2 = parseInt(hex2.substring(0, 2), 16);
+        const g2 = parseInt(hex2.substring(2, 4), 16);
+        const b2 = parseInt(hex2.substring(4, 6), 16);
+
+        // Linear interpolation formula: a + (b - a) * ratio
+        const r = Math.round(r1 + (r2 - r1) * ratio);
+        const g = Math.round(g1 + (g2 - g1) * ratio);
+        const b = Math.round(b1 + (b2 - b1) * ratio);
+
+        // Convert back to hex format
+        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    } 
+
     /**
      * Helper function to get lighter color for token backgrounds
      */
@@ -105,7 +171,14 @@ function create_visualizer(json_path, elem_id) {
      * Show a specific sequence by index
      */
     function showSequence(index) {
-        if (!data || !data[index]) return;
+        if (!data) return;
+        
+        // Ensure index is within valid range
+        if (index < 0) index = 0;
+        if (index >= data.length) index = data.length - 1;
+        
+        // Update current index
+        currentSequenceIndex = index;
         
         const sequence = data[index];
         const sequenceVisualization = document.getElementById(`sequenceVisualization_${elem_id}`);
@@ -126,6 +199,7 @@ function create_visualizer(json_path, elem_id) {
         currentLine.className = 'token-line';
         currentLine.style.display = 'flex';
         currentLine.style.flexWrap = 'wrap';
+        currentLine.style.minHeight = "2rem";
         
         // Add to token container
         tokenContainer.appendChild(currentLine);
@@ -173,10 +247,12 @@ function create_visualizer(json_path, elem_id) {
             // Normalize the confidence to a 0.1-1.0 range for opacity
             const minConfidence = 0.1; // 10% minimum for 10 classes
             const normalizedConfidence = (maxProb - minConfidence) / (1 - minConfidence);
-            const opacity = 0. + (normalizedConfidence * 0.7); // Scale from 0.2 to 0.9 based on confidence
+            // const opacity = 0. + (normalizedConfidence * 0.7); // Scale from 0.2 to 0.9 based on confidence
+
+
             
             // Apply the background color
-            tokenElement.style.backgroundColor = `${baseColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
+            tokenElement.style.backgroundColor = blendColors(textBackground, baseColor, normalizedConfidence); //`${baseColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
             
             // Token text
             const tokenText = document.createElement('div');
@@ -284,6 +360,7 @@ function create_visualizer(json_path, elem_id) {
                     currentLine.className = 'token-line';
                     currentLine.style.display = 'flex';
                     currentLine.style.flexWrap = 'wrap';
+                    currentLine.style.minHeight = "2rem";
                     // Add to container
                     tokenContainer.appendChild(currentLine);
                 }
@@ -292,6 +369,22 @@ function create_visualizer(json_path, elem_id) {
         
         // Add event listeners to tokens
         addTokenEventListeners();
+    }
+    
+    /**
+     * Update navigation button states based on current index
+     */
+    function updateNavigationButtons() {
+        const prevButton = document.getElementById(`prevButton_${elem_id}`);
+        const nextButton = document.getElementById(`nextButton_${elem_id}`);
+        
+        if (data) {
+            // Disable prev button if at first sequence
+            prevButton.disabled = currentSequenceIndex <= 0;
+            
+            // Disable next button if at last sequence
+            nextButton.disabled = currentSequenceIndex >= data.length - 1;
+        }
     }
     
     /**

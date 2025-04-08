@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+:root {
+    --color: white;
+    --accent: #ffa86a;
+    --background: color-mix(in srgb, var(--accent) 2%, #1d1e28 98%);
+    --syntax-code-border-color: rgb(255, 255, 255, 0.1);
+}
+
+body {
+    background: var(--background);
+    font-family: 'Fira Code', Monaco, Consolas, Ubuntu Mono, monospace;
+}
+
+div {
+    color: var(--color);
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+    padding: 1rem 1rem;
+    margin: 0 auto;
+    border: 1px solid var(--syntax-code-border-color);
+}
+.chat {
+    display: flex;
+    width: auto;
+    margin-bottom: 1rem;
+    border: 1px solid color-mix(in srgb, var(--background) 80%, rgb(255, 255, 255, 0.5) 20%);
+    background: color-mix(in srgb, var(--background) 80%, rgb(255, 255, 255, 0.5) 20%);
+    padding: 1rem;
+    max-width: 80%;
+}
+.right {
+    margin-left: auto;
+    border: color-mix(in srgb, var(--background) 70%, var(--accent) 30%);
+    background: color-mix(in srgb, var(--background) 70%, var(--accent) 30%);
+}
+.left {
+    margin-right: auto;
+}
+
+
+    </style>
+</head>
+    <body>
+    <div id="chat_container" class="chat-container">
+        <div id="right chat" class="right chat">
+            Hi there!
+        </div>
+        <div id="left chat" class="left chat">
+            What's up!? Longer text much longer text. Much much much longer text.
+        </div>
+
+    </div>
+
+    </body>
+</html>
