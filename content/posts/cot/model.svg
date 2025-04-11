@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="13.405 89.966 483.756 160.938" width="483.756px" height="160.938px" xmlns:bx="https://boxy-svg.com">
+  <rect x="202.064" y="90.443" width="102.564" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 236, 224);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="206.07" y="112.878"> Mareeba</text>
+  <rect x="108.423" y="90.767" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 236, 224);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="112.83" y="113.202"> through</text>
+  <rect x="308.753" y="89.966" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 236, 224);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="310.638" y="111.4" transform="matrix(1, 0, 0, 1, 2.842170943040401e-14, 0)">?</text>
+  <rect x="13.405" y="91.072" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 236, 224);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="17.812" y="113.507">     flows</text>
+  <rect x="16.789" y="143.175" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="23.045" y="147.527" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="29.029" y="152.968" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="34.469" y="159.495" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="119.398" y="142.777" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="125.654" y="147.129" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="131.638" y="152.57" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="137.078" y="159.097" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="222.129" y="143.774" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="228.385" y="148.126" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="234.369" y="153.567" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="239.809" y="160.094" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="326.356" y="141.78" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="332.612" y="146.132" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="338.596" y="151.573" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="344.036" y="158.1" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <path d="M 86.483 165.579 H 103.046 L 103.046 163.579 L 111.046 166.079 L 103.046 168.579 L 103.046 166.579 H 86.483 V 165.579 Z" bx:shape="arrow 86.483 163.579 24.563 5 1 8 0 1@ce1bedce" style="stroke: rgb(0, 0, 0);"/>
+  <path d="M 189.674 166.077 H 206.237 L 206.237 164.077 L 214.237 166.577 L 206.237 169.077 L 206.237 167.077 H 189.674 V 166.077 Z" bx:shape="arrow 189.674 164.077 24.563 5 1 8 0 1@71b1e1db" style="stroke: rgb(0, 0, 0);"/>
+  <path d="M 295 166.532 H 311.563 L 311.563 164.532 L 319.563 167.032 L 311.563 169.532 L 311.563 167.532 H 295 V 166.532 Z" bx:shape="arrow 295 164.532 24.563 5 1 8 0 1@5419a86b" style="stroke: rgb(0, 0, 0);"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 173.74182128906247, 60.64532470703125)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 271.6195373535156, 62.58124542236328)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 372.12347412109375, 63.116493225097656)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 475.12347412109375, 61.116493225097656)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 475.5256042480469, 139.3899688720703)"/>
+  <rect x="310.464" y="222.413" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 179, 179);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="316.925" y="243.916">The</text>
+  <rect x="404.905" y="90.412" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 179, 179);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="406.79" y="111.846">The</text>
+  <rect x="422.508" y="142.226" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="428.764" y="146.578" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="434.748" y="152.019" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <rect x="440.188" y="158.546" width="45.153" height="40.257" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 571.2753295898438, 61.56267547607422)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 571.6774291992188, 139.83615112304688)"/>
+  <rect x="406.616" y="222.859" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 179, 179);"/>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="413.077" y="244.362">Herbert</text>
+  <path d="M 393.664 166.044 H 410.227 L 410.227 164.044 L 418.227 166.544 L 410.227 169.044 L 410.227 167.044 H 393.664 V 166.044 Z" bx:shape="arrow 393.664 164.044 24.563 5 1 8 0 1@c071b09c" style="stroke: rgb(0, 0, 0);"/>
+  <rect x="113.43" y="222.214" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 179, 179); fill-opacity: 0.24; stroke-opacity: 0;"/>
+  <text style="fill: rgb(51, 51, 51); fill-opacity: 0.24; font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="117.891" y="243.717">the</text>
+  <rect x="212.582" y="222.66" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 179, 179); fill-opacity: 0.24; stroke-opacity: 0;"/>
+  <text style="fill: rgb(51, 51, 51); fill-opacity: 0.24; font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="222.043" y="244.163">district</text>
+  <rect x="17.411" y="221.839" width="90.545" height="28.045" rx="5" ry="5" style="stroke: rgb(0, 0, 0); fill: rgb(234, 179, 179); fill-opacity: 0.24; stroke-opacity: 0;"/>
+  <text style="fill: rgb(51, 51, 51); fill-opacity: 0.24; font-family: Arial, sans-serif; font-size: 23px; white-space: pre;" x="21.872" y="243.342">into</text>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 172.13632202148435, 142.15550231933594)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 371.4786376953125, 142.03675842285156)"/>
+  <path d="M 61.548 121.694 H 67.52 L 67.52 119.694 L 75.52 122.194 L 67.52 124.694 L 67.52 122.694 H 61.548 V 121.694 Z" bx:shape="arrow 61.548 119.694 13.972 5 1 8 0 1@a3091239" style="stroke: rgb(0, 0, 0);" transform="matrix(0, 1, -1, 0, 271.4786376953125, 142.03675842285156)"/>
+</svg>
