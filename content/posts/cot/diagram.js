@@ -1,11 +1,78 @@
+function manageNodeChange(nodes, prevNodes) {
+    for (let i = 1; i < nodes.length; i++) {
+        // if nodes[i] < prevNodes[i] -> decrease the 
+        // previous node
+        if (nodes[i] < prevNodes[i]) {
+            let maxVal = nodes[i];
+            // then, propagate through the rest of the array
+            for (let j = 0; j < nodes.length; j++) {
+                nodes[j] = Math.min(nodes[j], maxVal);
+            }
+            // break out of the outer loop
+            i = nodes.length;
+        } else {
+            nodes[i] = Math.max(nodes[i], nodes[i - 1]); 
+        }
+    }
+
+    // Tie the token directly to the last 
+    // process.
+    const lastHighlight = Math.max(...nodes.slice(-3));
+    nodes[nodes.length - 3] = lastHighlight;
+    nodes[nodes.length - 2] = lastHighlight;
+    nodes[nodes.length - 1] = lastHighlight;
+
+    return nodes
+};
+
+
+function calcColBoundsTriangle(nodes, prevNodes) {
+    nodes = manageNodeChange(nodes, prevNodes);
+
+    let starts = new Array(nodes.length);
+    let stops = new Array(nodes.length);
+
+    for (let i = 0; i < nodes.length; i++) {
+        if (i < 1) {
+            starts[i] = 0
+            stops[i] = Math.max(...nodes);
+        } else {
+            starts[i] = Math.max(nodes[i - 1] - 1, 0); 
+            stops[i] = Math.max(...nodes);
+        }
+
+    }
+    return [starts, stops];
+}
+
+function calcColBoundsSnake(nodes, prevNodes) {
+    nodes = manageNodeChange(nodes, prevNodes);
+
+    let starts = new Array(nodes.length);
+    let stops = new Array(nodes.length);
+
+    for (let i = 0; i < nodes.length; i++) {
+        if (i < 1) {
+            starts[i] = 0
+            stops[i] = nodes[0];
+        } else {
+            starts[i] = Math.max(nodes[i - 1] - 1, 0); 
+            stops[i] = nodes[i]; 
+        }
+
+    }
+    return [starts, stops];
+}
 // FlowchartGenerator.js - Vanilla JavaScript implementation
 function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=null, interact=true, 
-                      notes=null, mode="snake") {
+                      notes=null, bounds_func=calcColBoundsSnake,
+                      showFinalTokens=false) {
     const cols = start_tokens.length;
     console.assert(end_tokens.length == cols);
 
-    console.assert((mode == "snake") || (mode == "triangle"));
-
+    if (connections === null) {
+        connections = new Array(rows).fill(1);
+    }
 
     const container = document.getElementById(container_id);
     const previewContainer = document.createElement("div");
@@ -14,26 +81,27 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
     const highlightColor = "var(--accent)";
     const backgroundColor = "var(--fbc-secondary-text)";
     const textColor = "var(--fbc-white)";
+    const textSize = Number(getComputedStyle(container).fontSize.slice(0, -2));
 
-    const cellWidth = Math.min(Math.max(50, container.clientWidth / cols), 100);
-    const cellHeight = Math.min(Math.max(60, cellWidth * 0.6), 80);
-    const shape_width = cellWidth * 0.8;
-    const shape_height = cellHeight * 0.7;
+    const cellWidth = Math.min(Math.max(50, container.clientWidth / rows), 100);
+    const cellHeight = Math.min(Math.max(60, cellWidth * 0.7), 100);
+    const shape_width = cellWidth * 0.6;
+    const shape_height = cellHeight * 0.6;
 
-    container.style.height = `${cellHeight * rows}px`;
+    const gap_centre = (shape_height + cellHeight) / 2;
+    const gap_horizontal = (shape_width + cellWidth) / 2;
 
-    const horizontalMargin = container.clientWidth - cellWidth * cols;
+    container.style.height = `${cellHeight * cols}px`;
+
+    const horizontalMargin = container.clientWidth - cellWidth * rows;
 
     const stroke_width = 2;
 
-    if (connections === null) {
-        connections = new Array(rows).fill(1);
-    }
     let prevNodes = connections.slice();
 
     function getXY(row, col) {
-        const x = col * cellWidth + horizontalMargin / 2; 
-        const y = row * cellHeight + 1;
+        const x = row * cellWidth + horizontalMargin / 2; 
+        const y = col * cellHeight + 1;
         return [x, y];
     } 
 
@@ -115,7 +183,7 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
                 const shapeType = getShapeType(row, col, rows);
 
                 const [x, y] = getXY(row, col);
-                const gap_centre = (shape_height + cellHeight) / 2;
+
                 // Add node
                 const prefix = `${container_id}-node`;
 
@@ -125,13 +193,13 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
                 if (row < rows - 1) {
                     // Vertical connection to the node below
                     // svg += createVerticalConnection(x + 40, y + 40, cellHeight);
-                    svg += createVerticalStart(x + shape_width / 2, y + shape_height, gap_centre - shape_height, prefix, row, col); 
-                    svg += createVerticalEnd(x + shape_width / 2, y + gap_centre, gap_centre - shape_height, prefix, row + 1, col); 
+                    svg += createStart(x + shape_width, y + shape_height / 2, gap_horizontal - shape_width, prefix, row, col); 
+                    svg += createEnd(x + gap_horizontal, y + shape_height / 2, gap_horizontal - shape_width, prefix, row + 1, col); 
                 }
 
                 if (row < rows - 2 && col < columns - 1) {
                     // Horizontal connection to the node to the right
-                    svg += createHorizontalConnection(x + shape_width / 2, y + gap_centre, cellWidth, prefix, row, col + 1);
+                    svg += createConnection(x + gap_horizontal, y + shape_height / 2, cellHeight, prefix, row, col + 1);
                 }
             }
         }
@@ -170,7 +238,7 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
                 shapeSvg = `
                 <g id="${id2}" stroke="#000000">
                     <rect x="${x}" y="${y}" width="${shape_width}" height="${shape_height}" rx="${shape_height / 2}" ry="${shape_height / 2}" stroke-width="${stroke_width}" pointer-events="all" opacity="${opacity}" fill="none" stroke-dasharray="4"/>
-                    <text id="${id2 + '-text'}" x="${x + shape_width / 2}" y="${y + shape_height * 0.55}" fill="${textColor}" stroke="none" text-anchor="middle">${(row == 0) ? start_tokens[col] : end_tokens[col]}</text>
+                    <text id="${id2 + '-text'}" x="${x + shape_width / 2}" y="${y + shape_height - textSize * 0.95}" fill="${textColor}" stroke="none" text-anchor="middle">${(row == 0) ? start_tokens[col] : end_tokens[col]}</text>
                 </g>`;
                 break;
 
@@ -182,7 +250,7 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
                 if (notes != null) {
                     const note = notes[`${row},${col}`];
                     if (note != undefined) {
-                        shapeSvg += `<text x="${x + shape_width / 2}" y="${y + shape_height * 0.55}" fill="${textColor}" stroke="none" font-style="italic" text-anchor="middle">${note}</text>`;
+                        shapeSvg += `<text x="${x + shape_width / 2}" y="${y + shape_height - textSize * 0.95}" fill="${textColor}" stroke="none" font-style="italic" text-anchor="middle">${note}</text>`;
                     }
                 }
 
@@ -203,29 +271,29 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
         return shapeSvg;
     }
 
-    function createVerticalStart(x, y, height, id, row, col) {
+    function createStart(x, y, height, id, row, col) {
         return `
-            <path id="${id}-${row}-${col}-start" d="M ${x},${y} L ${x},${y + height}" stroke-width="${stroke_width}" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke"/>`;
+            <path id="${id}-${row}-${col}-start" d="M ${x},${y} L ${x + height},${y}" stroke-width="${stroke_width}" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke"/>`;
     }
 
-    function createVerticalEnd(x, y, height, id, row, col) {
+    function createEnd(x, y, height, id, row, col) {
         return `
             <g id="${id}-${row}-${col}-end" fill="#000000" stroke="#000000">
-            <path d="M ${x},${y} L ${x},${y + height}" stroke-miterlimit="10" stroke-width="${stroke_width}" pointer-events="stroke"/>
-            <path d="M ${x},${y + height} L ${x - 3.5},${y + height - 7} L ${x},${y + height - 5.37} L ${x + 3.5},${y + height - 7} Z" stroke-miterlimit="10" pointer-events="all"/>
+            <path d="M ${x},${y} L ${x + height},${y}" stroke-miterlimit="10" stroke-width="${stroke_width}" pointer-events="stroke"/>
+            <path d="M ${x + height},${y} L ${x + height - 7},${y - 3.5} L ${x + height - 5.37},${y} L ${x + height - 7},${y + 3.5} Z" stroke-miterlimit="10" pointer-events="all"/>
             </g>`;
     }
 
-    function createHorizontalConnection(x, y, width, id, row, col) {
+    function createConnection(x, y, width, id, row, col) {
         return `
             <g id="${id}-${row}-${col}-link" fill="#000000" stroke="#000000">
-            <path  d="M ${x},${y} L ${x + width/2},${y} L ${x + width}, ${y}" stroke-width="${stroke_width}" stroke-miterlimit="10"/>
-            <path  d="M ${x + width/2},${y} L ${x + width/2 - 7},${y - 3.5} L ${x + width/2 - 5.37},${y} L ${x + width/2 - 7},${y + 3.5} Z" stroke-miterlimit="10" pointer-events="all"/>
+            <path  d="M ${x},${y} L ${x},${y + width/2} L ${x}, ${y + width}" stroke-width="${stroke_width}" stroke-miterlimit="10"/>
+            <path  d="M ${x},${y + width / 2} L ${x - 3.5},${y + width/2 - 7} L ${x},${y + width/2 - 5.37} L ${x + 3.5},${y + width/2 - 7} Z" stroke-miterlimit="10" pointer-events="all"/>
             </g>`;
 
         //    return `
-        //  <path d="M ${x},${y} L ${x + width - 40},${y}" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke"/>
-    }
+        //  <path d="M ${x},${y} L ${x + width - 40},${y}" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="strocalcColBoundsSnake
+        }
 
 
     function highlightConnections(nodes) {
@@ -233,31 +301,9 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
             prevNodes = new Array(rows).fill(0);
         }
 
+        let [starts, stops] = bounds_func(nodes, prevNodes);
 
-        for (let i = 1; i < nodes.length; i++) {
-            // if nodes[i] < prevNodes[i] -> decrease the 
-            // previous node
-            if (nodes[i] < prevNodes[i]) {
-                let maxVal = nodes[i];
-                // then, propagate through the rest of the array
-                for (let j = 0; j < nodes.length; j++) {
-                    nodes[j] = Math.min(nodes[j], maxVal);
-                }
-                // break out of the outer loop
-                i = nodes.length;
-            } else {
-                nodes[i] = Math.max(nodes[i], nodes[i - 1]); 
-            }
-        }
-        
-        // Tie the token directly to the last 
-        // process.
-        const lastHighlight = Math.max(...nodes.slice(-3));
-        nodes[nodes.length - 3] = lastHighlight;
-        nodes[nodes.length - 2] = lastHighlight;
-        nodes[nodes.length - 1] = lastHighlight;
-
-
+        // Update prevNodes to prepare for a future update.
         prevNodes = nodes.slice();
 
         // Reset all elements to default colors
@@ -266,31 +312,18 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
         for (let i = 0; i < nodes.length; i++) {
             let current = [];
 
-            let stopCol, startCol;      
-            if (i < 1) {
-                startCol = 0
-                if (mode == "triangle") {
-                    stopCol = Math.max(...nodes);
-                } else {
-                    stopCol = nodes[0];
-                }
-
-            } else {
-                startCol = Math.max(nodes[i - 1] - 1, 0); 
-                if (mode == "triangle") {
-                    stopCol = Math.max(...nodes);
-                } else {
-                    stopCol = nodes[i]; 
-                }
-            }
-
-            for (let j = startCol; j < stopCol; j++) {
+            for (let j = starts[i]; j < stops[i]; j++) {
                 current.push(j);
 
                 let process = document.getElementById(`${container_id}-node-${i}-${j}`);
                 if (process != null) {
                     process.style.fill = highlightColor;
                     process.style.stroke = highlightColor;
+
+                    let text = document.getElementById(`${container_id}-node-${i}-${j}-text`);
+                    if (text != null & i > 0 & !showFinalTokens) {
+                        text.style.display = "block"; 
+                    }
                 }
 
                 let end = document.getElementById(`${container_id}-node-${i}-${j}-end`);
@@ -308,7 +341,7 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
             for (j of current) {
                 // only add a link between the previous ends and the 
                 // current starts
-                if (j > startCol) {
+                if (j > starts[i]) {
                     let link = document.getElementById(`${container_id}-node-${i}-${j}-link`);
                     if (link != null) {
                         link.style.stroke = highlightColor;
@@ -333,6 +366,11 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
                 if (process != null) {
                     process.style.fill = backgroundColor;
                     process.style.stroke = backgroundColor;
+
+                    let text = document.getElementById(`${container_id}-node-${row}-${col}-text`);
+                    if (text != null & row > 0 & !showFinalTokens) {
+                        text.style.display = "none"; 
+                    }
                 }
 
                 // Reset vertical connections
@@ -358,6 +396,8 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
     }
 
     highlightConnections(connections);
+
+    return highlightConnections;
 
 };
 

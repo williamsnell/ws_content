@@ -122,11 +122,24 @@ We'll think of each layer (one of the 3 rectangles in the middle) as being
 able to do a unit of work - perhaps a simple calculation on two numbers,
 or looking up a single fact.
 
+Let's run a single word through our transformer, and see what it predicts.
+
 
 <div id="flowchart2" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart2", 5, ["The"], ["1970s"], null, false);
+const highlightConnections = addFlowchart("flowchart2", 5, ["The"], ["1970s"], null, false);
+
+function animate() {
+    highlightConnections([1]);
+    setTimeout(() => highlightConnections([1, 1]), 1000);
+    setTimeout(() => highlightConnections([1, 1, 1]), 2000);
+    setTimeout(() => highlightConnections([1, 1, 1, 1]), 3000);
+    setTimeout(() => highlightConnections([1, 1, 1, 1, 1]), 4000);
+    setTimeout(animate, 5000);
+}
+
+animate();
 </script>
 
 The arrows show information flow. Each layer can read the outputs 
@@ -134,18 +147,36 @@ of the previous layers. Most layers pass on information from earlier
 layers, too. Therefore, the very last layer (just before predicting "1970s")
 can in principle access any result from any previous layer.
 
-When we add more tokens, we repeat this process.
+When we want to process a longer passage of text, say, "The cat sat", 
+we split the sentence into chunks called "tokens" and 
+repeat this process in parallel.
 
 <div id="flowchart7" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart7", 5, ["The"," cat"," sat"], [" 1970s","hedral"," on"],
-             [0,0,0,3,3], false, null, "triangle");
+let frame = 0;
+function colLabels(nodes, prevNodes) {
+    let out = [new Array(frame + 1).fill(0), new Array(frame + 1).fill(3)];
+
+    frame = (frame + 1) % 5;
+
+    return out;
+}
+
+const hc_2 = addFlowchart("flowchart7", 5, ["The"," cat"," sat"], [" 1970s","hedral"," on"],
+             [0], false, null, colLabels);
+
+function animate2() {
+    hc_2(new Array(frame + 1).fill(0));
+    setTimeout(animate2, 1000);
+}
+
+animate2();
 </script>
 
 Importantly, we haven't made the model any bigger. Each of the 3 layers perform
 the exact same calculations as before. What's changed is that they have access
-to new inputs. 
+to new information.
 
 Firstly, each pass through the model (represented as a vertical column)
 is initialized with the new token value. 
@@ -155,11 +186,44 @@ provided a) the token is earlier in the sequence,
 and b) the layer is earlier in the model. This is shown by the highlighted
 portions of the model. Any grayed-out layers are inaccessible to the current layer.
 
+To generate text, we take the output of the last token (`on`) and add it to 
+the text sequence, and then run the model again on the new, longer sequence.
+
+<div id="flowchart_gen" style="width: 100%;"></div>
+
+<script>
+let frame2 = 0;
+function colLabelsGen(nodes, prevNodes) {
+    let out = [new Array(frame2 + 1).fill(0), new Array(frame2 + 1).fill(4)];
+
+    if (frame2 >= 3) {
+        out[0].splice(3, out[0].length, ...new Array(out[0].length).fill(3));
+    }
+
+    frame2 = (frame2 + 1) % 5;
+
+    return out;
+}
+
+const hc_gen = addFlowchart("flowchart_gen", 5, ["The"," cat"," sat", "on"], [" 1970s","hedral"," on", "the"],
+             [0,0,0,0,0], false, null, colLabelsGen);
+
+function animate3() {
+    hc_gen([0, 0, 0, 0, 0]);
+    setTimeout(animate3, 1000);
+}
+
+animate3();
+</script>
+
+
+
+
 <div id="flowchart6" style="width: 100%;"></div>
 
 <script>
 addFlowchart("flowchart6", 5, ["The"," cat"," sat"," on", " the", " child"], [" 1970s","hedral"," on"," the", " mat", " ."],
-             null, true, null, "triangle");
+             null, true, null, calcColBoundsTriangle);
 </script>
 
 ## An example with maths.
@@ -176,8 +240,8 @@ For example, we could ask it what 1 + 1 is:
 addFlowchart("flowchart_facile", 3, ["1", "+", "1", "="], 
                               ["", "", "=", "2"], [3, 3, 4], false, 
                               {
-                               "1,2": "(2)",
-                               "1,3": "(2)",
+                               "1,2": "2",
+                               "1,3": "2",
                               });
 </script>
 
@@ -192,16 +256,16 @@ and serial.
 We can easily calculate something more complex, provided it's parallelizable. For example,
 we could add two vectors of numbers:
 
-"[1, 2] + [3, 4] = [(1 + 3), (2 + 4)]".
+"(1, 2) + (3, 4) = (1 + 3, 2 + 4)".
 
 <div id="flowchart_vector" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_vector", 3, ["[1,", "2]", "+", "[3,", "4]", "=",], 
-                              ["", "", "", "", "=", "[4,"], 
+addFlowchart("flowchart_vector", 3, ["(1,", "2)", "+", "(3,", "4)", "=",], 
+                              ["", "", "", "", "=", "(4,"], 
                               [6, 6, 6], false, 
                               {
-                               "1,5": "(4)",
+                               "1,5": "4",
                               });
 </script>
 
@@ -214,12 +278,12 @@ a problem.
 <div id="flowchart_vector_2" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_vector_2", 3, ["...", "+", "[3,", "4]", "=", "[4,"], 
-                              ["", "", "", "=", "[4,", "6]"], 
-                              [6, 6, 6], false, 
+addFlowchart("flowchart_vector_2", 3, ["[1,", "2]", "+", "[3,", "4]", "=", "[4,"], 
+                              ["", "", "", "", "=", "[4,", "6]"], 
+                              [7, 7, 7], false, 
                               {
-                               "1,4": "(4)",
-                               "1,5": "(6)",
+                               "1,5": "4",
+                               "1,6": "6",
                               });
 </script>
 
@@ -235,9 +299,10 @@ addFlowchart("flowchart_facile_serial", 3, ["1", "+", "2", "+", "3", "="],
                               ["", "", "=", "", "=", "???"], 
                               [6, 6, 6], false, 
                               {
-                               "1,2": "(3)",
+                               "1,2": "3",
                                "1,5": "(??)",
-                              });
+                              }, calcColBoundsTriangle,
+                              false);
 </script>
 
 Why is this impossible? After all, once the model had seen (1 + 2), it calculated (= 3), no problem.
@@ -256,11 +321,11 @@ addFlowchart("flowchart_facile_serial2", 4, ["1", "+", "2", "+", "3", "="],
                               ["", "", "=", "", "=", "6"], 
                               [3, 3, 4, 6], false, 
                               {
-                               "1,2": "(3)",
-                               "2,4": "(6)",
-                               "2,5": "(6)",
+                               "1,2": "3",
+                               "2,4": "6",
+                               "2,5": "6",
                               },
-                              "triangle");
+                              calcColBoundsTriangle);
 </script>
 
 In the first layer, any of the highlighted positions has enough information to 
@@ -277,10 +342,10 @@ addFlowchart("flowchart_facile_serial3", 4, ["1", "+", "2", "+", "3", "="],
                               ["", "", "=", "", "=", "6"], 
                               [6, 6, 6, 6], false, 
                               {
-                               "1,5": "(3)",
-                               "2,5": "(6)",
+                               "1,5": "3",
+                               "2,5": "6",
                               },
-                              "triangle");
+                              calcColBoundsTriangle);
 </script>
 
 If the model was working on something parallelizable, it could also split the
@@ -297,15 +362,17 @@ addFlowchart("flowchart_facile_serial4", 4, ["[1, 2, 3]", "+", "[4, 5, 6]", "+",
                                   "1,3": "2+5 = 7",
                                   "1,4": "3+6 = 9",
                               },
-                              "snake");
+                               );
 </script>
 
 
 In the second layer, once the model has seen the full equation (... + 3), it accesses
 the result from the previous layer, and can easily calculate 3 + 3 = 6.
 
-However, we can completely stump our new, larger model merely by add 
-an additional term - e.g. "1 + 2 + 3 + 4 =".
+However, we can completely stump our new, larger model merely by adding one more
+term - e.g. 
+
+"1 + 2 + 3 + 4 ="
 
 
 <div id="flowchart3" style="width: 100%;"></div>
@@ -314,11 +381,11 @@ an additional term - e.g. "1 + 2 + 3 + 4 =".
 addFlowchart("flowchart3", 4, ["1 + 2", "+ 3", "+ 4", "="], 
                               ["",  "",  "=",  "??"], 
                               [1, 2, 2, 4], false, 
-                              {"1,0": "(3)",
-                               "2,1": "(6)",
+                              {"1,0": "3",
+                               "2,1": "6",
                                "2,4": "??",
                                },
-                               "triangle");
+                               calcColBoundsTriangle);
 </script>
 
 Even though the model can compute (1 + 2) and (3 + 3), it has no way of passing
@@ -332,6 +399,19 @@ by information flow. Even though the model uses more than twice the compute
 for the former compared to the latter, it is no more capable of solving the 
 problem.
 
+<div id="flowchart_tokenized" style="width: 100%;"></div>
+
+<script>
+addFlowchart("flowchart_tokenized", 4, ["1", "+", "2", "+", "3", "+", "4", "="], 
+                              ["",  "", "=", "", "=", "", "", "??"], 
+                              [3, 3, 3, 8], false, 
+                              {"1,2": "3",
+                               "2,4": "6",
+                               "2,6": "??",
+                               "2,7": "??",
+                               },
+                               calcColBoundsTriangle);
+</script>
 
 
 
@@ -360,7 +440,7 @@ addFlowchart("flowchart5", 4, ["((", "60 - 45)", "+5)", "x 9"],
                                "2,2": "20",
                                "2,3": "? x 9",
                                "1,3": "?? x 9"},
-                               "triangle");
+                               calcColBoundsTriangle);
 </script>
 
 We can see that when the model processes the "+5)" token, it doesn't 
@@ -378,7 +458,7 @@ addFlowchart("flowchart8", 4, ["((", "60 - 45)", "+5)", "x 9"],
                                "2,2": "20",
                                "2,3": "? x 9",
                                },
-                               "triangle");
+                               calcColBoundsTriangle);
 </script>
 
 When we get to the fourth token "x 9", we definitely don't have enough 
