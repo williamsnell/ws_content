@@ -237,7 +237,7 @@ function addFlowchart(container_id, rows, start_tokens, end_tokens, connections=
             case 0: // Terminal (oval)
                 shapeSvg = `
                 <g id="${id2}" stroke="#000000">
-                    <rect x="${x}" y="${y}" width="${shape_width}" height="${shape_height}" rx="${shape_height / 2}" ry="${shape_height / 2}" stroke-width="${stroke_width}" pointer-events="all" opacity="${opacity}" fill="none" stroke-dasharray="4"/>
+                    <rect x="${x}" y="${y + shape_height * 0.2}" width="${shape_width}" height="${shape_height * 0.6}" rx="${shape_height * 0.3}" ry="${shape_height * 0.3}" stroke-width="${stroke_width}" pointer-events="all" opacity="${opacity}" fill="none" stroke-dasharray="4"/>
                     <text id="${id2 + '-text'}" x="${x + shape_width / 2}" y="${y + shape_height - textSize * 0.95}" fill="${textColor}" stroke="none" text-anchor="middle">${(row == 0) ? start_tokens[col] : end_tokens[col]}</text>
                 </g>`;
                 break;

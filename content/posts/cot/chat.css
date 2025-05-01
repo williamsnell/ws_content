@@ -1,22 +1,20 @@
-body {
-    background: var(--background);
-    font-family: 'Fira Code', Monaco, Consolas, Ubuntu Mono, monospace;
+:root {
+    --syntax-code-border-color: rgb(255, 255, 255, 0.1);
+    --background: color-mix(in srgb, var(--accent) 2%, #1d1e28 98%);
 }
 
-div {
-    color: var(--color);
-}
-
-pre {
+pre .chat,.chat-container {
     margin-left: 1rem;
     border: none;
+    white-space: pre-wrap;
 }
 
-pre code {
-    white-space: pre-wrap;
+pre code .chat,.chat-container {
     font-family: 'Fira Code', Monaco, Consolas, Ubuntu Mono, monospace;
     font-size: 1rem;
     color: var(--color);
+    white-space: pre-wrap;
+    display: block;
 }
 
 .chat-container {
@@ -48,4 +46,16 @@ pre code {
 }
 .left {
     margin-right: auto;
+}
+.wrapper {
+    display: flex;
+}
+.user-icon {
+    display: auto;
+    position: relative;
+    margin-bottom: calc(3rem / 4);
+    margin-top: auto;
+    margin-right: 1rem;
+    height: 3rem;
+    border-radius: 0.5rem;
 }

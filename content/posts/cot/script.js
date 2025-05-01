@@ -26,7 +26,7 @@ function create_visualizer(json_path, elem_id) {
     function initializeVisualizer() {
         // Create container structure
         targetElement.innerHTML = `
-            <div id="sequenceVisualization_${elem_id}" class="container" style="display: none; border: 0; background-color: ${textBackground}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <div id="sequenceVisualization_${elem_id}" class="token-display-container" style="display: none; border: 0; background-color: ${textBackground}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <div class="sequence-content">
                     <div id="tokenContainer_${elem_id}" class="token-container"></div>
                     <div id="answerIndicator_${elem_id}" class="answer-indicator"></div>
