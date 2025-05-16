@@ -22,34 +22,45 @@ color = "" #color from the theme settings
 <script src="chat.js"></script>
 <script src="token.js"></script>
 
-The era of "thinking" or "reasoning" models is upon us. If you haven't seen them before, watching a reasoning model
-answer a question can be quite a spooky experience. Before producing their final answer, these models will write out a "chain of thought" - sometimes hundreds or thousands of words long. These chains of thought look a lot like the internal monologue you or I might have while thinking through a problem.
+
+If you've been following recent developments in AI, you've probably heard of "simulated reasoning" models. Going by many names - OpenAI's o1, o3, and o4; Claude's "extended thinking mode"; Grok 3's "think" models; and perhaps most famously, DeepSeek's R1 model  - 
+these models are ubiquitous, and might offer a path to greater capabilities that doesn't rely on purely scaling up 
+models and datasets.
+
+
+If you've never seen a reasoning model in action, go try one! (ChatGPT, for example, has a "reason" button for free users.) To give a taste, here's an example response from DeepSeek R1:
+
 
 <div id="teaser-chat"></div>
 
 <script>
 makeChat("teaser-chat", [`What country is the 5th tallest mountain in?`,
-`&ltthink&gt Okay, so I need to figure out which country has the fifth tallest mountain. Let me start by recalling the list of the highest mountains in the world. I know that the tallest is Mount Everest, which is in Nepal and China (Tibet). Then the second is K...`
+`<i>&ltthink&gt</i> Okay, so I need to figure out which country has the fifth tallest mountain. Let me start by recalling the list of the highest mountains in the world. I know that the tallest is Mount Everest, which is in Nepal and China (Tibet). Then the second is K2 <b> ...[Truncated - this goes on for pages and pages.]<b>`
 ]);
 </script>
 
-Not only do these chains-of-thought look like thinking, they tend to improve model performance as well. OpenAI's O-family (O1, O3, and O4) are reasoning models, and DeepSeek's R1 is also a reasoning model. These models top most benchmarks, not just for Math, Science, and Software Engineering, but for everyday tasks as well. 
+Not only do these chains-of-thought look like thinking, they tend to improve model performance as well, letting these models top most [benchmarks for Math, Science, and Software Engineering.](https://artificialanalysis.ai/?models=o1%2Co3-mini%2Co1-preview%2Co1-mini%2Cgpt-4o-2024-08-06%2Cgpt-4o-2024-05-13%2Cgpt-4o%2Cgpt-4o-mini%2Co4-mini%2Cgpt-4-1%2Co3-mini-high%2Cgpt-4o-realtime-dec-2024%2Co3%2Cgpt-4-1-mini%2Co1-pro%2Cgpt-4o-mini-realtime-dec-2024%2Cgpt-4-1-nano%2Cgpt-4o-chatgpt-03-25%2Cgpt-4-5%2Cllama-3-3-instruct-70b%2Cqwen3-30b-a3b-instruct%2Cqwen3-235b-a22b-instruct%2Cqwen3-32b-instruct%2Cllama-3-1-instruct-405b%2Cllama-3-2-instruct-90b-vision%2Cllama-3-1-instruct-70b%2Cllama-3-2-instruct-11b-vision%2Cllama-3-1-instruct-8b%2Cllama-3-2-instruct-3b%2Cllama-3-2-instruct-1b%2Cllama-4-scout%2Cllama-4-maverick%2Cgemini-2-0-pro-experimental-02-05%2Cgemini-2-0-flash%2Cgemini-2-0-flash-experimental%2Cgemini-1-5-pro%2Cgemini-1-5-flash%2Cgemini-1-5-pro-may-2024%2Cgemma-2-27b%2Cgemma-2-9b%2Cgemini-1-5-flash-8b%2Cgemini-2-0-flash-thinking-exp-0121%2Cgemini-2-5-flash-reasoning%2Cgemini-2-5-pro%2Cgemini-2-0-flash-thinking-exp-1219%2Cclaude-35-sonnet%2Cclaude-3-7-sonnet-thinking%2Cclaude-3-7-sonnet%2Cdeepseek-r1%2Cdeepseek-r1-distill-llama-70b%2Cdeepseek-v3-0324%2Csonar%2Csonar-reasoning%2Cgrok-3-mini-reasoning%2Cgrok-3-reasoning%2Cgrok-3-mini-reasoning-low%2Cphi-3-medium%2Cllama-3-1-nemotron-instruct-70b%2Cllama-3-3-nemotron-super-49b%2Cllama-3-1-nemotron-ultra-253b-v1-reasoning%2Cgpt-4o-chatgpt%2Cdeepseek-v3#artificial-analysis-intelligence-index-by-model-type)
 
-But **why** do they work? Specifically,
+So, are we really seeing these AI models "thinking" out loud? Does reading the text between <i>\<think\></i> tags let us "read the mind" of an LLM?
 
-1. Why do models "reason" in natural language?
-2. Why does this tend to improve performance?
-3. Is this reasoning a true representation of the model's underlying "thought" process?
+The implications for AI safety are tantalising - perhaps we could audit models for misaligned goals or hidden biases just by reading their thought process as they make decisions. If a model was making a hiring decision based on protected characteristics,
+perhaps it would tell us?. If a model was scheming against us, its thoughts
+might lay bare the deception.
+
+But are these chains-of-thought "real"? Can we trust them?
+
+To answer this question, we first need to understand how simulated reasoning works, where it comes from, and why it helps model performance. 
+
+Finally, we'll answer the question that's been on my mind since I first encountered these models: isn't it profoundly weird that an AI model just happens to think in human language?
 
 
 ## How does <i>\<think\></i>ing work?
 
-To understand reasoning, we need a little background on how language models work.
-The most popular architecture for these models are variants of the transformer, which works like this:
+> To understand how simulated reasoning models work, we first need a micro-primer on large language models (LLMs). If you already know this, skip to [#Faithful or Unfaithful?](#faithful-or-unfaithful)
 
-<i>The</i>
+Frontier LLMs use variants of the transformer architecture. To feed text into a model, we first split it into chunks of text called "tokens".
 
-First, we split our text into chunks (called tokens). The sentence "The cat sat on the mat" might become
+The sentence "The cat sat on the mat" might become
 <i>The</i> <i> cat</i> <i> sat</i> <i> on</i> <i> the</i> <i> mat</i> <i>.</i>.
 
 Next, we feed these tokens into the input of the transformer. 
@@ -74,19 +85,12 @@ Next, we feed these tokens into the input of the transformer.
 }
 </script>
 
-Here, layers go from left to right. The first layer can only 
-read in a representation of the input token. The second layer can
-read this, plus the output of the first layer. The third layer can
-read the input token, the first layer's output, and the second layer's
-output (and so on.)
-
-After all the layers, the model predicts the next token.
-It does this by giving different probability scores for all possible tokens. In our
-example, we just take the token associated with the highest probability.
+The information flows from left to right through the first layer,
+the second layer, and so on. After the last layer, the model assigns probabilities to different tokens, and we pick the next 
+token according to these probabilities. 
 
 When we want to process a longer passage of text (e.g. "The cat sat"), 
-we split the sentence into tokens and 
-run them through the model.
+we feed more tokens through the model.
 
 <div id="flowchart_multi_serial" style="width: 100%;"></div>
 
@@ -120,12 +124,13 @@ animate();
 }
 </script>
 
-Now that we have multiple tokens, notice how later tokens (e.g. <i> sat</i>) can
+Later tokens (e.g. <i> sat</i>) can
 look back at the intermediate results of earlier tokens (e.g. <i>The</i> or <i> cat</i>).
 
 Notice also that we haven't made the **model** any bigger. Each of the 3 layers perform
-the exact same calculations as before. What's changed is that later in the token sequence,
-the model has access to more information.
+the exact same number of calculations as before. What's changed is that later in the token sequence,
+the model has access to more information - namely, previous calculations
+from when the model was processing the earlier tokens.
 
 Because of how the transformer is laid out, we don't actually need to calculate one token at a time. 
 Instead, we can get exactly the same result by marching through all tokens in parallel. See if
@@ -159,7 +164,7 @@ cannot, flow.)
 This parallelism is great for training because we can feed in long sequences of text all
 at once and, in a single forward pass, process the whole thing.
 
-To generate new text, we take the prediction at the last sequence position (<i> on</i>) and add it to 
+To generate new text, we take the prediction at the last sequence position <i> on</i>, add it to 
 the text sequence, and then run the model again on the new, longer sequence.
 
 <div id="flowchart_gen" style="width: 100%;"></div>
@@ -190,12 +195,11 @@ the text sequence, and then run the model again on the new, longer sequence.
 }
 </script>
 
-Note again that even though we've already calculated all layers for the first 3 tokens, 
-as we pass the 4th token through the model, each layer can only access information from
-earlier layers (i.e. to the left of the current layer). 
+Even though we've already processed the first 3 tokens, 
+information still only flows downwards and rightwards. 
 
 The transformer doesn't distinguish between text fed into it or generated by it, 
-and so it must be able to process the sequence identically whether we add one token
+and so it must be able to process the sequence identically - whether we add one token
 at a time like above, or process it fully in parallel, like below:
 
 <div id="flowchart_gen_parallel" style="width: 100%;"></div>
@@ -227,187 +231,123 @@ at a time like above, or process it fully in parallel, like below:
 
 With me so far? Great!
 
-## Where reasoning comes from (maybe)
+## Faithful or Unfaithful
 
-Large Language Models (LLMs) learn by
-ingesting huge quantities of text, typically scraped from the internet. These models
-are shown a chunk of text, and scored on how well they predict that same chunk of text,
-shifted by one word. That is, 
+Our little diversion into the transformer made one fact clear: adding more
+tokens lets the transformer do more processing. If we triple the tokens
+fed into the model, the model does three times the work. 
 
-<i>The</i> <i> cat</i> <i> sat</i> <i> on</i> <i> the</i> 
+It's tempting to imagine this as the explanation for why simulated 
+reasoning improves performance. 
+We know from [scaling laws](https://arxiv.org/pdf/2001.08361) that we can improve
+performance by making models bigger and/or training them on more data. 
+Perhaps letting a constant-sized model think for longer
+works similarly?
 
-might be scored based on whether
-it correctly predicts the sequence 
+Taken to its extreme conclusion, the *test-time compute hypothesis* might suggest
+that chain-of-thought content does not matter at all, and that we merely
+need to allocate extra compute when generating an answer (test-time) by letting
+the model generate extra tokens.
 
-<i> cat</i> <i> sat</i> <i> on</i> <i> the</i> <i> mat</i>
+This gives us hypothesis A:
+the *content* of reasoning does not matter at all. 
 
-Through this process, LLMs learn how to detect and replicate structures and patterns. Sometimes,
-fairly sophisticated capabilities emerge. So-called "in-context learning" is one such example. 
-In essence, in-context learning is where showing a model examples beforehand allows it to
-better stay on task or produce more accurate results. 
-Despite potentially never having encountered the exact structure in its training data, 
-the model appears to adapt its outputs to better replicate the style or
-structure of the examples given.
+The other extreme - that the specific choice of every token in the
+chain-of-thought is crucially
+important to performance - gives us hypothesis B. 
 
-For a concrete demonstration, let's imagine we want a model to read a sentence describing items we want to buy,
-and format it into a nice list. This model hasn't been trained to follow instructions, and instead 
-just predicts the next token as best it can.
+If hypothesis A were true, we could replace the reasoning trace with the word
+"Ummm" over and over, or "...", or gibberish, without losing any performance.
+If hypothesis B were correct, on the other hand, the final answer ultimately
+output by the model **must** depend on all the steps presented in the
+chain-of-thought, such that modifying any intermediate step modifies the
+conclusion (provided the model doesn't notice the modification and correct the
+chain.) 
 
-We could ask the model directly, but we'll probably get back some nonsense:
+(*Note that hypothesis B doesn't preclude the model from encoding a secret
+message in what otherwise looks like natural language.* It does mean,
+however, that the final answer must depend on this secret message.)
 
-<div id="chat A"></div>
+Research to date can rule out *both* hypotheses from being completely true, at least for most models across most problem types. 
+Thus, we should expect real-world situations to lie somewhere inbetween.
 
-<script>
-makeChat("chat A", [`Format this sentence into a python grocery list of strings. 
+Even moreso, hypotheses A and B both apply for certain *kinds* of computation. 
+Hypothesis A can apply if the problem is highly parallelizable, and hypothesis B
+if the problem is highly sequential.
 
-I want some bananas, a can of beans, and some coffee.`,
-`User 0: # grocery_list = "I want some bananas, a can of beans, and some coffee."
+To understand why, and to see how simulated reasoning resolves a fairly severe information bottleneck endemic to transformers, we need
+to dive back in to the transformer architecture.
 
- grocery_list = "I want some bananas, a can of beans, and some coffee."
- print(grocery_list)
- \# grocery_list = "I want some bananas, a can of beans, and some coffee."
- grocery_list = "I want some bananas,`
-          ]);
-</script>
+### Reasoning as Information Flow
 
+Let's imagine a very simple model, solving a very straightforward task. This model
+is a transformer with only one layer. It can read in simple maths equations and predict the
+next token - in fact, it's been trained the same way large language models are, only on a
+smaller set of text. 
 
-Instead, if we give concrete examples, we're much more likely to get a good result:
+Specifically, we train it on multiplication modulo *n* - that is, multiplication
+with a set of numbers that wraps around to 0 once it reaches *n*. (In this
+example, n = 61).
 
-<div id="chat B"></div>
+We give our model lots of examples of equations, including things like vectors:
 
-<script>
-makeChat("chat B", [`Format this sentence into a python grocery list of strings. 
-
-    Sentence:
-    I want a bagel and some cream cheese.
-
-    List:
-    ["bagel", "cream cheese"]
-
-    Sentence:
-    I want some bananas, a can of beans, and some coffee.
-    
-    List:`,
-` ["bananas", "can of beans", "coffee"]`
-]);
-</script>
-
-This ability - in-context learning - is a very useful tool for models to have in their
-toolkit.
-
-It might emerge during training because there are many patterns in the training data that
-are both *rare* and appear in *clusters* (see [Chan et. al](https://arxiv.org/pdf/2205.05055)). 
-
-For example, a clump of python code probably implies more python nearby.
-One or two worked math examples mean the model could be training on a textbook, or perhaps some exam solutions,
-and therefore might not need to worry about writing slam poetry.
-
-Being able to detect patterns in structure and style, and constrain generated text to mimic these patterns,
-lets models predict text within the training data much more accurately. Models appear to learn
-circuitry that enables, or at the very least [emerges alongside,](https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html) 
-this kind of pattern matching, and suggests this capability is more complex than mere regurgiation
-of already-seen patterns.
+"4 * 5 = 20"
 
 
-But back to reasoning! Early on, [researchers used in-context learning](https://arxiv.org/pdf/2201.11903)
-to get models to produce chains-of-thought when solving difficult maths problems, word problems, 
-"common sense" questions, etc. These tests seemed to show across-the-board improvements, given
-the language model was sufficiently large.
+"12 * 21 = 8"
 
-As to their justification for using chain-of-thought in the first place, it ranged from the anthropomorphic
-(
+"20 * 41 * 23 = 11"
+ 
+"(56, 60) * (34, 46) = (13, 15)"
 
-At this point, the answer to the question "why do models reason in natural language" was obvious:
-they reason in natural language because they were directly told to do so, and were given structured
-examples from which to copy the patterns. Even at this point, however, questions emerge: is structured
-reasoning just another domain-specific language or format that can be learned like JSON or XML? 
-Furthermore, are models really learning from the short examples provided, or using the examples to lock
-into patterns they had already learned?
+etc.
 
-[Later work suggests the latter explanation,](https://arxiv.org/pdf/2205.11916)
-finding that models as early as GPT-3 could be encouraged into this mode of 
-operation by simply inserting "Let's think step-by-step" into the beginning of the answer.
+Token by token, the model reads in the training data and tries to predict the next token.
+From this, it develops an understanding of how these questions are structured and,
+ultimately, how to actually calculate multiplication (mod n).
 
-<div id="chat C"></div>
+Our model's single layer is very small - let's say that it can only perform multiplication between
+two numbers at a time, and nothing more.
 
-<script>
-makeChat("chat C", [`Q: A juggler can juggle 16 balls. Half of the balls are golf balls, \
-and half of the golf balls are blue. How many blue golf balls are \
-there?
-
-A: Let’s think step by step`,
-`There are 16 balls in total. Half of the balls are golf \
-balls. That means that there are 8 golf balls. Half of the golf balls \
-are blue. That means that there are 4 blue golf balls.
-`]);
-</script>
-
-The most suprising outcome of all this work is, of course, that reasoning appears to greatly increase
-model's capacity to work through difficult problems. 
-
-But why?
-
-## Why reasoning (sometimes) works
-
-- steganography?
-- test-time compute?
-- 
-
-Producing a chain of thought involves generating a lot of tokens. Furthermore, we know that generating each token in a typical
-Transformer requires the same amount of compute as any other token. It can be tempting, then, to simply assume that 
-giving a model more tokens scales up the amount of compute, that more compute = more better, and leave it at that.
-
-There's a few issues with this approach, though.
-
-First, why do models need to bother "reasoning" at all? Why not some other learned strategy, such as repeating
-"umm" over and over?
-    - first, because we trained them that way
-    - second, because of information movement
-
-
-Let's consider a simple transformer with only one layer. This layer is fairly simple - imagine 
-it perform a maths operation
-(addition, subtraction, multiplication, etc.) on two numbers, but nothing more.
-
-For example, we could ask it what 1 + 1 is:
+For example, we could ask it what 1 * 1 is:
 
 <div id="flowchart_facile" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_facile", 3, ["1", "+", "1", "="], 
-                              ["", "", "=", "2"], [3, 3, 4], false, 
+addFlowchart("flowchart_facile", 3, ["1", "*", "1", "="], 
+                              ["*", "9", "=", "1"], [3, 3, 4], false, 
                               {
-                               "1,2": "2",
-                               "1,3": "2",
+                               "1,2": "1",
+                               "1,3": "1",
                               }, calcColBoundsSnake, true);
 </script>
 
-Note how the layer could compute the sum as soon as it read (1 + 1). However, because
+Note how the layer could compute the product as soon as it read (1 * 1). However, because
 the model is a next-token predictor, it didn't do anything with this information, and 
 instead predicted "=". Once the model was asked to return its answer, it recomputed the sum
-and correctly predicted "2".
+and correctly predicted "1".
 
 What about a more complicated equation? Well, there are two kinds of complications: parallel
 and serial.
 
 We can easily calculate something more complex, provided it's parallelizable. For example,
-we could add two vectors of numbers:
+we could add multiply (elementwise) two vectors of numbers:
 
-"(1, 2) + (3, 4) = (1 + 3, 2 + 4)".
+"(1, 2) * (3, 4) = (1 * 3, 2 * 4)".
 
 <div id="flowchart_vector" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_vector", 3, ["(1,", "2)", "+", "(3,", "4)", "=",], 
-                              ["", "", "", "", "=", "(4,"], 
+addFlowchart("flowchart_vector", 3, ["(1,", "2)", "*", "(3,", "4)", "=",], 
+                              ["", "", "", "", "=", "(3,"], 
                               [6, 6, 6], false, 
                               {
-                               "1,5": "4",
+                               "1,5": "3",
                               });
 </script>
 
 Even though the model can't calculate the whole vector sum at once, it can
-calculate the first addition (1 + 3 = 4) without knowing any of the other
+calculate the first multiplication (1 * 3 = 3) without knowing any of the other
 calculations. If we keep generating (passing the predicted token
 into the input tokens), the model can chug through this calculation without
 a problem.
@@ -415,34 +355,34 @@ a problem.
 <div id="flowchart_vector_2" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_vector_2", 3, ["[1,", "2]", "+", "[3,", "4]", "=", "[4,"], 
-                              ["", "", "", "", "=", "[4,", "6]"], 
+addFlowchart("flowchart_vector_2", 3, ["(1,", "2)", "*", "(3,", "4)", "=", "(3,"], 
+                              ["", "", "", "", "=", "(3,", "8)"], 
                               [7, 7, 7], false, 
                               {
-                               "1,5": "4",
-                               "1,6": "6",
-                              });
+                               "1,5": "3",
+                               "1,6": "8",
+                              }, calcColBoundsSnake, true);
 </script>
 
 
-This example involved calculating addition twice, and was trivially easy. Compare that
-to calculating "1 + 2 + 3". Again, we have two additions. Yet this task is impossible
+This example involved calculating multiplication twice, and was trivially easy. Compare that
+to calculating "1 * 2 * 3". Again, we have two additions. Yet this task is impossible
 for our model.
 
 <div id="flowchart_facile_serial" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_facile_serial", 3, ["1", "+", "2", "+", "3", "="], 
-                              ["", "", "=", "", "=", "???"], 
+addFlowchart("flowchart_facile_serial", 3, ["1", "*", "2", "*", "3", "="], 
+                              ["", "", "=", "", "=", "9?"], 
                               [6, 6, 6], false, 
                               {
-                               "1,2": "3",
+                               "1,2": "2",
                                "1,5": "(??)",
                               }, calcColBoundsTriangle,
                               false);
 </script>
 
-Why is this impossible? After all, once the model had seen (1 + 2), it calculated (= 3), no problem.
+Why is this impossible? After all, once the model had seen (1 * 2), it calculated (= 2), no problem.
 However, this information is locked away, inaccessible to the last token's calculator.
 In the last token position, the model doesn't have the ability to do something too hard (calculating
 the sum of 3 numbers) in a single step. Plus, it doesn't have a way of retrieving the earlier calculation
@@ -454,11 +394,11 @@ pass information to later ones.
 <div id="flowchart_facile_serial2" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_facile_serial2", 4, ["1", "+", "2", "+", "3", "="], 
+addFlowchart("flowchart_facile_serial2", 4, ["1", "*", "2", "*", "3", "="], 
                               ["", "", "=", "", "=", "6"], 
                               [3, 3, 4, 6], false, 
                               {
-                               "1,2": "3",
+                               "1,2": "2",
                                "2,4": "6",
                                "2,5": "6",
                               },
@@ -466,82 +406,85 @@ addFlowchart("flowchart_facile_serial2", 4, ["1", "+", "2", "+", "3", "="],
 </script>
 
 In the first layer, any of the highlighted positions has enough information to 
-calculate the sum (1 + 2). The model could choose to do this sum in any or all
+calculate (1 * 2). The model could choose to do this sum in any or all
 of these positions, and it would still succeed at its task. 
 
-For example, it might wait to calculate (1+2) until the "=" token, which
+For example, it might wait to calculate (1 * 2) until the "=" token, which
 would look like this:
 
 <div id="flowchart_facile_serial3" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_facile_serial3", 4, ["1", "+", "2", "+", "3", "="], 
+addFlowchart("flowchart_facile_serial3", 4, ["1", "*", "2", "*", "3", "="], 
                               ["", "", "=", "", "=", "6"], 
                               [6, 6, 6, 6], false, 
                               {
-                               "1,5": "3",
+                               "1,5": "2",
                                "2,5": "6",
                               },
                               calcColBoundsTriangle);
 </script>
 
-In the second layer, once the model has seen the full equation (... + 3), it accesses
-the result from the previous layer, and can easily calculate 3 + 3 = 6.
+In the second layer, once the model has seen the full equation it accesses
+the result from the previous layer, and can easily calculate 2 * 3 = 6.
 
 However, we can completely stump our new, larger model merely by adding one more
 term - e.g. 
 
-"1 + 2 + 3 + 4 ="
-
-
-<div id="flowchart3" style="width: 100%;"></div>
-
-<script>
-addFlowchart("flowchart3", 4, ["1 + 2", "+ 3", "+ 4", "="], 
-                              ["",  "",  "=",  "??"], 
-                              [1, 2, 2, 4], false, 
-                              {"1,0": "3",
-                               "2,1": "6",
-                               "2,4": "??",
-                               },
-                               calcColBoundsTriangle);
-</script>
-
-Even though the model can compute (1 + 2) and (3 + 3), it has no way of passing
-(3 + 3 = 6) to the next few tokens. So, (6 + 4) never gets calculated, and the
-model has to guess once again.
-
-Crucially, giving the model more tokens doesn't help us here. Whether we
-tokenize the problem as `1` `+` `2` `+` `3` `+` `4` or `1 + 2` `+ 3` `+4`,
-the model can't make use of the extra compute, because it is bottlenecked
-by information flow. Even though the model uses more than twice the compute
-for the former compared to the latter, it is no more capable of solving the 
-problem.
+"1 * 2 * 3 * 4 ="
 
 <div id="flowchart_tokenized" style="width: 100%;"></div>
 
 <script>
-addFlowchart("flowchart_tokenized", 4, ["1", "+", "2", "+", "3", "+", "4", "="], 
+addFlowchart("flowchart_tokenized", 4, ["1", "*", "2", "*", "3", "*", "4", "="], 
                               ["",  "", "=", "", "=", "", "", "??"], 
                               [3, 3, 3, 8], false, 
-                              {"1,2": "3",
+                              {"1,2": "2",
+                              "1,3": "2",
+                              "1,4": "2",
+                              "1,5": "2",
+                              "1,6": "2",
+                              "1,7": "2",
                                "2,4": "6",
-                               "2,6": "??",
-                               "2,7": "??",
+                               "2,5": "6",
+                               "2,6": "6",
+                               "2,7": "6",
                                },
                                calcColBoundsTriangle);
 </script>
 
+
+Even though the model can compute 
+
+1 * 2 = 2
+
+and 
+
+2 * 3 = 6
+
+it has no way of passing the intermediate result (6) to the next few tokens. 
+So, 
+
+6 * 4 = ?
+
+never gets calculated, and the
+model has to guess once again.
+
+Crucially, the model is not compute limited - rather, it's bottlenecked
+by **information flow**. 
+
+#### Why reasoning helps
 We can easily teach our single-layer model to solve problems that stump our two layer 
-model, though. A fairly natural way to do this - natural in the sense that it's similar to the types
-of text the model has already learnt to produce - is **simulated reasoning**. We let our model generate
+model. A fairly natural way to do this is **simulated reasoning**. 
+
+With some additional training, we teach our model to generate
 intermediate tokens that move results out of the inaccessible latent stream of the model
 and into the model's context.
 
 
 <div id="flowchart_reason" style="width: 100%;"></div>
 <script>
-addFlowchart("flowchart_reason", 3, ["1", "+", "2", "+", "3", "="], 
+addFlowchart("flowchart_reason", 3, ["1", "*", "2", "*", "3", "="], 
                               ["", "", "", "", "", "&ltthink&gt"], 
                               [6, 6, 6], false, 
                               {
@@ -554,82 +497,111 @@ Instead of answering right away, the model indicates it wants to spend some time
 
 <div id="flowchart_reason2" style="width: 100%;"></div>
 <script>
-addFlowchart("flowchart_reason2", 3, ["&ltthink&gt", "1", "+", "2", "="], 
-                              ["1", "+", "2", "=", "3"], 
+addFlowchart("flowchart_reason2", 3, ["&ltthink&gt", "1", "*", "2", "="], 
+                              ["1", "*", "2", "=", "2"], 
                               [5, 5, 5], false, 
                               {
-                                "1,3": "3",
-                                "1,4": "3",
+                                "1,3": "2",
+                                "1,4": "2",
                               },
                                calcColBoundsTriangle, true);
 </script>
 
-Here, the model recalculates 1 + 2 (remember, it can't access the earlier calculations). Now that it's in
+Here, the model copies the first part of the equation, and solves it. Now that it's in
 thinking mode, it gets to write this result directly into the context and read it back in as the next input
-token, giving all calculations on subsequent tokens access.
+token, giving all calculations on subsequent tokens access. 
+
+Note that it hasn't had to learn much new grammar to do this.
 
 <div id="flowchart_reason3" style="width: 100%;"></div>
 <script>
-addFlowchart("flowchart_reason3", 3, ["=", "3", ",", "3", "+", "3", "=", "6"], 
-                              ["3", ",", "3", "+", "3", "=", "6", "&lt/think&gt"], 
+addFlowchart("flowchart_reason3", 3, ["=", "2", ",", "2", "*", "3", "=", "6"], 
+                              ["2", ",", "2", "*", "3", "=", "6", "&lt/think&gt"], 
                               [8, 8, 8], false, 
                               {
-                                "1,0": "3", 
+                                "1,0": "2", 
                                 "1,5": "6",
                                 "1,6": "6",
                               },
                                calcColBoundsTriangle, true);
 </script>
 
-Now, the model gets to calculate 3 + 3 instead of (1+2) + 3. It does so easily, and
+Now, the model gets to calculate 2 * 3 instead of (1 * 2) * 3. It does so easily, and
 writes the answer into the context stream. Finally, it emits a `</think>` token
 to signal the end of thinking mode.
 
 The full sequence looks like:
 <div id="reason-chat"></div>
 <script>
-makeChat("reason-chat", ["1 + 2 + 3 = ",
-"&ltthink&gt \n1 + 2 = 3, \n3 + 3 = 6 \n&lt/think&gt \n\n 6"]);
+makeChat("reason-chat", ["1 * 2 * 3 = ",
+"&ltthink&gt \n1 * 2 = 2, \n2 * 3 = 6 \n&lt/think&gt \n\n 6"]);
 </script>
 
-### Progress, but at what cost?
+### That's it?
 
-This little demonstration shows how simulated reasoning can help a model's performance. Our little model
-could keep performing this trick on more and more complicated sequences, and keep succeeding. This alone
-is quite impressive.
+Without needing to philosophize about whether a model was truly "thinking" or "reasoning", 
+we have a clear example of where "reasoning" can improve performance. 
+When we let the model write out intermediate results,
+it can re-use its existing machinery, and solve problems that would otherwise be impossible.
 
-However, you've hopefully also noticed some less desirable side-effects. Firstly, this process is **slow**,
-and woefully inefficient. Even though the model could (and did) calculate (1 + 2) very early on, it has to 
-recompute it multiple times. Plus, all the filler tokens where the model restates the problem do nothing
-to directly solve the task at hand, but **do** add to its cost. Each token, after all, uses the same amount
-of compute. The more verbose a model's reasoning is, the more costly. 
+Because our model is so simple, it has no choice but to make the chain-of-thought
+faithful for this problem. We could intervene on its <i>\<think\></i>-ing and change
+the answer, such as by setting:
 
-In terms of parallelizable tasks, perhaps this verbosity really does allow a model access to compute it needs
-to improve its answers. But if the reasoning is simply using (a lot of) tokens to move very small chunks of information
-around, it is woefully inefficient.
+"1 * 2 = 3"
 
+The model would compute (3 * 3 = 9) and answer 9
+(provided it didn't detect the issue and start over).
 
+<div id="reason-chat-intervention"></div>
+<script>
+makeChat("reason-chat-intervention", ["1 * 2 * 3 = ",
+"&ltthink&gt \n1 * 2 = <b><u>3</u></b>, \n3 * 3 = 9 \n&lt/think&gt \n\n 9"]);
+</script>
+
+However, if we gave the model a question that was too simple, there's no longer a guarantee
+its final answer will be influenced by the chain-of-thought. When we intervene
+again, the model could answer
+by referring to its chain-of-thought, or it could just recalculate (1 * 2) on the fly without
+telling us.
+
+<div id="reason-chat-intervention-simple"></div>
+<script>
+makeChat("reason-chat-intervention-simple", ["1 * 2 = ",
+"&ltthink&gt \n1 * 2 = <b><u>3</u></b>\n&lt/think&gt \n\n 2"]);
+</script>
+
+In the right circumstances, then, chains-of-thought could give us insight
+into what the model is doing. It depends on how the model is using them.
+
+There are obvious and subtle reasons this works.
+First and foremost, letting the model write intermediate results clearly lets it move information
+in ways otherwise impossible.
+However, even in our
+minimal example, there's more than just information movement going on. 
+
+Consider the \<think\> 
+token - we explicitly trained the model that text between 
+\<think\> and \</think\> tags would not be considered part of its answer. Thus, after
+emitting and reading in a \<think\> token, the model enters a different mode, allowing
+it to output tokens that don't directly answer the question, but instead work through it, 
+step-by-step. There are subtle uses for this self-programming, particularly for larger models with a wider vocabulary. For example, if the model wasn't sure of its working and wanted to 
+backtrack, perhaps it might learn to emit the word "wait".
+
+From this minimal model, then, we've seen two ways that chain-of-thought reasoning *can*
+allow models greater capability: through communication, and through coordination. A model
+can *communicate* results that are otherwise inaccessible to itself in the future,
+and a model can *coordinate* by choosing what mode it wants to be in.
+
+Real models are, of course, vastly more complicated than our little one-layer model. Let's scale up, and see if our intuition holds.
 
 ## Critical Path
 
-To drive home the point, lets look at the critical path of information flow through
-a transformer. Here, the tokens aren't introducing any new information. From the very
-first token, the model has all the information it needs - its job is to distribute the work,
-perform calculations, make a decision based on those calculations, and ultimately output
-an answer.
+Play around with the following interactive diagram!
 
-We are drawing what's called the critical path. This means that each layer relies on
-some information from the previous layer to be ready before it can make a decision, perform
-a calculation, etc.
-
-Here, we display a critical path through the model. Each layer needs some information from
-the previous layer's calculations before it can start with its own. 
-
-Any grey nodes above the critical path don't have enough information yet to get started, and
-so are irrelevant to this chain of decisions. These nodes have to guess, or work on something else.
-Any grey nodes below the critical path don't add any extra information to the 
-chain of decisions, and so likewise
-are irrelevant.
+This represents all possible information flows in the model for a sequence of filler
+tokens that don't convey any information extra information. This technically
+gives the model access to more compute, but doesn't let it write intermediate tokens. 
 
 <div id="flowchart_critpath" style="width: 100%;"></div>
 <script>
@@ -641,28 +613,178 @@ addFlowchart("flowchart_critpath", 7, ["", "", "", "", "", "", ""],
                                calcColBoundsSnake);
 </script>
 
-The model has a lot of freedom to parallelize problems that might be tricky. But even though
-it has lots of tokens worth of compute to play with, it can't actually make very many decisions.
+We are drawing what we might call the critical path. In each layer (each vertical slice),
+the model can choose to parallelize the problem as 
+much as it needs to. But if the model needs 5 parallel tokens to calculate a result,
+the subsequent layer can only collect that result after those 5 tokens.
 
-In fact, the depth of the critical path is fixed to the same number as if the model was processing
-a single token. Each calculation can be split across more tokens and parallelized, but only 
-a finite number of decisions can depend on each other.
+Any grey nodes above the critical path don't have enough information yet to get started, and
+so are irrelevant to this chain of decisions. These nodes have to guess, or work on something else.
+Any grey nodes below the critical path don't add any extra information to the 
+chain of decisions, and so likewise are irrelevant.
+
+The model has a lot of freedom to parallelize problems that might be tricky.
+Research shows that when problems are highly parallelizable, 
+transformers can indeed [learn to solve them using only
+filler tokens.](https://arxiv.org/pdf/2404.15758v1)
+
+But even when a model has many tokens worth of compute to play with, it can't actually make very many linked
+decisions.
+
+The most important takeaway is this: the **depth of the critical path is constant**,
+regardless of how many *filler* tokens are added.
+Each calculation can be split across more tokens and parallelized, but only 
+a finite number of decisions can depend on each other. 
+
+However, if we let the model pass information back to itself using a chain-of-thought,
+we unlock much greater logical depth. Research also confirms this: letting
+models produce intermediate steps [drastically increases their capabilities when
+solving serial problems.](https://arxiv.org/pdf/2402.12875)
+
+Practically, this means that models *don't need* chain-of-thought tokens to hold meaning 
+for simple or parallelizable problems, and *do* need it for highly serial problems. 
+
+This explains the counterintuitive finding that, for a given problem, [larger models often produce
+less faithful chains-of-thought than smaller models.](https://arxiv.org/pdf/2307.13702)
+
+
+# Where does reasoning come from?
+
+In the [previous section](#why-reasoning-helps), we saw that letting our model
+output a grammar similar(ish) to human reasoning allowed it to improve
+performance. But where do real models learn this skill?
+
+It helps to remember how LLMs are trained. First, they are *pretrained* on huge amounts of data, large
+portions of which is natural human language.
+This exposes them to countless patterns, facts, ways of speaking, etc.
+Modelling this accurately requires detecting and replicating patterns found in the dataset. 
+
+Chain-of-thought is one such pattern. Think of textbooks, or solutions to exams, or forums
+discussing approaches to solving a logic puzzle. Being able to write the subset of
+natural language that produces "logic speak" would be a boon for an LLM, just
+like detecting and writing python code would be.
+
+Furthermore, these chains-of-thought often serve as a bridge between an initial
+question 
+and a logical process that breaks the problem into simpler
+subproblems, groups relevant information, stores results of intermediate calculations, 
+etc. (see [Madaan & Yazdanbakhsh).](https://arxiv.org/pdf/2209.07686)
+
+Early work fed LLMs example chains-of-thought alongside exam-style problems to see if 
+getting the model to copy this format allowed it to perform better. Surprisingly enough,
+[it did!](https://arxiv.org/abs/2201.11903)
+
+Later work found that models as early as GPT-3 didn't even need examples - they could be 
+encouraged to produce chains-of-thought simply by inserting the phrase 
+["Let's think step-by-step"](https://arxiv.org/pdf/2205.11916)
+before their answer.
+
+<div id="chat C"></div>
+
+<script>
+makeChat("chat C", [`Q: A juggler can juggle 16 balls. Half of the balls are golf balls, \
+and half of the golf balls are blue. How many blue golf balls are \
+there?
+
+A: Let’s think step by step.`,
+`There are 16 balls in total. Half of the balls are golf \
+balls. That means that there are 8 golf balls. Half of the golf balls \
+are blue. That means that there are 4 blue golf balls.
+`]);
+</script>
+
+So, we can be fairly sure the patterns used by reasoning models, or at least a close precursor, exists in,
+and was learnt from, the training data. 
+The real surprise was that chains-of-thought could improve performance on downstream
+tasks. 
+
+From the previous section, we now have an idea of why this is - communication and coordination. 
+
+This doesn't fully explain why
+**reasoning** models appear to use this technique, however. 
+
+What sets reasoning models apart is their training regime - typically, the use
+of **reinforcement learning** after initial pre-training.
+
+[Reinforcement learning](http://www.incompleteideas.net/book/RLbook2020.pdf) 
+is very different to the approach used for pretraining.
+For one, it is goal-driven: models are rewarded based on some criteria, like
+picking the correct answer to a question, or producing a response that humans 
+rate highly. In a multiple choice setting, for example, the model might only be rated on
+which choice it selects as its final answer.
+
+Also, in RL, models are allowed to "explore" by interacting with their environment.
+For text-predictors, this means they are free to start producing text 
+unlike any they were trained on. Because they are only rated based on
+their final answer, they are (by default) free to come up with unique ways of
+solving problems. If the approach works, they are rewarded and will learn to use
+it more often.
+
+In the previous section, we taught a tiny model to solve problems beyond its capabilities by
+writing to, and reading from, its token context. We assumed the model would structure its
+reasoning into a form that makes sense to us. But why would it? It's not impossible
+to imagine the model doing something like this:
+
+<div id="reason-chat-steganography"></div>
+<script>
+makeChat("reason-chat-steganography", ["1 * 2 * 3 = ",
+"&ltthink&gt  .#振%^^^ &&lt/think&gt \n\n 6"]);
+</script>
+
+There are a few reasons we don't see this behaviour. Firstly and most simply, exploitation: if a
+model has already learnt a technique that works (e.g. chain-of-thought using human
+language), it doesn't initially have much incentive to modify it. Making the
+chain-of-thought longer often improves performance, and so models trained with
+RL often generate very long chains-of-thought (see
+[Deepseek-AI](https://github.com/deepseek-ai/DeepSeek-R1/blob/main/DeepSeek_R1.pdf);
+but also [Liu et. al).](https://arxiv.org/pdf/2503.20783)
+
+Secondly, some RL regimes restrict the model from straying too far from its base
+pre-trained self. A prime example is the use of the KL divergence between an RL
+model and its pretrained base model. Here, the model is lightly penalized 
+for pruning its responses to a subset of the base model's, but heavily penalized for producing 
+a sequence the base model would be unlikely to produce. In other words, as the RL model
+explores new ways of answering a question, it can prune its outputs to
+a subset of what the base model might answer, but punished if it strays too far
+from something the original model might produce. KL divergence is generally
+intended to prevent a model "unlearning" useful tools as it is trained.
+However, this term is also an explicit selection
+pressure which guides model training away from completely novel (read:
+unintelligible) solutions.
+
+
+Finally, there are implicit selection biases at play. DeepSeek R1 might have
+taken the world by storm, but before R1, there was
+[R1-Zero.](https://github.com/deepseek-ai/DeepSeek-R1/blob/main/DeepSeek_R1.pdf)
+R1-Zero was
+post-trained entirely using reinforcement learning, and learned to reason by
+mixing languages and producing sometimes incoherent chains-of-thought. As such,
+it was effectively sidelined and never saw broad adoption. Instead, R1 was
+trained more explicitly to produce human-interpretable reasoning chains. These
+implicit selection biases are at least some of the reason why models reason the
+way they do: because that's what we want them to do, and so we discard training
+regimes and models that don't meet this criteria.
+
+Examples of reasoning models that aren't human interpretable include [Coconut,
+implicit CoT, etc.] There is a bit of a backlash against them [links]
 
 
 
-All of this assumes that layers are ordered perfectly for whatever serial calculation needs to take 
-place. It might not be especially easy for a model to learn how to do maths in every single layer, and
-so it's also quite possible that the effective model depth drops off even faster than shown here.
+So, to summarise:
+- Large language models learn to detect and reproduce structures and patterns in text.
+- One pattern they learn to produce is the "chain-of-thought", where a problem is broken down step-by-step.
+- For some problems, applying this pattern allows the model to break down and solve simpler subproblems.
+- When this is the case, chain-of-thought can dramatically improve performance.
 
 
-
-## The Question
+# Experiments
 
 Given what we've seen, it can be hard to know how seriously to take a chain-of-thought. In an ideal world,
 a model's reasoning would be an accurate representation of how it arrived at an answer. The reality appears
 more complicated. 
 
-One question I'm particularly interested in: when does the model actually choose its final answer? 
+One approach is looking below the surface of the model and reading it's internal state. In particular,
+we can try and read out when the model actually choose its final answer.
 
 Why is this an interesting question to ask?
 
@@ -671,20 +793,8 @@ is doing and why is basically the gold standard for AI Safety.
 
 - If we want to review a model's reasoning, we don't want to wade through paragraphs of post-hoc justification.
 - We want to know whether/to what degree we can trust a model's chain of thought to explain how it has made
-its choices. If some/all of its working has no impact on the final answer, we know not to trust it (?)
-- It's possible a model could come up with an initial guess, and then uses later reasoning to refine this estimate.
-
-
-- If a model doesn't actually use its reasoning tokens to do reasoning, then why bother emit them? Is it 
-pursuing a secondary goal of *looking like it's reasoning*?
-- Do phrases like "Wait wait wait", "But!" etc. actually matter? 
-
-1. How much of the chain-of-thought actually matters? 
-
-Could a model decide on its answer early on, and then spend time going through the charade of writing out reasoning?
-
-In particular, I'm trying to tease apart what a model does and doesn't know - whether it has 'secretly' stored its 
-answer away, or if it truly doesn't come up with an answer until the very end.
+its choices. If some/all of its working has no impact on the final answer, we can safely ignore this reasoning.
+- It's possible a model could come up with an initial guess, and then use later reasoning to refine this estimate.
 
 
 ## The experiment
@@ -739,3 +849,4 @@ Most likely: the model memorises the questions (mostly eliminated by not trainin
         create_visualizer('tf.json', 'visualizer1');
     });
 </script>
+
